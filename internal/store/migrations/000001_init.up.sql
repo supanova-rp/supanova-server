@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS dummy (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+  name TEXT NOT NULL
+);
