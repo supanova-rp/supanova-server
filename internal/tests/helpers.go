@@ -58,7 +58,6 @@ func (tr *TestResources) Cleanup(ctx context.Context, t *testing.T) {
 	}
 
 	if tr.ComposeStack != nil {
-		fmt.Println(">>> downnnnn")
 		err := tr.ComposeStack.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal)
 		if err != nil {
 			t.Logf("failed to tear down compose stack: %v", err)
@@ -90,7 +89,7 @@ func getPostgresURL(ctx context.Context, composeStack *compose.DockerCompose) (s
 }
 
 func getAppURL(ctx context.Context, composeStack *compose.DockerCompose) (string, error) {
-	appContainer, err := composeStack.ServiceContainer(ctx, "go-template")
+	appContainer, err := composeStack.ServiceContainer(ctx, "supanova-server")
 	if err != nil {
 		return "", fmt.Errorf("failed to get app container: %w", err)
 	}

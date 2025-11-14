@@ -10,8 +10,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"github.com/JDGarner/go-template/internal/handlers"
-	"github.com/JDGarner/go-template/internal/store"
+	"github.com/supanova-rp/supanova-server/internal/handlers"
+	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
 const (

@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 
-	"github.com/JDGarner/go-template/internal/store/sqlc"
+	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
 func TestIntegration(t *testing.T) {

@@ -1,9 +1,9 @@
 services:
-  go-template:
+  supanova-server:
     build:
       context: ../../.
       dockerfile: Dockerfile
-    container_name: go-template-test
+    container_name: supanova-server-test
     ports:
       - "3001:3001"
     env_file:
@@ -24,7 +24,7 @@ services:
 
   postgres:
     image: postgres:18-alpine
-    container_name: go-template-test-postgres
+    container_name: supanova-server-test-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: testuser
@@ -32,8 +32,6 @@ services:
       POSTGRES_DB: testdb
     env_file:
       - .env.test
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     ports:
       - "5431:5432"
     healthcheck:
@@ -41,6 +39,3 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-volumes:
-  postgres_data:
