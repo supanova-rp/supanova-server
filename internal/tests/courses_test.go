@@ -1,4 +1,4 @@
-package courses_test
+package tests
 
 import (
 	"context"
@@ -14,13 +14,12 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
-	"github.com/supanova-rp/supanova-server/internal/tests"
 )
 
 func TestIntegration(t *testing.T) {
 	ctx := context.Background()
 
-	testResources, err := tests.SetupTestResources(ctx, t)
+	testResources, err := setupTestResources(ctx, t)
 	if err != nil {
 		fmt.Printf("setup tests failed: %s", err)
 		testResources.Cleanup(ctx, t)
