@@ -1,4 +1,4 @@
-package tests
+package courses_test
 
 import (
 	"context"
@@ -14,12 +14,13 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
+	"github.com/supanova-rp/supanova-server/internal/tests"
 )
 
 func TestIntegration(t *testing.T) {
 	ctx := context.Background()
 
-	testResources, err := setupTestResources(ctx, t)
+	testResources, err := tests.SetupTestResources(ctx, t)
 	if err != nil {
 		fmt.Printf("setup tests failed: %s", err)
 		testResources.Cleanup(ctx, t)
@@ -30,21 +31,23 @@ func TestIntegration(t *testing.T) {
 		testResources.Cleanup(ctx, t)
 	})
 
-	t.Run("returns dummy item", func(t *testing.T) {
+	t.Run("returns course by id", func(t *testing.T) {
 		id := uuid.New()
-		expectedName := "hello"
+		expectedTitle := "course A"
+		expectedDescription := "This is a course about xyz"
 
 		_, err := testResources.DB.ExecContext(
 			ctx,
-			`INSERT INTO dummy VALUES ($1, $2)`,
+			`INSERT INTO courses VALUES ($1, $2, $3)`,
 			id,
-			expectedName,
+			expectedTitle,
+			expectedDescription,
 		)
 		if err != nil {
 			t.Fatalf("failed to insert test data: %v", err)
 		}
 
-		resp := getItem(t, testResources.AppURL, id)
+		resp := getCourse(t, testResources.AppURL, id)
 		defer resp.Body.Close() //nolint:errcheck
 
 		if resp.StatusCode != http.StatusOK {
@@ -56,14 +59,18 @@ func TestIntegration(t *testing.T) {
 			t.Fatalf("failed to read response body: %v", err)
 		}
 
-		var result sqlc.Dummy
+		var result sqlc.Course
 		err = json.Unmarshal(body, &result)
 		if err != nil {
 			t.Fatalf("failed to parse JSON response: %v. Body: %s", err, string(body))
 		}
 
-		if result.Name != expectedName {
-			t.Errorf("expected name '%s', got '%s'", expectedName, result.Name)
+		if result.Title.String != expectedTitle {
+			t.Errorf("expected title '%s', got '%s'", expectedTitle, result.Title.String)
+		}
+
+		if result.Description.String != expectedDescription {
+			t.Errorf("expected description '%s', got '%s'", expectedDescription, result.Description.String)
 		}
 
 		if result.ID.String() != id.String() {
@@ -72,9 +79,9 @@ func TestIntegration(t *testing.T) {
 	})
 
 	t.Run("returns not found error", func(t *testing.T) {
-		nonExistantID := uuid.New()
+		nonExistentID := uuid.New()
 
-		resp := getItem(t, testResources.AppURL, nonExistantID)
+		resp := getCourse(t, testResources.AppURL, nonExistentID)
 		defer resp.Body.Close() //nolint:errcheck
 
 		if resp.StatusCode != http.StatusNotFound {
@@ -83,10 +90,10 @@ func TestIntegration(t *testing.T) {
 	})
 }
 
-func getItem(t *testing.T, baseURL string, id uuid.UUID) *http.Response {
+func getCourse(t *testing.T, baseURL string, id uuid.UUID) *http.Response {
 	t.Helper()
 
-	urlString := fmt.Sprintf("%s/item/%s", baseURL, id.String())
+	urlString := fmt.Sprintf("%s/course/%s", baseURL, id.String())
 	parsedURL, err := url.Parse(urlString)
 	if err != nil {
 		t.Fatalf("failed to parse URL: %v", err)

@@ -8,7 +8,57 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Dummy struct {
-	ID   pgtype.UUID
-	Name string
+type Course struct {
+	ID          pgtype.UUID
+	Title       pgtype.Text
+	Description pgtype.Text
+}
+
+type Quizanswer struct {
+	ID             pgtype.UUID
+	Answer         pgtype.Text
+	CorrectAnswer  pgtype.Bool
+	QuizQuestionID pgtype.UUID
+	Position       pgtype.Int4
+}
+
+type Quizquestion struct {
+	ID            pgtype.UUID
+	Question      pgtype.Text
+	Position      pgtype.Int4
+	QuizSectionID pgtype.UUID
+}
+
+type Quizsection struct {
+	ID       pgtype.UUID
+	Position pgtype.Int4
+	CourseID pgtype.UUID
+}
+
+type User struct {
+	ID    string
+	Name  pgtype.Text
+	Email pgtype.Text
+}
+
+type Usercourse struct {
+	ID       pgtype.UUID
+	UserID   pgtype.Text
+	CourseID pgtype.UUID
+}
+
+type Userprogress struct {
+	ID                  pgtype.UUID
+	UserID              string
+	CourseID            pgtype.UUID
+	CompletedSectionIds []pgtype.UUID
+	CompletedCourse     pgtype.Bool
+}
+
+type Videosection struct {
+	ID       pgtype.UUID
+	Title    pgtype.Text
+	VideoUrl pgtype.Text
+	Position pgtype.Int4
+	CourseID pgtype.UUID
 }

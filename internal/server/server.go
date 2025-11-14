@@ -67,7 +67,7 @@ func (s *Server) Stop() error {
 
 func registerRoutes(e *echo.Echo, h *handlers.Handlers) {
 	e.GET("/health", h.HealthCheck)
-	e.GET("/item/:id", h.GetItem)
+	e.GET("/course/:id", h.GetCourse)
 }
 
 type customValidator struct {

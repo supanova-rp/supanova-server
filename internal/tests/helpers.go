@@ -16,7 +16,7 @@ type TestResources struct {
 }
 
 // setupTestResources creates and starts all required containers for testing
-func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, error) {
+func SetupTestResources(ctx context.Context, t *testing.T) (*TestResources, error) {
 	composeStack, err := compose.NewDockerCompose("./docker-compose.yml")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create compose stack: %w", err)

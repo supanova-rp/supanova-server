@@ -14,7 +14,8 @@ type RequestParams struct {
 	ID string `param:"id" validate:"required"`
 }
 
-func (h *Handlers) GetItem(e echo.Context) error {
+// TODO: implement this
+func (h *Handlers) GetCourse(e echo.Context) error {
 	var params RequestParams
 	if err := e.Bind(&params); err != nil {
 		return err
@@ -30,7 +31,7 @@ func (h *Handlers) GetItem(e echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid uuid format")
 	}
 
-	item, err := h.Store.Queries.GetDummyItem(e.Request().Context(), uuid)
+	item, err := h.Store.Queries.GetCourseById(e.Request().Context(), uuid)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return echo.NewHTTPError(http.StatusNotFound, "item not found")
