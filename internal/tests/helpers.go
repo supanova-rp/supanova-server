@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"testing"
 
 	"github.com/testcontainers/testcontainers-go/modules/compose"
@@ -17,6 +18,7 @@ type TestResources struct {
 
 // setupTestResources creates and starts all required containers for testing
 func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, error) {
+	t.Helper()
 	composeStack, err := compose.NewDockerCompose("./docker-compose.yml")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create compose stack: %w", err)
@@ -26,10 +28,11 @@ func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to start compose stack: %w", err)
 	}
-	defer func () {
+	defer func() {
 		// handle cleanup here if setup fails halfway through
 		if err != nil {
-			composeStack.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal)
+			err = composeStack.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal)
+			slog.Error("cleanup error", slog.Any("error", err))
 		}
 	}()
 

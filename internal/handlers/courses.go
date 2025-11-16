@@ -14,7 +14,6 @@ type RequestParams struct {
 	ID string `param:"id" validate:"required"`
 }
 
-// TODO: implement this
 func (h *Handlers) GetCourse(e echo.Context) error {
 	var params RequestParams
 	if err := e.Bind(&params); err != nil {
@@ -31,15 +30,15 @@ func (h *Handlers) GetCourse(e echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid uuid format")
 	}
 
-	item, err := h.Store.Queries.GetCourseById(e.Request().Context(), uuid)
+	course, err := h.Store.Queries.GetCourseById(e.Request().Context(), uuid)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return echo.NewHTTPError(http.StatusNotFound, "item not found")
+			return echo.NewHTTPError(http.StatusNotFound, "course not found")
 		}
 
-		slog.Error("failed to get item", slog.Any("error", err), slog.String("id", params.ID))
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get item")
+		slog.Error("failed to get course", slog.Any("error", err), slog.String("id", params.ID))
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get course")
 	}
 
-	return e.JSON(http.StatusOK, item)
+	return e.JSON(http.StatusOK, course)
 }
