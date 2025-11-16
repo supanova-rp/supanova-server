@@ -31,8 +31,8 @@ func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, erro
 	defer func() {
 		// handle cleanup here if setup fails halfway through
 		if err != nil {
-			err = composeStack.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal)
-			slog.Error("cleanup error", slog.Any("error", err))
+			cleanupErr := composeStack.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal)
+			slog.Error("cleanup error", slog.Any("error", cleanupErr))
 		}
 	}()
 
