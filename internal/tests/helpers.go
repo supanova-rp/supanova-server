@@ -26,6 +26,12 @@ func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to start compose stack: %w", err)
 	}
+	defer func () {
+		// handle cleanup here if setup fails halfway through
+		if err != nil {
+			composeStack.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal)
+		}
+	}()
 
 	postgresURL, err := getPostgresURL(ctx, composeStack)
 	if err != nil {
@@ -39,7 +45,7 @@ func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, erro
 
 	db, err := sql.Open("postgres", postgresURL)
 	if err != nil {
-		t.Fatalf("failed to connect to database: %v", err)
+		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
 
 	return &TestResources{
@@ -50,6 +56,10 @@ func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, erro
 }
 
 func (tr *TestResources) Cleanup(ctx context.Context, t *testing.T) {
+	if tr == nil {
+		return
+	}
+
 	if tr.DB != nil {
 		err := tr.DB.Close()
 		if err != nil {
