@@ -1,1 +1,8 @@
-DROP TABLE IF EXISTS dummy;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS courses;
+DROP TABLE IF EXISTS videosections;
+DROP TABLE IF EXISTS quizsections;
+DROP TABLE IF EXISTS quizquestions;
+DROP TABLE IF EXISTS quizanswers;
+DROP TABLE IF EXISTS usercourses;
+DROP TABLE IF EXISTS userprogress;

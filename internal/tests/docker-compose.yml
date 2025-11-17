@@ -1,16 +1,13 @@
 services:
-  go-template:
+  supanova-server:
     build:
       context: ../../.
       dockerfile: Dockerfile
-    container_name: go-template-test
+    container_name: supanova-server-test
     ports:
       - "3001:3001"
     env_file:
       - .env.test
-    environment:
-      # Override DATABASE_URL to use @postgres for the db host
-      DATABASE_URL: postgres://testuser:password@postgres:5432/testdb?sslmode=disable
     restart: unless-stopped
     depends_on:
       postgres:
@@ -24,23 +21,14 @@ services:
 
   postgres:
     image: postgres:18-alpine
-    container_name: go-template-test-postgres
+    container_name: supanova-server-test-postgres
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: testuser
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: testdb
     env_file:
       - .env.test
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     ports:
       - "5431:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U testuser -d testdb"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-volumes:
-  postgres_data:

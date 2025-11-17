@@ -57,5 +57,5 @@ formatters:
       sections:
         - standard
         - default
-        - prefix(github.com/JDGarner/go-template)
+        - prefix(github.com/supanova-rp/supanova-server)
 

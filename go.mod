@@ -1,4 +1,4 @@
-module github.com/JDGarner/go-template
+module github.com/supanova-rp/supanova-server
 
 go 1.25.3
 

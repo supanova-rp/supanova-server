@@ -8,9 +8,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/JDGarner/go-template/internal/config"
-	"github.com/JDGarner/go-template/internal/server"
-	"github.com/JDGarner/go-template/internal/store"
+	"github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/supanova-rp/supanova-server/internal/server"
+	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
 func main() {

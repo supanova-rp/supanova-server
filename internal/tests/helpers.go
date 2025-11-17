@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"testing"
 
 	"github.com/testcontainers/testcontainers-go/modules/compose"
@@ -17,6 +18,7 @@ type TestResources struct {
 
 // setupTestResources creates and starts all required containers for testing
 func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, error) {
+	t.Helper()
 	composeStack, err := compose.NewDockerCompose("./docker-compose.yml")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create compose stack: %w", err)
@@ -26,6 +28,13 @@ func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to start compose stack: %w", err)
 	}
+	defer func() {
+		// handle cleanup here if setup fails halfway through
+		if err != nil {
+			cleanupErr := composeStack.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal)
+			slog.Error("cleanup error", slog.Any("error", cleanupErr))
+		}
+	}()
 
 	postgresURL, err := getPostgresURL(ctx, composeStack)
 	if err != nil {
@@ -39,7 +48,7 @@ func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, erro
 
 	db, err := sql.Open("postgres", postgresURL)
 	if err != nil {
-		t.Fatalf("failed to connect to database: %v", err)
+		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
 
 	return &TestResources{
@@ -50,6 +59,10 @@ func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, erro
 }
 
 func (tr *TestResources) Cleanup(ctx context.Context, t *testing.T) {
+	if tr == nil {
+		return
+	}
+
 	if tr.DB != nil {
 		err := tr.DB.Close()
 		if err != nil {
@@ -58,7 +71,6 @@ func (tr *TestResources) Cleanup(ctx context.Context, t *testing.T) {
 	}
 
 	if tr.ComposeStack != nil {
-		fmt.Println(">>> downnnnn")
 		err := tr.ComposeStack.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal)
 		if err != nil {
 			t.Logf("failed to tear down compose stack: %v", err)
@@ -90,7 +102,7 @@ func getPostgresURL(ctx context.Context, composeStack *compose.DockerCompose) (s
 }
 
 func getAppURL(ctx context.Context, composeStack *compose.DockerCompose) (string, error) {
-	appContainer, err := composeStack.ServiceContainer(ctx, "go-template")
+	appContainer, err := composeStack.ServiceContainer(ctx, "supanova-server")
 	if err != nil {
 		return "", fmt.Errorf("failed to get app container: %w", err)
 	}

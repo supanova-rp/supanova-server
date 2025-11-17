@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/JDGarner/go-template/internal/store/sqlc"
+	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
 type Store struct {

@@ -1,2 +1,2 @@
--- name: GetDummyItem :one
-SELECT id, name FROM dummy WHERE id = $1;
+-- name: GetCourseById :one
+SELECT id, title, description FROM courses WHERE id = $1;

@@ -1,6 +1,6 @@
 GIT_HASH := $(shell git rev-parse --short HEAD)
 DOCKER_USER := jdgarner
-IMAGE_NAME := go-template
+IMAGE_NAME := supanova-server
 
 dep:
 	go mod download
@@ -16,11 +16,14 @@ lint/install:
 lint/run:
 	bin/golangci-lint run --config .golangci.yml
 
+lint/fix:
+	bin/golangci-lint run --config .golangci.yml --fix
+
 test:
 	go test ./...
 
 sqlc:
-	go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0 generate -f internal/store/sqlc.yaml
+	go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0 generate -f internal/store/sqlc.yml
 
 migrate/create:
 	@if [ -z "$(name)" ]; then \
@@ -33,7 +36,7 @@ build:
 	CGO_ENABLED=0 \
 	GOOS=linux \
 	GOARCH=amd64 \
-	go build -o go-template .
+	go build -o supanova-server .
 
 docker/local-build:
 	DOCKER_BUILDKIT=1 docker buildx build \

@@ -11,13 +11,13 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getDummyItem = `-- name: GetDummyItem :one
-SELECT id, name FROM dummy WHERE id = $1
+const getCourseById = `-- name: GetCourseById :one
+SELECT id, title, description FROM courses WHERE id = $1
 `
 
-func (q *Queries) GetDummyItem(ctx context.Context, id pgtype.UUID) (Dummy, error) {
-	row := q.db.QueryRow(ctx, getDummyItem, id)
-	var i Dummy
-	err := row.Scan(&i.ID, &i.Name)
+func (q *Queries) GetCourseById(ctx context.Context, id pgtype.UUID) (Course, error) {
+	row := q.db.QueryRow(ctx, getCourseById, id)
+	var i Course
+	err := row.Scan(&i.ID, &i.Title, &i.Description)
 	return i, err
 }

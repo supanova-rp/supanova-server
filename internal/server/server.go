@@ -10,8 +10,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"github.com/JDGarner/go-template/internal/handlers"
-	"github.com/JDGarner/go-template/internal/store"
+	"github.com/supanova-rp/supanova-server/internal/handlers"
+	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
 const (
@@ -67,7 +67,7 @@ func (s *Server) Stop() error {
 
 func registerRoutes(e *echo.Echo, h *handlers.Handlers) {
 	e.GET("/health", h.HealthCheck)
-	e.GET("/item/:id", h.GetItem)
+	e.GET("/course/:id", h.GetCourse)
 }
 
 type customValidator struct {
