@@ -28,6 +28,7 @@ type Server struct {
 func New(s *store.Store, port string) *Server {
 	e := echo.New()
 	e.Validator = &customValidator{validator: validator.New()}
+	e.HideBanner = true // Prevents startup banner from being logged
 
 	// limits each unique IP to 60 requests per minute with a burst of 120.
 	config := middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
