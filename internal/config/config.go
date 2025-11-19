@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Port        string
-	DatabaseURL string
-	LogLevel    slog.Level
+	Port          string
+	DatabaseURL   string
+	RunMigrations bool
+	LogLevel      slog.Level
 }
 
 var logLevelMap = map[string]slog.Level{
@@ -28,9 +30,10 @@ func ParseEnv() (*Config, error) {
 	_ = godotenv.Load()
 
 	envVars := map[string]string{
-		"SERVER_PORT":  "",
-		"DATABASE_URL": "",
-		"LOG_LEVEL":    "",
+		"SERVER_PORT":    "",
+		"DATABASE_URL":   "",
+		"RUN_MIGRATIONS": "",
+		"LOG_LEVEL":      "",
 	}
 
 	for key := range envVars {
@@ -41,14 +44,20 @@ func ParseEnv() (*Config, error) {
 		envVars[key] = value
 	}
 
+	runMigrations, err := strconv.ParseBool(envVars["RUN_MIGRATIONS"])
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse RUN_MIGRATIONS environment variable: %v", err)
+	}
+
 	logLevel, ok := logLevelMap[envVars["LOG_LEVEL"]]
 	if !ok {
 		return nil, errors.New("LOG_LEVEL should be one of debug|info|warning|error")
 	}
 
 	return &Config{
-		Port:        envVars["SERVER_PORT"],
-		DatabaseURL: envVars["DATABASE_URL"],
-		LogLevel:    logLevel,
+		Port:          envVars["SERVER_PORT"],
+		DatabaseURL:   envVars["DATABASE_URL"],
+		RunMigrations: runMigrations,
+		LogLevel:      logLevel,
 	}, nil
 }
