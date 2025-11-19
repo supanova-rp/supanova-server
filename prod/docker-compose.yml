@@ -19,6 +19,6 @@ services:
       driver: fluentd
       options:
         fluentd-address: "localhost:24224"
-        tag: "docker.{{.Name}}"
+        tag: "{{.Name}}"
         fluentd-async: "true"
         fluentd-max-retries: "5"
