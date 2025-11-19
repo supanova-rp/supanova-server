@@ -5,14 +5,14 @@ services:
       dockerfile: Dockerfile
     container_name: supanova-server
     ports:
-      - "3000:3000"
+      - "${SERVER_PORT}:${SERVER_PORT}"
     env_file: .env
     # network_mode host needed so it can connect to postgres running outside of docker
     # once we move postgres to run inside docker, we can remove this
     network_mode: host
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      test: ["CMD-SHELL", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${SERVER_PORT}/health"]
       interval: 5s
       timeout: 3s
       retries: 10
