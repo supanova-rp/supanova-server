@@ -1,8 +1,6 @@
 services:
   supanova-server:
-    build:
-      context: ../.
-      dockerfile: Dockerfile
+    image: jdgarner/supanova-server:latest
     container_name: supanova-server
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
@@ -12,8 +10,15 @@ services:
     network_mode: host
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${SERVER_PORT}/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:${SERVER_PORT}/health || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
       start_period: 10s
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: "localhost:24224"
+        tag: "{{.Name}}"
+        fluentd-async: "true"
+        fluentd-max-retries: "5"
