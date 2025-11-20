@@ -32,8 +32,11 @@ migrate/create:
 	fi
 	migrate create -ext sql -dir internal/store/migrations -seq $(name)
 
-prod:
+prod-up:
 	cd prod && docker-compose -p supanova-server up -d
+
+prod-down:
+	cd prod && docker-compose -p supanova-server down
 
 build:
 	CGO_ENABLED=0 \
