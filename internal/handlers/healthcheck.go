@@ -8,12 +8,14 @@ import (
 
 func (h *Handlers) HealthCheck(e echo.Context) error {
 	dbStatus := "ok"
+	httpStatus := http.StatusOK
 	err := h.Store.Ping(e.Request().Context())
 	if err != nil {
+		httpStatus = http.StatusServiceUnavailable
 		dbStatus = "unreachable"
 	}
 
-	return e.JSON(http.StatusOK, map[string]string{
+	return e.JSON(httpStatus, map[string]string{
 		"status": "ok",
 		"db":     dbStatus,
 	})
