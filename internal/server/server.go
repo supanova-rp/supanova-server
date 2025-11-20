@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -67,8 +68,12 @@ func (s *Server) Stop() error {
 }
 
 func registerRoutes(e *echo.Echo, h *handlers.Handlers) {
-	e.GET("/health", h.HealthCheck)
-	e.GET("/course/:id", h.GetCourse)
+	e.GET(getRoute("v2", "health"), h.HealthCheck)
+	e.GET(getRoute("v2", "course/:id"), h.GetCourse)
+}
+
+func getRoute(prefix, route string) string {
+	return fmt.Sprintf("/%s/%s", prefix, route)
 }
 
 type customValidator struct {
