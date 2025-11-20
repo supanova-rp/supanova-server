@@ -92,7 +92,7 @@ func TestIntegration(t *testing.T) {
 func getCourse(t *testing.T, baseURL string, id uuid.UUID) *http.Response {
 	t.Helper()
 
-	urlString := fmt.Sprintf("%s/course/%s", baseURL, id.String())
+	urlString := fmt.Sprintf("%s/v2/course/%s", baseURL, id.String())
 	parsedURL, err := url.Parse(urlString)
 	if err != nil {
 		t.Fatalf("failed to parse URL: %v", err)

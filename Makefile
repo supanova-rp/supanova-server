@@ -33,7 +33,9 @@ migrate/create:
 	migrate create -ext sql -dir internal/store/migrations -seq $(name)
 
 prod-up:
-	cd prod && docker-compose -p supanova-server up -d
+	docker pull jdgarner/supanova-server:latest && \
+	cd prod && \
+	docker-compose -p supanova-server up -d
 
 prod-down:
 	cd prod && docker-compose -p supanova-server down
