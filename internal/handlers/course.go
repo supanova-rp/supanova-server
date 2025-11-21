@@ -30,7 +30,7 @@ func (h *Handlers) GetCourse(e echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid uuid format")
 	}
 
-	course, err := h.Store.Queries.GetCourseById(e.Request().Context(), uuid)
+	course, err := h.Course.GetCourse(e.Request().Context(), uuid)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return echo.NewHTTPError(http.StatusNotFound, "course not found")

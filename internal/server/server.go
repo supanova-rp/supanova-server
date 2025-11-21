@@ -12,7 +12,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/supanova-rp/supanova-server/internal/handlers"
-	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
 const (
@@ -26,7 +25,7 @@ type Server struct {
 	port string
 }
 
-func New(s *store.Store, port string) *Server {
+func New(h *handlers.Handlers, port string) *Server {
 	e := echo.New()
 	e.Validator = &customValidator{validator: validator.New()}
 	e.HideBanner = true // Prevents startup banner from being logged
@@ -39,9 +38,6 @@ func New(s *store.Store, port string) *Server {
 	})
 	e.Use(middleware.RateLimiter(config))
 
-	h := &handlers.Handlers{
-		Store: s,
-	}
 	registerRoutes(e, h)
 
 	return &Server{

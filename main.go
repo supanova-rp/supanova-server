@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/server"
 	"github.com/supanova-rp/supanova-server/internal/store"
 )
@@ -43,7 +44,11 @@ func run() error {
 	}
 	defer db.Close()
 
-	svr := server.New(db, cfg.Port)
+	h := &handlers.Handlers{
+		Course: db,
+	}
+
+	svr := server.New(h, cfg.Port)
 	serverErr := make(chan error, 1)
 
 	go func() {
