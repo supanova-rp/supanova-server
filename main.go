@@ -38,15 +38,16 @@ func run() error {
 	}))
 	slog.SetDefault(logger)
 
-	db, err := store.NewStore(ctx, cfg.DatabaseURL, cfg.RunMigrations)
+	st, err := store.NewStore(ctx, cfg.DatabaseURL, cfg.RunMigrations)
 	if err != nil {
 		return fmt.Errorf("unable to connect to database: %v", err)
 	}
-	defer db.Close()
+	defer st.Close()
 
-	h := &handlers.Handlers{
-		Course: db,
-	}
+	h := handlers.NewHandlers(
+		st,
+		st,
+	)
 
 	svr := server.New(h, cfg.Port)
 	serverErr := make(chan error, 1)

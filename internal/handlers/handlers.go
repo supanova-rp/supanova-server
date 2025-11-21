@@ -2,10 +2,19 @@ package handlers
 
 import (
 	"github.com/supanova-rp/supanova-server/internal/domain"
-	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
 type Handlers struct {
-	Store  *store.Store
+	System domain.SystemRepository
 	Course domain.CourseRepository
+}
+
+func NewHandlers(
+	system domain.SystemRepository,
+	course domain.CourseRepository,
+) *Handlers {
+	return &Handlers{
+		System: system,
+		Course: course,
+	}
 }
