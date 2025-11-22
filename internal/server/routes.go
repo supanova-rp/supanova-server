@@ -7,6 +7,7 @@ import (
 )
 
 func RegisterCourseRoutes(e *echo.Echo, h *handlers.Handlers) {
-	e.GET(getRoute("v2", "course/:id"), h.GetCourse)
-	e.POST(getRoute("v2", "course"), h.AddCourse)
+	e.POST(getRoute("v2", "course"), h.GetCourse)
+	// e.POST(getRoute("v2", "get-progress"), h.GetProgress)
+	e.POST(getRoute("v2", "add-course"), h.AddCourse)
 }

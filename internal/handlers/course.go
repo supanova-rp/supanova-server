@@ -13,7 +13,7 @@ import (
 )
 
 type GetCourseParams struct {
-	ID string `param:"id" validate:"required"`
+	ID string `json:"id" validate:"required"`
 }
 
 type AddCourseParams struct {
@@ -58,7 +58,7 @@ func (h *Handlers) AddCourse(e echo.Context) error {
 	}
 
 	if err := e.Validate(&params); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "validation failed")
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid course format")
 	}
 
 	sqlcParams := sqlc.AddCourseParams{

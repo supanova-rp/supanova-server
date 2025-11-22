@@ -1,13 +1,11 @@
 package tests
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"testing"
 
@@ -108,57 +106,4 @@ func TestIntegration(t *testing.T) {
 			t.Fatalf("expected status 201, got %d", resp.StatusCode)
 		}
 	})
-}
-
-func getCourse(t *testing.T, baseURL string, id uuid.UUID) *http.Response {
-	t.Helper()
-
-	urlString := fmt.Sprintf("%s/v2/course/%s", baseURL, id.String())
-	parsedURL, err := url.Parse(urlString)
-	if err != nil {
-		t.Fatalf("failed to parse GET /course URL: %v", err)
-	}
-
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, parsedURL.String(), http.NoBody)
-	if err != nil {
-		t.Fatalf("failed to create GET /course request: %v", err)
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		t.Fatalf("failed to make GET /course request: %v", err)
-	}
-
-	return resp
-}
-
-func addCourse(t *testing.T, baseURL string, course *handlers.AddCourseParams) *http.Response {
-	t.Helper()
-
-	urlString := fmt.Sprintf("%s/v2/course", baseURL)
-	parsedURL, err := url.Parse(urlString)
-	if err != nil {
-		t.Fatalf("failed to parse POST /course URL: %v", err)
-	}
-
-	b, err := json.Marshal(course)
-	if err != nil {
-		t.Fatalf("failed to parse POST /course request body: %v", err)
-	}
-
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, parsedURL.String(), bytes.NewBuffer(b))
-	if err != nil {
-		t.Fatalf("failed to create POST /course request: %v", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		t.Fatalf("failed to make POST /course request: %v", err)
-	}
-
-	return resp
 }
