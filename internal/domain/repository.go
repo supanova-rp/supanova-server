@@ -1,9 +1,15 @@
 package domain
 
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
+
 type SystemRepository interface {
-	// TODO: add the method signature here that is needed by the handler in handlers/course.go.
+	pingDB(context.Context) error
 }
 
 type CourseRepository interface {
-	// TODO: add the method signature here that is needed by the handler in handlers/course.go.
+	getCourse(context.Context, uuid.UUID) (Course, error)
 }
