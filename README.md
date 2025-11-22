@@ -44,8 +44,3 @@ make sqlc
 ```
 make migrate/create name=<migration_name>
 ```
-
-#### Deploying on prod:
-```
-make prod-up
-```

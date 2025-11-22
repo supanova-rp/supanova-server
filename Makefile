@@ -32,14 +32,6 @@ migrate/create:
 	fi
 	migrate create -ext sql -dir internal/store/migrations -seq $(name)
 
-prod-up:
-	docker pull jdgarner/supanova-server:latest && \
-	cd prod && \
-	docker-compose -p supanova-server up -d
-
-prod-down:
-	cd prod && docker-compose -p supanova-server down
-
 build:
 	CGO_ENABLED=0 \
 	GOOS=linux \
