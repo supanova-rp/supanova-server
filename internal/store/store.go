@@ -51,7 +51,7 @@ func (s *Store) Close() {
 	s.pool.Close()
 }
 
-func (s *Store) Ping(ctx context.Context) error {
+func (s *Store) PingDB(ctx context.Context) error {
 	return s.pool.Ping(ctx)
 }
 

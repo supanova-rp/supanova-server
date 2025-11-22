@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"testing"
 
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 
+	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
@@ -31,20 +31,7 @@ func TestIntegration(t *testing.T) {
 	})
 
 	t.Run("returns course by id", func(t *testing.T) {
-		id := uuid.New()
-		expectedTitle := "course A"
-		expectedDescription := "This is a course about xyz"
-
-		_, err := testResources.DB.ExecContext(
-			ctx,
-			`INSERT INTO courses VALUES ($1, $2, $3)`,
-			id,
-			expectedTitle,
-			expectedDescription,
-		)
-		if err != nil {
-			t.Fatalf("failed to insert test data: %v", err)
-		}
+		id := insertCourse(ctx, t, testResources)
 
 		resp := getCourse(t, testResources.AppURL, id)
 		defer resp.Body.Close() //nolint:errcheck
@@ -64,12 +51,12 @@ func TestIntegration(t *testing.T) {
 			t.Fatalf("failed to parse JSON response: %v. Body: %s", err, string(body))
 		}
 
-		if result.Title.String != expectedTitle {
-			t.Errorf("expected title '%s', got '%s'", expectedTitle, result.Title.String)
+		if result.Title.String != CourseTitle {
+			t.Errorf("expected title '%s', got '%s'", CourseTitle, result.Title.String)
 		}
 
-		if result.Description.String != expectedDescription {
-			t.Errorf("expected description '%s', got '%s'", expectedDescription, result.Description.String)
+		if result.Description.String != CourseDescription {
+			t.Errorf("expected description '%s', got '%s'", CourseDescription, result.Description.String)
 		}
 
 		if result.ID.String() != id.String() {
@@ -87,27 +74,18 @@ func TestIntegration(t *testing.T) {
 			t.Fatalf("expected status 404, got %d", resp.StatusCode)
 		}
 	})
-}
 
-func getCourse(t *testing.T, baseURL string, id uuid.UUID) *http.Response {
-	t.Helper()
+	t.Run("creates new course", func(t *testing.T) {
+		newCourse := &handlers.AddCourseParams{
+			Title:       CourseTitle,
+			Description: CourseDescription,
+		}
 
-	urlString := fmt.Sprintf("%s/v2/course/%s", baseURL, id.String())
-	parsedURL, err := url.Parse(urlString)
-	if err != nil {
-		t.Fatalf("failed to parse URL: %v", err)
-	}
+		resp := addCourse(t, testResources.AppURL, newCourse)
+		defer resp.Body.Close() //nolint:errcheck
 
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, parsedURL.String(), http.NoBody)
-	if err != nil {
-		t.Fatalf("failed to create request: %v", err)
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		t.Fatalf("failed to make request: %v", err)
-	}
-
-	return resp
+		if resp.StatusCode != http.StatusCreated {
+			t.Fatalf("expected status 201, got %d", resp.StatusCode)
+		}
+	})
 }

@@ -11,6 +11,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const addCourse = `-- name: AddCourse :one
+INSERT INTO courses (title, description) VALUES ($1, $2) RETURNING id
+`
+
+type AddCourseParams struct {
+	Title       pgtype.Text
+	Description pgtype.Text
+}
+
+func (q *Queries) AddCourse(ctx context.Context, arg AddCourseParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, addCourse, arg.Title, arg.Description)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getCourseById = `-- name: GetCourseById :one
 SELECT id, title, description FROM courses WHERE id = $1
 `
@@ -19,5 +35,26 @@ func (q *Queries) GetCourseById(ctx context.Context, id pgtype.UUID) (Course, er
 	row := q.db.QueryRow(ctx, getCourseById, id)
 	var i Course
 	err := row.Scan(&i.ID, &i.Title, &i.Description)
+	return i, err
+}
+
+const getProgressById = `-- name: GetProgressById :one
+SELECT completed_intro, completed_section_ids FROM userprogress WHERE user_id = $1 AND course_id = $2
+`
+
+type GetProgressByIdParams struct {
+	UserID   string
+	CourseID pgtype.UUID
+}
+
+type GetProgressByIdRow struct {
+	CompletedIntro      pgtype.Bool
+	CompletedSectionIds []pgtype.UUID
+}
+
+func (q *Queries) GetProgressById(ctx context.Context, arg GetProgressByIdParams) (GetProgressByIdRow, error) {
+	row := q.db.QueryRow(ctx, getProgressById, arg.UserID, arg.CourseID)
+	var i GetProgressByIdRow
+	err := row.Scan(&i.CompletedIntro, &i.CompletedSectionIds)
 	return i, err
 }

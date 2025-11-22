@@ -52,6 +52,7 @@ type Userprogress struct {
 	UserID              string
 	CourseID            pgtype.UUID
 	CompletedSectionIds []pgtype.UUID
+	CompletedIntro      pgtype.Bool
 	CompletedCourse     pgtype.Bool
 }
 
