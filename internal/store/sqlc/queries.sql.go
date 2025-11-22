@@ -37,3 +37,24 @@ func (q *Queries) GetCourseById(ctx context.Context, id pgtype.UUID) (Course, er
 	err := row.Scan(&i.ID, &i.Title, &i.Description)
 	return i, err
 }
+
+const getProgressById = `-- name: GetProgressById :one
+SELECT completed_intro, completed_section_ids FROM userprogress WHERE user_id = $1 AND course_id = $2
+`
+
+type GetProgressByIdParams struct {
+	UserID   string
+	CourseID pgtype.UUID
+}
+
+type GetProgressByIdRow struct {
+	CompletedIntro      pgtype.Bool
+	CompletedSectionIds []pgtype.UUID
+}
+
+func (q *Queries) GetProgressById(ctx context.Context, arg GetProgressByIdParams) (GetProgressByIdRow, error) {
+	row := q.db.QueryRow(ctx, getProgressById, arg.UserID, arg.CourseID)
+	var i GetProgressByIdRow
+	err := row.Scan(&i.CompletedIntro, &i.CompletedSectionIds)
+	return i, err
+}

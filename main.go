@@ -47,6 +47,7 @@ func run() error {
 	h := handlers.NewHandlers(
 		st,
 		st,
+		st,
 	)
 
 	svr := server.New(h, cfg.Port)
