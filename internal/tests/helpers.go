@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -27,6 +28,8 @@ func addCourse(t *testing.T, baseURL string, course *handlers.AddCourseParams) *
 }
 
 func makePOSTRequest(t *testing.T, baseURL, endpoint string, resource any) *http.Response {
+	t.Helper()
+
 	parsedURL, err := url.Parse(fmt.Sprintf("%s/v2/%s", baseURL, endpoint))
 	if err != nil {
 		t.Fatalf("failed to parse URL: %v", err)
@@ -53,3 +56,20 @@ func makePOSTRequest(t *testing.T, baseURL, endpoint string, resource any) *http
 	return res
 }
 
+func insertCourse(ctx context.Context, t *testing.T, testResources *TestResources) uuid.UUID {
+	t.Helper()
+	id := uuid.New()
+
+	_, err := testResources.DB.ExecContext(
+		ctx,
+		`INSERT INTO courses VALUES ($1, $2, $3)`,
+		id,
+		CourseTitle,
+		CourseDescription,
+	)
+	if err != nil {
+		t.Fatalf("failed to insert test data: %v", err)
+	}
+
+	return id
+}

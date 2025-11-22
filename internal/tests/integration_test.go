@@ -16,11 +16,6 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
-const (
-	courseTitle       = "Course A"
-	courseDescription = "Course description"
-)
-
 func TestIntegration(t *testing.T) {
 	ctx := context.Background()
 
@@ -36,20 +31,7 @@ func TestIntegration(t *testing.T) {
 	})
 
 	t.Run("returns course by id", func(t *testing.T) {
-		id := uuid.New()
-		expectedTitle := courseTitle
-		expectedDescription := courseDescription
-
-		_, err := testResources.DB.ExecContext(
-			ctx,
-			`INSERT INTO courses VALUES ($1, $2, $3)`,
-			id,
-			expectedTitle,
-			expectedDescription,
-		)
-		if err != nil {
-			t.Fatalf("failed to insert test data: %v", err)
-		}
+		id := insertCourse(ctx, t, testResources)
 
 		resp := getCourse(t, testResources.AppURL, id)
 		defer resp.Body.Close() //nolint:errcheck
@@ -69,12 +51,12 @@ func TestIntegration(t *testing.T) {
 			t.Fatalf("failed to parse JSON response: %v. Body: %s", err, string(body))
 		}
 
-		if result.Title.String != expectedTitle {
-			t.Errorf("expected title '%s', got '%s'", expectedTitle, result.Title.String)
+		if result.Title.String != CourseTitle {
+			t.Errorf("expected title '%s', got '%s'", CourseTitle, result.Title.String)
 		}
 
-		if result.Description.String != expectedDescription {
-			t.Errorf("expected description '%s', got '%s'", expectedDescription, result.Description.String)
+		if result.Description.String != CourseDescription {
+			t.Errorf("expected description '%s', got '%s'", CourseDescription, result.Description.String)
 		}
 
 		if result.ID.String() != id.String() {
@@ -95,8 +77,8 @@ func TestIntegration(t *testing.T) {
 
 	t.Run("creates new course", func(t *testing.T) {
 		newCourse := &handlers.AddCourseParams{
-			Title:       courseTitle,
-			Description: courseDescription,
+			Title:       CourseTitle,
+			Description: CourseDescription,
 		}
 
 		resp := addCourse(t, testResources.AppURL, newCourse)
