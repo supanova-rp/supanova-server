@@ -1,6 +1,6 @@
 package tests
 
 const (
-    CourseTitle       = "Course A"
-    CourseDescription = "Course description"
+	CourseTitle       = "Course A"
+	CourseDescription = "Course description"
 )

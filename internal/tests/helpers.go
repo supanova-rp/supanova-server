@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 )
 
