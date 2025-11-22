@@ -11,6 +11,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const addCourse = `-- name: AddCourse :one
+INSERT INTO courses (title, description) VALUES ($1, $2) RETURNING id
+`
+
+type AddCourseParams struct {
+	Title       pgtype.Text
+	Description pgtype.Text
+}
+
+func (q *Queries) AddCourse(ctx context.Context, arg AddCourseParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, addCourse, arg.Title, arg.Description)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getCourseById = `-- name: GetCourseById :one
 SELECT id, title, description FROM courses WHERE id = $1
 `
