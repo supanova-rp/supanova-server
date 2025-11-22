@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,7 +14,13 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 
+	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
+)
+
+const (
+	courseTitle       = "Course A"
+	courseDescription = "Course description"
 )
 
 func TestIntegration(t *testing.T) {
@@ -32,8 +39,8 @@ func TestIntegration(t *testing.T) {
 
 	t.Run("returns course by id", func(t *testing.T) {
 		id := uuid.New()
-		expectedTitle := "course A"
-		expectedDescription := "This is a course about xyz"
+		expectedTitle := courseTitle
+		expectedDescription := courseDescription
 
 		_, err := testResources.DB.ExecContext(
 			ctx,
@@ -87,6 +94,20 @@ func TestIntegration(t *testing.T) {
 			t.Fatalf("expected status 404, got %d", resp.StatusCode)
 		}
 	})
+
+	t.Run("creates new course", func(t *testing.T) {
+		newCourse := &handlers.AddCourseParams{
+			Title:       courseTitle,
+			Description: courseDescription,
+		}
+
+		resp := addCourse(t, testResources.AppURL, newCourse)
+		defer resp.Body.Close() //nolint:errcheck
+
+		if resp.StatusCode != http.StatusCreated {
+			t.Fatalf("expected status 201, got %d", resp.StatusCode)
+		}
+	})
 }
 
 func getCourse(t *testing.T, baseURL string, id uuid.UUID) *http.Response {
@@ -95,18 +116,48 @@ func getCourse(t *testing.T, baseURL string, id uuid.UUID) *http.Response {
 	urlString := fmt.Sprintf("%s/v2/course/%s", baseURL, id.String())
 	parsedURL, err := url.Parse(urlString)
 	if err != nil {
-		t.Fatalf("failed to parse URL: %v", err)
+		t.Fatalf("failed to parse GET /course URL: %v", err)
 	}
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, parsedURL.String(), http.NoBody)
 	if err != nil {
-		t.Fatalf("failed to create request: %v", err)
+		t.Fatalf("failed to create GET /course request: %v", err)
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		t.Fatalf("failed to make request: %v", err)
+		t.Fatalf("failed to make GET /course request: %v", err)
+	}
+
+	return resp
+}
+
+func addCourse(t *testing.T, baseURL string, course *handlers.AddCourseParams) *http.Response {
+	t.Helper()
+
+	urlString := fmt.Sprintf("%s/v2/course", baseURL)
+	parsedURL, err := url.Parse(urlString)
+	if err != nil {
+		t.Fatalf("failed to parse POST /course URL: %v", err)
+	}
+
+	b, err := json.Marshal(course)
+	if err != nil {
+		t.Fatalf("failed to parse POST /course request body: %v", err)
+	}
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, parsedURL.String(), bytes.NewBuffer(b))
+	if err != nil {
+		t.Fatalf("failed to create POST /course request: %v", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("failed to make POST /course request: %v", err)
 	}
 
 	return resp

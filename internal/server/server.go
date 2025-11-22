@@ -66,6 +66,7 @@ func (s *Server) Stop() error {
 func registerRoutes(e *echo.Echo, h *handlers.Handlers) {
 	e.GET(getRoute("v2", "health"), h.HealthCheck)
 	e.GET(getRoute("v2", "course/:id"), h.GetCourse)
+	e.POST(getRoute("v2", "course"), h.AddCourse)
 }
 
 func getRoute(prefix, route string) string {
