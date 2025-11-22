@@ -69,6 +69,7 @@ func registerRoutes(e *echo.Echo, h *handlers.Handlers) {
 	RegisterProgressRoutes(e, h)
 }
 
+//nolint:unparam // prefix will vary in the future
 func getRoute(prefix, route string) string {
 	return fmt.Sprintf("/%s/%s", prefix, route)
 }
