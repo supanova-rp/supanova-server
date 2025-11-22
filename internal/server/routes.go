@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/labstack/echo/v4"
+
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 )
 
