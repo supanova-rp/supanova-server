@@ -13,6 +13,6 @@ type ProgressRespository interface {
 }
 
 type Progress struct {
-	CompletedSectionIds []uuid.UUID
-	CompletedIntro      bool
+	CompletedSectionIds []uuid.UUID `json:"completedSectionIds"`
+	CompletedIntro      bool        `json:"completedIntro"`
 }

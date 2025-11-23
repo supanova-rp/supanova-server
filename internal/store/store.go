@@ -2,10 +2,8 @@ package store
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
@@ -53,8 +51,4 @@ func (s *Store) Close() {
 
 func (s *Store) PingDB(ctx context.Context) error {
 	return s.pool.Ping(ctx)
-}
-
-func IsNotFoundErr(err error) bool {
-	return errors.Is(err, pgx.ErrNoRows)
 }
