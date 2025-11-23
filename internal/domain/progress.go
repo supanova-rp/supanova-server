@@ -8,7 +8,7 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
-type ProgressRespository interface {
+type ProgressRepository interface {
 	GetProgress(context.Context, sqlc.GetProgressByIDParams) (*Progress, error)
 }
 

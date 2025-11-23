@@ -7,13 +7,13 @@ import (
 type Handlers struct {
 	System   domain.SystemRepository
 	Course   domain.CourseRepository
-	Progress domain.ProgressRespository
+	Progress domain.ProgressRepository
 }
 
 func NewHandlers(
 	system domain.SystemRepository,
 	course domain.CourseRepository,
-	progress domain.ProgressRespository,
+	progress domain.ProgressRepository,
 ) *Handlers {
 	return &Handlers{
 		System:   system,
