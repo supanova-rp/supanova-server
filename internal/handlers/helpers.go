@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
+
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 )
 
