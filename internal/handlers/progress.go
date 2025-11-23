@@ -18,33 +18,36 @@ type GetProgressParams struct {
 }
 
 func (h *Handlers) GetProgress(e echo.Context) error {
-	var params GetProgressParams
-	userID, ok := e.Request().Context().Value("userID").(string)
-	if !ok || userID == "" {
-		slog.Error(errors.ErrUserIDCtxNotFound)
+	ctx := e.Request().Context()
+
+	id, ok := userID(ctx)
+	if !ok {
 		return echo.NewHTTPError(http.StatusInternalServerError, errors.Getting(progressResource))
 	}
-	params.UserID = userID
-	if err := e.Bind(&params); err != nil {
+
+	var params GetProgressParams
+	params.UserID = id
+	if err := bindAndValidate(e, &params); err != nil {
 		return err
 	}
 
-	if err := e.Validate(&params); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.ErrValidation)
-	}
-
-	courseUuid, err := toPGUUID(params.CourseID)
+	courseUUID, err := pgUUID(params.CourseID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.ErrInvalidUuid)
+		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
-	progress, err := h.Progress.GetProgress(e.Request().Context(), sqlc.GetProgressByIdParams{UserID: params.UserID, CourseID: courseUuid})
+	sqlcParams := sqlc.GetProgressByIDParams{
+		UserID:   params.UserID,
+		CourseID: courseUUID,
+	}
+
+	progress, err := h.Progress.GetProgress(e.Request().Context(), sqlcParams)
 	if err != nil {
 		if errors.IsNotFoundErr(err) {
 			return echo.NewHTTPError(http.StatusNotFound, errors.NotFound(progressResource))
 		}
 
-		slog.Error(errors.Getting(progressResource), slog.Any("error", err), slog.String("id", params.CourseID))
+		slog.ErrorContext(ctx, errors.Getting(progressResource), slog.Any("error", err), slog.String("id", params.CourseID))
 		return echo.NewHTTPError(http.StatusInternalServerError, errors.Getting(progressResource))
 	}
 

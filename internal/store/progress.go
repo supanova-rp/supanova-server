@@ -9,19 +9,19 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
-func (s *Store) GetProgress(ctx context.Context, args sqlc.GetProgressByIdParams) (*domain.Progress, error) {
-	progress, err := s.Queries.GetProgressById(ctx, args)
+func (s *Store) GetProgress(ctx context.Context, args sqlc.GetProgressByIDParams) (*domain.Progress, error) {
+	progress, err := s.Queries.GetProgressByID(ctx, args)
 	if err != nil {
 		return nil, err
 	}
 
-	var sectionUuids []uuid.UUID
-	for _, sectionId := range progress.CompletedSectionIds {
-		sectionUuids = append(sectionUuids, uuid.UUID(sectionId.Bytes))
+	var sectionUUIDs []uuid.UUID
+	for _, sectionID := range progress.CompletedSectionIds {
+		sectionUUIDs = append(sectionUUIDs, uuid.UUID(sectionID.Bytes))
 	}
 
 	return &domain.Progress{
-		CompletedSectionIds: sectionUuids,
+		CompletedSectionIDs: sectionUUIDs,
 		CompletedIntro:      progress.CompletedIntro.Bool,
 	}, nil
 }

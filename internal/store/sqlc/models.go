@@ -9,9 +9,19 @@ import (
 )
 
 type Course struct {
-	ID          pgtype.UUID
-	Title       pgtype.Text
-	Description pgtype.Text
+	ID                pgtype.UUID
+	Title             pgtype.Text
+	Description       pgtype.Text
+	CompletionTitle   pgtype.Text
+	CompletionMessage pgtype.Text
+}
+
+type CourseMaterial struct {
+	ID         pgtype.UUID
+	CourseID   pgtype.UUID
+	StorageKey pgtype.UUID
+	Name       string
+	Position   pgtype.Int4
 }
 
 type Quizanswer struct {
@@ -41,6 +51,14 @@ type User struct {
 	Email pgtype.Text
 }
 
+type UserQuizState struct {
+	ID        pgtype.UUID
+	UserID    string
+	QuizID    pgtype.UUID
+	QuizState []byte
+	Attempts  int32
+}
+
 type Usercourse struct {
 	ID       pgtype.UUID
 	UserID   pgtype.Text
@@ -57,9 +75,9 @@ type Userprogress struct {
 }
 
 type Videosection struct {
-	ID       pgtype.UUID
-	Title    pgtype.Text
-	VideoUrl pgtype.Text
-	Position pgtype.Int4
-	CourseID pgtype.UUID
+	ID         pgtype.UUID
+	Title      pgtype.Text
+	Position   pgtype.Int4
+	StorageKey pgtype.UUID
+	CourseID   pgtype.UUID
 }

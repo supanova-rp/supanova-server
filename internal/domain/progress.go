@@ -9,10 +9,10 @@ import (
 )
 
 type ProgressRespository interface {
-	GetProgress(context.Context, sqlc.GetProgressByIdParams) (*Progress, error)
+	GetProgress(context.Context, sqlc.GetProgressByIDParams) (*Progress, error)
 }
 
 type Progress struct {
-	CompletedSectionIds []uuid.UUID `json:"completedSectionIds"`
+	CompletedSectionIDs []uuid.UUID `json:"completedSectionIds"`
 	CompletedIntro      bool        `json:"completedIntro"`
 }

@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	ErrInvalidUuid       = "invalid uuid format"
-	ErrValidation        = "validation failed"
-	ErrUserIDCtxNotFound = "user not found in context"
+	InvalidUUID        = "invalid uuid format"
+	Validation         = "validation failed"
+	InvalidRequestBody = "invalid request body"
+	UserIDCtxNotFound  = "user not found in context"
 )
 
 func Getting(resource string) string {

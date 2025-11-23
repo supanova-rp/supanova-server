@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
 
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
@@ -17,64 +16,53 @@ type GetCourseParams struct {
 	ID string `json:"id" validate:"required"`
 }
 
-type AddCourseParams struct {
-	Title       string `json:"title" validate:"required"`
-	Description string `json:"description" validate:"required"`
-}
-
 func (h *Handlers) GetCourse(e echo.Context) error {
+	ctx := e.Request().Context()
+
 	var params GetCourseParams
-	if err := e.Bind(&params); err != nil {
+	if err := bindAndValidate(e, &params); err != nil {
 		return err
 	}
 
-	if err := e.Validate(&params); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.ErrValidation)
-	}
-
-	uuid, err := toPGUUID(params.ID)
+	uuid, err := pgUUID(params.ID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.ErrInvalidUuid)
+		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
-	course, err := h.Course.GetCourse(e.Request().Context(), uuid)
+	course, err := h.Course.GetCourse(ctx, uuid)
 	if err != nil {
 		if errors.IsNotFoundErr(err) {
 			return echo.NewHTTPError(http.StatusNotFound, errors.NotFound(courseResource))
 		}
 
-		slog.Error(errors.Getting(courseResource), slog.Any("error", err), slog.String("id", params.ID))
+		slog.ErrorContext(ctx, errors.Getting(courseResource), slog.Any("error", err), slog.String("id", params.ID))
 		return echo.NewHTTPError(http.StatusInternalServerError, errors.Getting(courseResource))
 	}
 
 	return e.JSON(http.StatusOK, course)
 }
 
-func (h *Handlers) AddCourse(e echo.Context) error {
-	var params AddCourseParams
+type AddCourseParams struct {
+	Title       string `json:"title" validate:"required"`
+	Description string `json:"description" validate:"required"`
+}
 
-	if err := e.Bind(&params); err != nil {
+func (h *Handlers) AddCourse(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	var params AddCourseParams
+	if err := bindAndValidate(e, &params); err != nil {
 		return err
 	}
 
-	if err := e.Validate(&params); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidFormat(courseResource))
-	}
-
 	sqlcParams := sqlc.AddCourseParams{
-		Title: pgtype.Text{
-			String: params.Title,
-			Valid:  true,
-		},
-		Description: pgtype.Text{
-			String: params.Description,
-			Valid:  true,
-		},
+		Title:       pgText(params.Title),
+		Description: pgText(params.Description),
 	}
 
-	id, err := h.Course.AddCourse(e.Request().Context(), sqlcParams)
+	id, err := h.Course.AddCourse(ctx, sqlcParams)
 	if err != nil {
-		slog.Error(errors.Getting(courseResource), slog.Any("error", err))
+		slog.ErrorContext(ctx, errors.Getting(courseResource), slog.Any("error", err))
 		return echo.NewHTTPError(http.StatusInternalServerError, errors.Getting(courseResource))
 	}
 
