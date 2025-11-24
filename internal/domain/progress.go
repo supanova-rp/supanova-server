@@ -9,7 +9,7 @@ import (
 )
 
 type ProgressRepository interface {
-	GetProgress(context.Context, sqlc.GetProgressByIDParams) (*Progress, error)
+	GetProgress(context.Context, sqlc.GetProgressParams) (*Progress, error)
 }
 
 type Progress struct {

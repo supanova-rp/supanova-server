@@ -9,8 +9,8 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
-func (s *Store) GetProgress(ctx context.Context, args sqlc.GetProgressByIDParams) (*domain.Progress, error) {
-	progress, err := s.Queries.GetProgressByID(ctx, args)
+func (s *Store) GetProgress(ctx context.Context, args sqlc.GetProgressParams) (*domain.Progress, error) {
+	progress, err := s.Queries.GetProgress(ctx, args)
 	if err != nil {
 		return nil, err
 	}

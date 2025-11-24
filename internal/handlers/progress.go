@@ -14,7 +14,6 @@ const progressResource = "user progress"
 
 type GetProgressParams struct {
 	CourseID string `json:"courseId" validate:"required"`
-	UserID   string `validate:"required"` // comes from context
 }
 
 func (h *Handlers) GetProgress(e echo.Context) error {
@@ -26,7 +25,6 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 	}
 
 	var params GetProgressParams
-	params.UserID = id
 	if err := bindAndValidate(e, &params); err != nil {
 		return err
 	}
@@ -36,8 +34,8 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
-	sqlcParams := sqlc.GetProgressByIDParams{
-		UserID:   params.UserID,
+	sqlcParams := sqlc.GetProgressParams{
+		UserID:   id,
 		CourseID: courseUUID,
 	}
 
