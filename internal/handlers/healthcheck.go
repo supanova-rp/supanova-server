@@ -9,7 +9,7 @@ import (
 func (h *Handlers) HealthCheck(e echo.Context) error {
 	dbStatus := "ok"
 	httpStatus := http.StatusOK
-	err := h.Store.Ping(e.Request().Context())
+	err := h.System.PingDB(e.Request().Context())
 	if err != nil {
 		httpStatus = http.StatusServiceUnavailable
 		dbStatus = "unreachable"
