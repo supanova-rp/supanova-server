@@ -9,9 +9,8 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
+	"github.com/supanova-rp/supanova-server/internal/middleware"
 )
-
-const userIDContextKey = "userID"
 
 func pgUUID(id string) (pgtype.UUID, error) {
 	var uuid pgtype.UUID
@@ -27,7 +26,7 @@ func pgText(text string) pgtype.Text {
 }
 
 func userID(ctx context.Context) (string, bool) {
-	id, ok := ctx.Value(userIDContextKey).(string)
+	id, ok := ctx.Value(middleware.UserIDContextKey).(string)
 	if !ok || id == "" {
 		slog.ErrorContext(ctx, errors.UserIDCtxNotFound)
 		return "", false

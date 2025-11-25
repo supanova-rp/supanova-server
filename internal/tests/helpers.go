@@ -2,30 +2,54 @@ package tests
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"testing"
 
 	"github.com/google/uuid"
 
+	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 )
 
-func getCourse(t *testing.T, baseURL string, id uuid.UUID) *http.Response {
+func getCourse(t *testing.T, baseURL string, id uuid.UUID) *domain.Course {
 	t.Helper()
 
-	return makePOSTRequest(t, baseURL, "course", map[string]uuid.UUID{
+	resp := makePOSTRequest(t, baseURL, "course", map[string]uuid.UUID{
 		"id": id,
 	})
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", resp.StatusCode)
+	}
+
+	return parseJSONResponse[domain.Course](t, resp)
 }
 
-func addCourse(t *testing.T, baseURL string, course *handlers.AddCourseParams) *http.Response {
+func addCourse(t *testing.T, baseURL string, params *handlers.AddCourseParams) *domain.Course {
 	t.Helper()
 
-	return makePOSTRequest(t, baseURL, "add-course", course)
+	resp := makePOSTRequest(t, baseURL, "add-course", params)
+	defer resp.Body.Close() //nolint:errcheck
+
+	return parseJSONResponse[domain.Course](t, resp)
+}
+
+func getProgress(t *testing.T, baseURL string, courseID uuid.UUID) *domain.Progress {
+	t.Helper()
+
+	resp := makePOSTRequest(t, baseURL, "get-progress", map[string]uuid.UUID{
+		"id": courseID,
+	})
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", resp.StatusCode)
+	}
+
+	return parseJSONResponse[domain.Progress](t, resp)
 }
 
 func makePOSTRequest(t *testing.T, baseURL, endpoint string, resource any) *http.Response {
@@ -57,20 +81,19 @@ func makePOSTRequest(t *testing.T, baseURL, endpoint string, resource any) *http
 	return res
 }
 
-func insertCourse(ctx context.Context, t *testing.T, testResources *TestResources) uuid.UUID {
+func parseJSONResponse[T any](t *testing.T, resp *http.Response) *T {
 	t.Helper()
-	id := uuid.New()
 
-	_, err := testResources.DB.ExecContext(
-		ctx,
-		`INSERT INTO courses VALUES ($1, $2, $3)`,
-		id,
-		CourseTitle,
-		CourseDescription,
-	)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		t.Fatalf("failed to insert test data: %v", err)
+		t.Fatalf("failed to read response body: %v", err)
 	}
 
-	return id
+	var result T
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		t.Fatalf("failed to parse JSON response: %v. Body: %s", err, string(body))
+	}
+
+	return &result
 }

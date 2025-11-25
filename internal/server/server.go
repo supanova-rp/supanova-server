@@ -9,9 +9,10 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
 
 	"github.com/supanova-rp/supanova-server/internal/handlers"
+	"github.com/supanova-rp/supanova-server/internal/middleware"
 )
 
 const (
@@ -31,12 +32,14 @@ func New(h *handlers.Handlers, port string) *Server {
 	e.HideBanner = true // Prevents startup banner from being logged
 
 	// limits each unique IP to 60 requests per minute with a burst of 120.
-	config := middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
+	config := echoMiddleware.NewRateLimiterMemoryStoreWithConfig(echoMiddleware.RateLimiterMemoryStoreConfig{
 		Rate:      serverRateLimit,
 		Burst:     serverBurstLimit,
 		ExpiresIn: time.Minute,
 	})
-	e.Use(middleware.RateLimiter(config))
+	e.Use(echoMiddleware.RateLimiter(config))
+
+	e.Use(middleware.AuthMiddleware)
 
 	registerRoutes(e, h)
 
