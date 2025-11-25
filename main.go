@@ -10,6 +10,7 @@ import (
 
 	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/server"
+	"github.com/supanova-rp/supanova-server/internal/services/s3"
 	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
@@ -43,6 +44,12 @@ func run() error {
 	}
 	defer db.Close()
 
+	// TODO: add config vars here and in config.go
+	// TODO: pass s3 client to server?
+	s3Client, err := s3.New(ctx, &s3.S3Cfg{
+		BucketName: cfg.S3BucketName,
+	})
+
 	svr := server.New(db, cfg.Port)
 	serverErr := make(chan error, 1)
 
@@ -59,7 +66,7 @@ func run() error {
 
 	shutdownErr := svr.Stop()
 	if shutdownErr != nil {
-		slog.Error("server shutdown error", slog.Any("error", shutdownErr))
+		slog.Error("server shutdown error", slog.Any("err", shutdownErr))
 	}
 
 	return err

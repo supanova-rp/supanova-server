@@ -53,7 +53,7 @@ func New(s *store.Store, port string) *Server {
 func (s *Server) Start() error {
 	err := s.echo.Start(":" + s.port)
 	if err != nil && err != http.ErrServerClosed {
-		slog.Error("server error", slog.Any("error", err))
+		slog.Error("server error", slog.Any("err", err))
 		return err
 	}
 

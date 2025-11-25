@@ -36,7 +36,7 @@ func (h *Handlers) GetCourse(e echo.Context) error {
 			return echo.NewHTTPError(http.StatusNotFound, "course not found")
 		}
 
-		slog.Error("failed to get course", slog.Any("error", err), slog.String("id", params.ID))
+		slog.Error("failed to get course", slog.Any("err", err), slog.String("id", params.ID))
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get course")
 	}
 
