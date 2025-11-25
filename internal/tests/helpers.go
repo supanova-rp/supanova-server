@@ -34,6 +34,9 @@ func addCourse(t *testing.T, baseURL string, params *handlers.AddCourseParams) *
 
 	resp := makePOSTRequest(t, baseURL, "add-course", params)
 	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", resp.StatusCode)
+	}
 
 	return parseJSONResponse[domain.Course](t, resp)
 }
