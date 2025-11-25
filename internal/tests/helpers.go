@@ -1,121 +1,76 @@
 package tests
 
 import (
+	"bytes"
 	"context"
-	"database/sql"
+	"encoding/json"
 	"fmt"
-	"log/slog"
+	"net/http"
+	"net/url"
 	"testing"
 
-	"github.com/testcontainers/testcontainers-go/modules/compose"
+	"github.com/google/uuid"
+
+	"github.com/supanova-rp/supanova-server/internal/handlers"
 )
 
-type TestResources struct {
-	ComposeStack *compose.DockerCompose
-	DB           *sql.DB
-	AppURL       string
-}
-
-// setupTestResources creates and starts all required containers for testing
-func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, error) {
+func getCourse(t *testing.T, baseURL string, id uuid.UUID) *http.Response {
 	t.Helper()
-	composeStack, err := compose.NewDockerCompose("./docker-compose.yml")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create compose stack: %w", err)
-	}
 
-	err = composeStack.Up(ctx, compose.Wait(true))
-	if err != nil {
-		return nil, fmt.Errorf("failed to start compose stack: %w", err)
-	}
-	defer func() {
-		// handle cleanup here if setup fails halfway through
-		if err != nil {
-			cleanupErr := composeStack.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal)
-			slog.Error("cleanup error", slog.Any("error", cleanupErr))
-		}
-	}()
-
-	postgresURL, err := getPostgresURL(ctx, composeStack)
-	if err != nil {
-		return nil, err
-	}
-
-	appURL, err := getAppURL(ctx, composeStack)
-	if err != nil {
-		return nil, err
-	}
-
-	db, err := sql.Open("postgres", postgresURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %v", err)
-	}
-
-	return &TestResources{
-		ComposeStack: composeStack,
-		DB:           db,
-		AppURL:       appURL,
-	}, nil
+	return makePOSTRequest(t, baseURL, "course", map[string]uuid.UUID{
+		"id": id,
+	})
 }
 
-func (tr *TestResources) Cleanup(ctx context.Context, t *testing.T) {
-	if tr == nil {
-		return
-	}
+func addCourse(t *testing.T, baseURL string, course *handlers.AddCourseParams) *http.Response {
+	t.Helper()
 
-	if tr.DB != nil {
-		err := tr.DB.Close()
-		if err != nil {
-			t.Logf("failed to close db: %v", err)
-		}
-	}
-
-	if tr.ComposeStack != nil {
-		err := tr.ComposeStack.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal)
-		if err != nil {
-			t.Logf("failed to tear down compose stack: %v", err)
-		}
-	}
+	return makePOSTRequest(t, baseURL, "add-course", course)
 }
 
-func getPostgresURL(ctx context.Context, composeStack *compose.DockerCompose) (string, error) {
-	postgresContainer, err := composeStack.ServiceContainer(ctx, "postgres")
+func makePOSTRequest(t *testing.T, baseURL, endpoint string, resource any) *http.Response {
+	t.Helper()
+
+	parsedURL, err := url.Parse(fmt.Sprintf("%s/v2/%s", baseURL, endpoint))
 	if err != nil {
-		return "", fmt.Errorf("failed to get postgres container: %w", err)
+		t.Fatalf("failed to parse URL: %v", err)
 	}
 
-	postgresPort, err := postgresContainer.MappedPort(ctx, "5432")
+	b, err := json.Marshal(resource)
 	if err != nil {
-		return "", fmt.Errorf("failed to get postgres mapped port: %w", err)
+		t.Fatalf("failed to parse request body: %v", err)
 	}
 
-	postgresHost, err := postgresContainer.Host(ctx)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, parsedURL.String(), bytes.NewBuffer(b))
 	if err != nil {
-		return "", fmt.Errorf("failed to get postgres host: %w", err)
+		t.Fatalf("failed to create request: %v", err)
 	}
 
-	return fmt.Sprintf(
-		"postgres://testuser:password@%s:%s/testdb?sslmode=disable",
-		postgresHost,
-		postgresPort.Port(),
-	), nil
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("failed to make request: %v", err)
+	}
+
+	return res
 }
 
-func getAppURL(ctx context.Context, composeStack *compose.DockerCompose) (string, error) {
-	appContainer, err := composeStack.ServiceContainer(ctx, "supanova-server")
+func insertCourse(ctx context.Context, t *testing.T, testResources *TestResources) uuid.UUID {
+	t.Helper()
+	id := uuid.New()
+
+	_, err := testResources.DB.ExecContext(
+		ctx,
+		`INSERT INTO courses VALUES ($1, $2, $3)`,
+		id,
+		CourseTitle,
+		CourseDescription,
+	)
 	if err != nil {
-		return "", fmt.Errorf("failed to get app container: %w", err)
+		t.Fatalf("failed to insert test data: %v", err)
 	}
 
-	appPort, err := appContainer.MappedPort(ctx, "3001")
-	if err != nil {
-		return "", fmt.Errorf("failed to get app mapped port: %w", err)
-	}
-
-	appHost, err := appContainer.Host(ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to get app host: %w", err)
-	}
-
-	return fmt.Sprintf("http://%s:%s", appHost, appPort.Port()), nil
+	return id
 }

@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/server"
 	"github.com/supanova-rp/supanova-server/internal/services/s3"
 	"github.com/supanova-rp/supanova-server/internal/store"
@@ -38,11 +39,11 @@ func run() error {
 	}))
 	slog.SetDefault(logger)
 
-	db, err := store.NewStore(ctx, cfg.DatabaseURL, cfg.RunMigrations)
+	st, err := store.NewStore(ctx, cfg.DatabaseURL, cfg.RunMigrations)
 	if err != nil {
 		return fmt.Errorf("unable to connect to database: %v", err)
 	}
-	defer db.Close()
+	defer st.Close()
 
 	// TODO: add config vars here and in config.go
 	// TODO: pass s3 client to server?
@@ -50,7 +51,13 @@ func run() error {
 		BucketName: cfg.S3BucketName,
 	})
 
-	svr := server.New(db, cfg.Port)
+	h := handlers.NewHandlers(
+		st,
+		st,
+		st,
+	)
+
+	svr := server.New(h, cfg.Port)
 	serverErr := make(chan error, 1)
 
 	go func() {

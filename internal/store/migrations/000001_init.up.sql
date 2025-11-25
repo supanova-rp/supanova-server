@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS userprogress (
   course_id UUID NOT NULL,
   completed_section_ids UUID[] NOT NULL,
   completed_course BOOLEAN DEFAULT FALSE,
+  completed_intro BOOLEAN DEFAULT FALSE,
 
   CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_courses FOREIGN KEY(course_id) REFERENCES courses(id) ON DELETE CASCADE,
