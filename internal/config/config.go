@@ -10,11 +10,21 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type Config struct {
+type App struct {
 	Port          string
 	DatabaseURL   string
 	RunMigrations bool
 	LogLevel      slog.Level
+	AWS           *AWS
+}
+
+type AWS struct {
+	Region       string
+	AccessKey    string
+	SecretKey    string
+	BucketName   string
+	CDNDomain    string
+	CDNKeyPairID string
 }
 
 var logLevelMap = map[string]slog.Level{
@@ -24,16 +34,22 @@ var logLevelMap = map[string]slog.Level{
 	"error": slog.LevelError,
 }
 
-func ParseEnv() (*Config, error) {
+func ParseEnv() (*App, error) {
 	// Ignore error because in production there will be no .env file, env vars will be passed
 	// in at runtime via docker run command/docker-compose
 	_ = godotenv.Load()
 
 	envVars := map[string]string{
-		"SERVER_PORT":    "",
-		"DATABASE_URL":   "",
-		"RUN_MIGRATIONS": "",
-		"LOG_LEVEL":      "",
+		"SERVER_PORT":            "",
+		"DATABASE_URL":           "",
+		"RUN_MIGRATIONS":         "",
+		"LOG_LEVEL":              "",
+		"AWS_REGION":             "",
+		"AWS_ACCESS_KEY_ID":      "",
+		"AWS_SECRET_ACCESS_KEY":  "",
+		"AWS_BUCKET_NAME":        "",
+		"CLOUDFRONT_DOMAIN":      "",
+		"CLOUDFRONT_KEY_PAIR_ID": "",
 	}
 
 	for key := range envVars {
@@ -54,10 +70,18 @@ func ParseEnv() (*Config, error) {
 		return nil, errors.New("LOG_LEVEL should be one of debug|info|warning|error")
 	}
 
-	return &Config{
+	return &App{
 		Port:          envVars["SERVER_PORT"],
 		DatabaseURL:   envVars["DATABASE_URL"],
 		RunMigrations: runMigrations,
 		LogLevel:      logLevel,
+		AWS: &AWS{
+			Region:       envVars["AWS_REGION"],
+			AccessKey:    envVars["AWS_ACCESS_KEY_ID"],
+			SecretKey:    envVars["AWS_SECRET_ACCESS_KEY"],
+			BucketName:   envVars["AWS_BUCKET_NAME"],
+			CDNDomain:    envVars["CLOUDFRONT_DOMAIN"],
+			CDNKeyPairID: envVars["CLOUDFRONT_KEY_PAIR_ID"],
+		},
 	}, nil
 }

@@ -49,7 +49,7 @@ func New(h *handlers.Handlers, port string) *Server {
 func (s *Server) Start() error {
 	err := s.echo.Start(":" + s.port)
 	if err != nil && err != http.ErrServerClosed {
-		slog.Error("server error", slog.Any("err", err))
+		slog.Error("server error", slog.Any("error", err))
 		return err
 	}
 
