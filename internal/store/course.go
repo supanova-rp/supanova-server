@@ -23,13 +23,16 @@ func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, 
 	}, nil
 }
 
-func (s *Store) AddCourse(ctx context.Context, course sqlc.AddCourseParams) (*uuid.UUID, error) {
+func (s *Store) AddCourse(ctx context.Context, course sqlc.AddCourseParams) (*domain.Course, error) {
 	id, err := s.Queries.AddCourse(ctx, course)
 	if err != nil {
 		return nil, err
 	}
 
-	ID := uuid.UUID(id.Bytes)
+	created, err := s.GetCourse(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 
-	return &ID, nil
+	return created, nil
 }

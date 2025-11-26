@@ -60,13 +60,11 @@ func (h *Handlers) AddCourse(e echo.Context) error {
 		Description: pgText(params.Description),
 	}
 
-	id, err := h.Course.AddCourse(ctx, sqlcParams)
+	course, err := h.Course.AddCourse(ctx, sqlcParams)
 	if err != nil {
 		slog.ErrorContext(ctx, errors.Getting(courseResource), slog.Any("error", err))
 		return echo.NewHTTPError(http.StatusInternalServerError, errors.Getting(courseResource))
 	}
 
-	return e.JSON(http.StatusCreated, map[string]any{
-		"id": id,
-	})
+	return e.JSON(http.StatusCreated, course)
 }

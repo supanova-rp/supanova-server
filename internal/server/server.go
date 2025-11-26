@@ -9,9 +9,11 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
 
+	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
+	"github.com/supanova-rp/supanova-server/internal/middleware"
 )
 
 const (
@@ -25,18 +27,25 @@ type Server struct {
 	port string
 }
 
-func New(h *handlers.Handlers, port string) *Server {
+func New(h *handlers.Handlers, port string, env config.Environment) *Server {
 	e := echo.New()
 	e.Validator = &customValidator{validator: validator.New()}
 	e.HideBanner = true // Prevents startup banner from being logged
 
 	// limits each unique IP to 60 requests per minute with a burst of 120.
-	config := middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
-		Rate:      serverRateLimit,
-		Burst:     serverBurstLimit,
-		ExpiresIn: time.Minute,
-	})
-	e.Use(middleware.RateLimiter(config))
+	e.Use(echoMiddleware.RateLimiter(echoMiddleware.NewRateLimiterMemoryStoreWithConfig(
+		echoMiddleware.RateLimiterMemoryStoreConfig{
+			Rate:      serverRateLimit,
+			Burst:     serverBurstLimit,
+			ExpiresIn: time.Minute,
+		},
+	)))
+
+	if env == config.EnvironmentTest {
+		e.Use(middleware.TestAuthMiddleware)
+	} else {
+		e.Use(middleware.AuthMiddleware)
+	}
 
 	registerRoutes(e, h)
 

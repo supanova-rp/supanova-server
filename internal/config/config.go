@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"slices"
 	"strconv"
 
 	"github.com/joho/godotenv"
@@ -15,6 +16,21 @@ type Config struct {
 	DatabaseURL   string
 	RunMigrations bool
 	LogLevel      slog.Level
+	Environment   Environment
+}
+
+type Environment string
+
+const (
+	EnvironmentDevelopment Environment = "development"
+	EnvironmentProduction  Environment = "production"
+	EnvironmentTest        Environment = "test"
+)
+
+var validEnvironments = []Environment{
+	EnvironmentDevelopment,
+	EnvironmentProduction,
+	EnvironmentTest,
 }
 
 var logLevelMap = map[string]slog.Level{
@@ -34,6 +50,7 @@ func ParseEnv() (*Config, error) {
 		"DATABASE_URL":   "",
 		"RUN_MIGRATIONS": "",
 		"LOG_LEVEL":      "",
+		"ENVIRONMENT":    "",
 	}
 
 	for key := range envVars {
@@ -54,10 +71,16 @@ func ParseEnv() (*Config, error) {
 		return nil, errors.New("LOG_LEVEL should be one of debug|info|warning|error")
 	}
 
+	environment := Environment(envVars["ENVIRONMENT"])
+	if !slices.Contains(validEnvironments, environment) {
+		return nil, errors.New("ENVIRONMENT should be one of development|production|test")
+	}
+
 	return &Config{
 		Port:          envVars["SERVER_PORT"],
 		DatabaseURL:   envVars["DATABASE_URL"],
 		RunMigrations: runMigrations,
 		LogLevel:      logLevel,
+		Environment:   environment,
 	}, nil
 }

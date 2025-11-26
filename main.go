@@ -50,7 +50,7 @@ func run() error {
 		st,
 	)
 
-	svr := server.New(h, cfg.Port)
+	svr := server.New(h, cfg.Port, cfg.Environment)
 	serverErr := make(chan error, 1)
 
 	go func() {
