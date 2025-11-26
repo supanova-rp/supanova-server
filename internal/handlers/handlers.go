@@ -10,6 +10,7 @@ type Handlers struct {
 	System   domain.SystemRepository
 	Course   domain.CourseRepository
 	Progress domain.ProgressRepository
+	Media    domain.ProgressRepository
 
 	ObjectStorage ObjectStorage
 }
@@ -23,12 +24,14 @@ func NewHandlers(
 	system domain.SystemRepository,
 	course domain.CourseRepository,
 	progress domain.ProgressRepository,
+	media domain.ProgressRepository,
 	objectStorage ObjectStorage,
 ) *Handlers {
 	return &Handlers{
 		System:        system,
 		Course:        course,
 		Progress:      progress,
+		Media:         media,
 		ObjectStorage: objectStorage,
 	}
 }

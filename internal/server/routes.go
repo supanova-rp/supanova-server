@@ -14,3 +14,7 @@ func RegisterCourseRoutes(e *echo.Echo, h *handlers.Handlers) {
 func RegisterProgressRoutes(e *echo.Echo, h *handlers.Handlers) {
 	e.POST(getRoute("v2", "get-progress"), h.GetProgress)
 }
+
+func RegisterMediaRoutes(e *echo.Echo, h *handlers.Handlers) {
+	e.POST(getRoute("v2", "video-url"), h.GetVideoURL)
+}

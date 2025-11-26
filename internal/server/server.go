@@ -76,6 +76,7 @@ func registerRoutes(e *echo.Echo, h *handlers.Handlers) {
 	e.GET(getRoute("v2", "health"), h.HealthCheck)
 	RegisterCourseRoutes(e, h)
 	RegisterProgressRoutes(e, h)
+	RegisterMediaRoutes(e, h)
 }
 
 //nolint:unparam // prefix will vary in the future
