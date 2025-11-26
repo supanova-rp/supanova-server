@@ -19,7 +19,7 @@ type GetProgressParams struct {
 func (h *Handlers) GetProgress(e echo.Context) error {
 	ctx := e.Request().Context()
 
-	id, ok := userID(ctx)
+	userID, ok := getUserID(ctx)
 	if !ok {
 		return echo.NewHTTPError(http.StatusInternalServerError, errors.Getting(progressResource))
 	}
@@ -29,14 +29,14 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 		return err
 	}
 
-	courseUUID, err := pgUUID(params.CourseID)
+	courseID, err := pgUUID(params.CourseID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
 	sqlcParams := sqlc.GetProgressParams{
-		UserID:   id,
-		CourseID: courseUUID,
+		UserID:   userID,
+		CourseID: courseID,
 	}
 
 	progress, err := h.Progress.GetProgress(e.Request().Context(), sqlcParams)
@@ -45,8 +45,7 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 			return echo.NewHTTPError(http.StatusNotFound, errors.NotFound(progressResource))
 		}
 
-		slog.ErrorContext(ctx, errors.Getting(progressResource), slog.Any("error", err), slog.String("id", params.CourseID))
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.Getting(progressResource))
+		return internalError(ctx, errors.Getting(progressResource), err, slog.String("id", params.CourseID))
 	}
 
 	return e.JSON(http.StatusOK, progress)
