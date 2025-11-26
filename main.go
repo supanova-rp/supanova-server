@@ -54,6 +54,7 @@ func run() error {
 		st,
 		st,
 		st,
+		st,
 		objectStore,
 	)
 

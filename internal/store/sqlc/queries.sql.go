@@ -64,3 +64,19 @@ func (q *Queries) GetProgress(ctx context.Context, arg GetProgressParams) (GetPr
 	err := row.Scan(&i.CompletedIntro, &i.CompletedSectionIds)
 	return i, err
 }
+
+const isUserEnrolledInCourse = `-- name: IsUserEnrolledInCourse :one
+SELECT EXISTS(SELECT 1 FROM usercourses WHERE user_id = $1 AND course_id = $2)
+`
+
+type IsUserEnrolledInCourseParams struct {
+	UserID   pgtype.Text
+	CourseID pgtype.UUID
+}
+
+func (q *Queries) IsUserEnrolledInCourse(ctx context.Context, arg IsUserEnrolledInCourseParams) (bool, error) {
+	row := q.db.QueryRow(ctx, isUserEnrolledInCourse, arg.UserID, arg.CourseID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
