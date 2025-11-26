@@ -72,22 +72,13 @@ func (s *Store) GenerateUploadURL(ctx context.Context, key string, contentType *
 		Bucket: aws.String(s.bucketName),
 		Key:    aws.String(key),
 	}
-
 	if contentType != nil {
 		input.ContentType = contentType
 	}
 
-	_, err := s.client.PutObject(ctx, input)
-	if err != nil {
-		return "", fmt.Errorf("failed to upload file key to s3: %v", err)
-	}
-
 	presignClient := s3.NewPresignClient(s.client)
 
-	req, err := presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(s.bucketName),
-		Key:    aws.String(key),
-	}, s3.WithPresignExpires(URLExpiry))
+	req, err := presignClient.PresignPutObject(ctx, input, s3.WithPresignExpires(URLExpiry))
 	if err != nil {
 		return "", fmt.Errorf("failed to generate signed s3 URL: %v", err)
 	}
