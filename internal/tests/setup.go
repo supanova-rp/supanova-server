@@ -51,6 +51,11 @@ func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, erro
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
 
+	err = insertSetupData(ctx, db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert test user data: %v", err)
+	}
+
 	return &TestResources{
 		ComposeStack: composeStack,
 		DB:           db,
@@ -118,4 +123,16 @@ func getAppURL(ctx context.Context, composeStack *compose.DockerCompose) (string
 	}
 
 	return fmt.Sprintf("http://%s:%s", appHost, appPort.Port()), nil
+}
+
+func insertSetupData(ctx context.Context, db *sql.DB) error {
+	_, err := db.ExecContext(
+		ctx,
+		"INSERT INTO users (id, name, email) VALUES ($1, $2, $3)",
+		testUserID,
+		testUserName,
+		testUserEmail,
+	)
+
+	return err
 }

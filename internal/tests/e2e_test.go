@@ -48,6 +48,17 @@ func TestCourse(t *testing.T) {
 			Description: CourseDescription,
 		})
 
+		// TODO: replace this with a call the the EnrollUserInCourse endpoint once that is implemented
+		_, err := testResources.DB.ExecContext(
+			t.Context(),
+			"INSERT INTO usercourses (user_id, course_id) VALUES ($1, $2)",
+			testUserID,
+			created.ID,
+		)
+		if err != nil {
+			t.Fatalf("failed to insert into usercourses: %v", err)
+		}
+
 		actual := getCourse(t, testResources.AppURL, created.ID)
 
 		if diff := cmp.Diff(created, actual); diff != "" {
