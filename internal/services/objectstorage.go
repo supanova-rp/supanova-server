@@ -23,10 +23,10 @@ import (
 type Store struct {
 	client     *s3.Client
 	bucketName string
-	CDN        *CDNStore
+	CDN        *CDN
 }
 
-type CDNStore struct {
+type CDN struct {
 	client *cloudfront.Client
 	signer *sign.URLSigner
 	domain string
@@ -54,7 +54,7 @@ func New(ctx context.Context, c *config.AWS) (*Store, error) {
 	}
 	cfSigner := sign.NewURLSigner(c.CDNKeyPairID, cfKey)
 
-	CDN := &CDNStore{
+	CDN := &CDN{
 		client: cloudfront.NewFromConfig(cfg),
 		domain: c.CDNDomain,
 		signer: cfSigner,
