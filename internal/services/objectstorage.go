@@ -14,7 +14,6 @@ import (
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/cloudfront/sign"
-	"github.com/aws/aws-sdk-go-v2/service/cloudfront"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
@@ -27,7 +26,6 @@ type Store struct {
 }
 
 type CDN struct {
-	client *cloudfront.Client
 	signer *sign.URLSigner
 	domain string
 }
@@ -55,7 +53,6 @@ func New(ctx context.Context, c *config.AWS) (*Store, error) {
 	cfSigner := sign.NewURLSigner(c.CDNKeyPairID, cfKey)
 
 	CDN := &CDN{
-		client: cloudfront.NewFromConfig(cfg),
 		domain: c.CDNDomain,
 		signer: cfSigner,
 	}

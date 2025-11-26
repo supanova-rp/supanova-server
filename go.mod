@@ -7,7 +7,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.1
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.1
 	github.com/aws/aws-sdk-go-v2/feature/cloudfront/sign v1.9.14
-	github.com/aws/aws-sdk-go-v2/service/cloudfront v1.57.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.92.0
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/golang-migrate/migrate/v4 v4.19.0
