@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
-	course, err := s.Queries.GetCourseByID(ctx, id)
+	course, err := s.Queries.GetCourse(ctx, id)
 	if err != nil {
 		return nil, err
 	}
