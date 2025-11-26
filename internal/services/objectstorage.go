@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"log/slog"
 	"os"
 	"time"
 
@@ -42,7 +41,6 @@ func New(ctx context.Context, c *config.AWS) (*Store, error) {
 			),
 		))
 	if err != nil {
-		slog.Error("failed to load aws config", slog.Any("error", err))
 		return nil, fmt.Errorf("failed to load aws config: %v", err)
 	}
 
@@ -102,21 +100,16 @@ func parseCDNKey() (*rsa.PrivateKey, error) {
 	const cfKeyPath = "./cloudfront_private_key.pem"
 	cfKeyBytes, err := os.ReadFile(cfKeyPath)
 	if err != nil {
-		slog.Error("failed to read CDN private key",
-			slog.String("path", cfKeyPath),
-			slog.Any("error", err))
 		return nil, fmt.Errorf("failed to read CDN private key from %s: %v", cfKeyPath, err)
 	}
 
 	block, _ := pem.Decode(cfKeyBytes)
 	if block == nil {
-		slog.Error("failed to decode PEM block from CDN private key")
 		return nil, fmt.Errorf("failed to decode PEM block")
 	}
 
 	cfKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		slog.Error("failed to parse CDN private key", slog.Any("error", err))
 		return nil, err
 	}
 
