@@ -19,6 +19,7 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
+	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
 type customValidator struct {
@@ -144,6 +145,98 @@ func TestGetCourse(t *testing.T) {
 
 		assertHTTPError(t, err, http.StatusInternalServerError, "Error getting course")
 		assertRepoCalls(t, len(mockRepo.GetCourseCalls()), 1)
+	})
+}
+
+func TestAddCourse(t *testing.T) {
+	t.Run("adds course successfully", func(t *testing.T) {
+		courseID := uuid.New()
+		expected := &domain.Course{
+			ID:          courseID,
+			Title:       "New Course",
+			Description: "New Description",
+		}
+
+		mockRepo := &mocks.CourseRepositoryMock{
+			AddCourseFunc: func(ctx context.Context, params sqlc.AddCourseParams) (*domain.Course, error) {
+				return expected, nil
+			},
+		}
+
+		h := &handlers.Handlers{Course: mockRepo}
+		c, rec := setupEchoContext(t, `{"title":"New Course","description":"New Description"}`)
+
+		err := h.AddCourse(c)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if rec.Code != http.StatusCreated {
+			t.Errorf("expected status %d, got %d", http.StatusCreated, rec.Code)
+		}
+
+		var actual domain.Course
+		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+			t.Fatalf("failed to unmarshal response: %v", err)
+		}
+
+		if diff := cmp.Diff(expected, &actual); diff != "" {
+			t.Errorf("course mismatch (-want +got):\n%s", diff)
+		}
+
+		if len(mockRepo.AddCourseCalls()) != 1 {
+			t.Errorf("expected 1 call to AddCourse, got %d", len(mockRepo.AddCourseCalls()))
+		}
+	})
+
+	t.Run("validation error - missing title", func(t *testing.T) {
+		mockRepo := &mocks.CourseRepositoryMock{
+			AddCourseFunc: func(ctx context.Context, params sqlc.AddCourseParams) (*domain.Course, error) {
+				return nil, nil
+			},
+		}
+
+		h := &handlers.Handlers{Course: mockRepo}
+		c, _ := setupEchoContext(t, `{"description":"Test Description"}`)
+
+		err := h.AddCourse(c)
+
+		assertHTTPError(t, err, http.StatusBadRequest, "validation failed")
+		assertRepoCalls(t, len(mockRepo.AddCourseCalls()), 0)
+	})
+
+	t.Run("validation error - missing description", func(t *testing.T) {
+		mockRepo := &mocks.CourseRepositoryMock{
+			AddCourseFunc: func(ctx context.Context, params sqlc.AddCourseParams) (*domain.Course, error) {
+				return nil, nil
+			},
+		}
+
+		h := &handlers.Handlers{Course: mockRepo}
+		c, _ := setupEchoContext(t, `{"title":"Test Title"}`)
+
+		err := h.AddCourse(c)
+
+		assertHTTPError(t, err, http.StatusBadRequest, "validation failed")
+		assertRepoCalls(t, len(mockRepo.AddCourseCalls()), 0)
+	})
+
+	t.Run("internal server error", func(t *testing.T) {
+		mockRepo := &mocks.CourseRepositoryMock{
+			AddCourseFunc: func(ctx context.Context, params sqlc.AddCourseParams) (*domain.Course, error) {
+				return nil, errors.New("database connection failed")
+			},
+		}
+
+		h := &handlers.Handlers{Course: mockRepo}
+		c, _ := setupEchoContext(t, `{"title":"Test Title","description":"Test Description"}`)
+
+		err := h.AddCourse(c)
+
+		assertHTTPError(t, err, http.StatusInternalServerError, "Error getting course")
+		if len(mockRepo.AddCourseCalls()) != 1 {
+			t.Errorf("expected 1 call to AddCourse, got %d", len(mockRepo.AddCourseCalls()))
+		}
 	})
 }
 
