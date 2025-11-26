@@ -74,6 +74,7 @@ func makePOSTRequest(t *testing.T, baseURL, endpoint string, resource any) *http
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Test-User-ID", testUserID)
 
 	client := &http.Client{}
 	res, err := client.Do(req)
