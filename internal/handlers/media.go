@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 )
 
@@ -27,7 +28,12 @@ func (h *Handlers) GetVideoURL(e echo.Context) error {
 	videoKey := fmt.Sprintf("%s/videos/%s", params.CourseID, params.StorageKey)
 	URL, err := h.ObjectStorage.GetCDNURL(ctx, videoKey)
 	if err != nil {
-		internalError(ctx, errors.Getting(videoResource), err, slog.String("id", params.CourseID), slog.String("storageKey", params.StorageKey))
+		return internalError(
+			ctx,
+			errors.Getting(videoResource),
+			err,
+			slog.String("id", params.CourseID), slog.String("storageKey", params.StorageKey),
+		)
 	}
 
 	return e.JSON(http.StatusOK, map[string]string{
