@@ -43,13 +43,11 @@ func TestMain(m *testing.M) {
 
 func TestCourse(t *testing.T) {
 	t.Run("course - happy path", func(t *testing.T) {
-		// Add a course
 		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
 			Title:       CourseTitle,
 			Description: CourseDescription,
 		})
 
-		// Retrieve that course
 		actual := getCourse(t, testResources.AppURL, created.ID)
 
 		if diff := cmp.Diff(created, actual); diff != "" {
