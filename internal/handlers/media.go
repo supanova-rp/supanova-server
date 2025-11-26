@@ -2,6 +2,8 @@ package handlers
 
 import "github.com/labstack/echo/v4"
 
+const videoResource = "video"
+
 func (h *Handlers) GetVideoURL(e echo.Context) error {
 // 	const getVideoUrl = async (request, response) => {
 //   const { courseId, storageKey } = request.body;
