@@ -9,13 +9,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
-
-	"github.com/go-playground/validator/v10"
 
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
@@ -198,7 +197,7 @@ func assertHTTPError(t *testing.T, err error, expectedCode int, expectedMsg stri
 	}
 }
 
-func assertRepoCalls(t *testing.T, got int, expected int) {
+func assertRepoCalls(t *testing.T, got, expected int) {
 	t.Helper()
 
 	if got != expected {
