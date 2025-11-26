@@ -97,6 +97,11 @@ func (s *Store) GenerateUploadURL(ctx context.Context, key string, contentType *
 }
 
 func parseCDNKey() (*rsa.PrivateKey, error) {
+	// TODO: remove this once AWS Secrets Manager logic is implemented
+	if os.Getenv("ENVIRONMENT") == string(config.EnvironmentTest) {
+		return nil, nil
+	}
+
 	const cfKeyPath = "./cloudfront_private_key.pem"
 	cfKeyBytes, err := os.ReadFile(cfKeyPath)
 	if err != nil {
