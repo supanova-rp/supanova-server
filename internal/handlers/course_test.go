@@ -31,7 +31,6 @@ func (cv *customValidator) Validate(i any) error {
 
 func TestGetCourse(t *testing.T) {
 	t.Run("returns course successfully", func(t *testing.T) {
-		// Arrange
 		courseID := uuid.New()
 		expected := &domain.Course{
 			ID:          courseID,
@@ -48,10 +47,7 @@ func TestGetCourse(t *testing.T) {
 		h := &handlers.Handlers{Course: mockRepo}
 		c, rec := setupEchoContext(t, `{"id":"`+courseID.String()+`"}`)
 
-		// Act
 		err := h.GetCourse(c)
-
-		// Assert
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -71,7 +67,6 @@ func TestGetCourse(t *testing.T) {
 	})
 
 	t.Run("validation error - missing id", func(t *testing.T) {
-		// Arrange
 		mockRepo := &mocks.CourseRepositoryMock{
 			GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
 				return nil, nil
@@ -84,16 +79,13 @@ func TestGetCourse(t *testing.T) {
 
 		c, _ := setupEchoContext(t, `{}`) // missing id
 
-		// Act
 		err := h.GetCourse(c)
 
-		// Assert
 		assertHTTPError(t, err, http.StatusBadRequest, "validation failed")
 		assertRepoCalls(t, len(mockRepo.GetCourseCalls()), 0)
 	})
 
 	t.Run("validation error - invalid uuid format", func(t *testing.T) {
-		// Arrange
 		mockRepo := &mocks.CourseRepositoryMock{
 			GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
 				return nil, nil
@@ -106,16 +98,13 @@ func TestGetCourse(t *testing.T) {
 
 		c, _ := setupEchoContext(t, `{"id":"invalid-uuid"}`)
 
-		// Act
 		err := h.GetCourse(c)
 
-		// Assert
 		assertHTTPError(t, err, http.StatusBadRequest, "invalid uuid format")
 		assertRepoCalls(t, len(mockRepo.GetCourseCalls()), 0)
 	})
 
 	t.Run("course not found", func(t *testing.T) {
-		// Arrange
 		courseID := uuid.New()
 
 		mockRepo := &mocks.CourseRepositoryMock{
@@ -130,16 +119,13 @@ func TestGetCourse(t *testing.T) {
 
 		c, _ := setupEchoContext(t, `{"id":"`+courseID.String()+`"}`)
 
-		// Act
 		err := h.GetCourse(c)
 
-		// Assert
 		assertHTTPError(t, err, http.StatusNotFound, "course not found")
 		assertRepoCalls(t, len(mockRepo.GetCourseCalls()), 1)
 	})
 
 	t.Run("internal server error", func(t *testing.T) {
-		// Arrange
 		courseID := uuid.New()
 
 		mockRepo := &mocks.CourseRepositoryMock{
@@ -154,10 +140,8 @@ func TestGetCourse(t *testing.T) {
 
 		c, _ := setupEchoContext(t, `{"id":"`+courseID.String()+`"}`)
 
-		// Act
 		err := h.GetCourse(c)
 
-		// Assert
 		assertHTTPError(t, err, http.StatusInternalServerError, "Error getting course")
 		assertRepoCalls(t, len(mockRepo.GetCourseCalls()), 1)
 	})
