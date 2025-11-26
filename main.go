@@ -11,13 +11,14 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/server"
+	"github.com/supanova-rp/supanova-server/internal/services"
 	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
 func main() {
 	err := run()
 	if err != nil {
-		slog.Error("run failed", slog.Any("err", err))
+		slog.Error("run failed", slog.Any("error", err))
 		os.Exit(1)
 	}
 
@@ -30,7 +31,7 @@ func run() error {
 
 	cfg, err := config.ParseEnv()
 	if err != nil {
-		return fmt.Errorf("unable to parse env: %v", err)
+		return fmt.Errorf("failed to parse env: %v", err)
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
@@ -40,14 +41,20 @@ func run() error {
 
 	st, err := store.NewStore(ctx, cfg.DatabaseURL, cfg.RunMigrations)
 	if err != nil {
-		return fmt.Errorf("unable to connect to database: %v", err)
+		return fmt.Errorf("failed to connect to database: %v", err)
 	}
 	defer st.Close()
+
+	objectStore, err := objectstorage.New(ctx, cfg.AWS)
+	if err != nil {
+		return fmt.Errorf("failed to create object store: %v", err)
+	}
 
 	h := handlers.NewHandlers(
 		st,
 		st,
 		st,
+		objectStore,
 	)
 
 	svr := server.New(h, cfg.Port, cfg.Environment)
