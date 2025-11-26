@@ -18,6 +18,11 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/config"
 )
 
+const (
+	URLExpiry = time.Hour * 6
+	CDNExpiry = time.Hour * 2
+)
+
 type Store struct {
 	client     *s3.Client
 	bucketName string
@@ -79,11 +84,10 @@ func (s *Store) GenerateUploadURL(ctx context.Context, key string, contentType *
 
 	presignClient := s3.NewPresignClient(s.client)
 
-	const URLexpiry = time.Hour * 6
 	req, err := presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucketName),
 		Key:    aws.String(key),
-	}, s3.WithPresignExpires(URLexpiry))
+	}, s3.WithPresignExpires(URLExpiry))
 	if err != nil {
 		return "", fmt.Errorf("failed to generate signed s3 URL: %v", err)
 	}
@@ -117,9 +121,7 @@ func parseCDNKey() (*rsa.PrivateKey, error) {
 }
 
 func (s *Store) GetCDNURL(ctx context.Context, key string) (string, error) {
-	const expiry = 2
-	expiryDuration := expiry * time.Hour
 	URL := fmt.Sprintf("https://%s/%s", s.CDN.domain, key)
 
-	return s.CDN.signer.Sign(URL, time.Now().Add(expiryDuration))
+	return s.CDN.signer.Sign(URL, time.Now().Add(CDNExpiry))
 }
