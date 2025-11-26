@@ -65,7 +65,7 @@ func TestGetCourse(t *testing.T) {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
 
-		if diff := cmp.Diff(expected, actual); diff != "" {
+		if diff := cmp.Diff(expected, &actual); diff != "" {
 			t.Errorf("course mismatch (-want +got):\n%s", diff)
 		}
 	})
