@@ -11,7 +11,7 @@ import (
 
 type CourseRepository interface {
 	GetCourse(context.Context, pgtype.UUID) (*Course, error)
-	AddCourse(context.Context, sqlc.AddCourseParams) (*uuid.UUID, error)
+	AddCourse(context.Context, sqlc.AddCourseParams) (*Course, error)
 }
 
 type Course struct {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"slices"
 	"strconv"
 
 	"github.com/joho/godotenv"
@@ -15,7 +16,22 @@ type App struct {
 	DatabaseURL   string
 	RunMigrations bool
 	LogLevel      slog.Level
+	Environment   Environment
 	AWS           *AWS
+}
+
+type Environment string
+
+const (
+	EnvironmentDevelopment Environment = "development"
+	EnvironmentProduction  Environment = "production"
+	EnvironmentTest        Environment = "test"
+)
+
+var validEnvironments = []Environment{
+	EnvironmentDevelopment,
+	EnvironmentProduction,
+	EnvironmentTest,
 }
 
 type AWS struct {
@@ -50,6 +66,7 @@ func ParseEnv() (*App, error) {
 		"AWS_BUCKET_NAME":        "",
 		"CLOUDFRONT_DOMAIN":      "",
 		"CLOUDFRONT_KEY_PAIR_ID": "",
+		"ENVIRONMENT":            "",
 	}
 
 	for key := range envVars {
@@ -70,6 +87,11 @@ func ParseEnv() (*App, error) {
 		return nil, errors.New("LOG_LEVEL should be one of debug|info|warning|error")
 	}
 
+	environment := Environment(envVars["ENVIRONMENT"])
+	if !slices.Contains(validEnvironments, environment) {
+		return nil, errors.New("ENVIRONMENT should be one of development|production|test")
+	}
+
 	return &App{
 		Port:          envVars["SERVER_PORT"],
 		DatabaseURL:   envVars["DATABASE_URL"],
@@ -83,5 +105,6 @@ func ParseEnv() (*App, error) {
 			CDNDomain:    envVars["CLOUDFRONT_DOMAIN"],
 			CDNKeyPairID: envVars["CLOUDFRONT_KEY_PAIR_ID"],
 		},
+		Environment: environment,
 	}, nil
 }
