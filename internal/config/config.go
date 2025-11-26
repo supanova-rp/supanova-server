@@ -6,18 +6,16 @@ import (
 	"log/slog"
 	"os"
 	"slices"
-	"strconv"
 
 	"github.com/joho/godotenv"
 )
 
 type App struct {
-	Port          string
-	DatabaseURL   string
-	RunMigrations bool
-	LogLevel      slog.Level
-	Environment   Environment
-	AWS           *AWS
+	Port        string
+	DatabaseURL string
+	LogLevel    slog.Level
+	Environment Environment
+	AWS         *AWS
 }
 
 type Environment string
@@ -58,7 +56,6 @@ func ParseEnv() (*App, error) {
 	envVars := map[string]string{
 		"SERVER_PORT":            "",
 		"DATABASE_URL":           "",
-		"RUN_MIGRATIONS":         "",
 		"LOG_LEVEL":              "",
 		"AWS_REGION":             "",
 		"AWS_ACCESS_KEY_ID":      "",
@@ -77,11 +74,6 @@ func ParseEnv() (*App, error) {
 		envVars[key] = value
 	}
 
-	runMigrations, err := strconv.ParseBool(envVars["RUN_MIGRATIONS"])
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse RUN_MIGRATIONS environment variable: %v", err)
-	}
-
 	logLevel, ok := logLevelMap[envVars["LOG_LEVEL"]]
 	if !ok {
 		return nil, errors.New("LOG_LEVEL should be one of debug|info|warning|error")
@@ -93,10 +85,9 @@ func ParseEnv() (*App, error) {
 	}
 
 	return &App{
-		Port:          envVars["SERVER_PORT"],
-		DatabaseURL:   envVars["DATABASE_URL"],
-		RunMigrations: runMigrations,
-		LogLevel:      logLevel,
+		Port:        envVars["SERVER_PORT"],
+		DatabaseURL: envVars["DATABASE_URL"],
+		LogLevel:    logLevel,
 		AWS: &AWS{
 			Region:       envVars["AWS_REGION"],
 			AccessKey:    envVars["AWS_ACCESS_KEY_ID"],

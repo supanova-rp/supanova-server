@@ -39,7 +39,7 @@ func run() error {
 	}))
 	slog.SetDefault(logger)
 
-	st, err := store.NewStore(ctx, cfg.DatabaseURL, cfg.RunMigrations)
+	st, err := store.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %v", err)
 	}
