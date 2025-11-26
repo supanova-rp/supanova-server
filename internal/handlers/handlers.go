@@ -10,7 +10,6 @@ type Handlers struct {
 	System     domain.SystemRepository
 	Course     domain.CourseRepository
 	Progress   domain.ProgressRepository
-	Media      domain.ProgressRepository
 	Enrollment domain.EnrollmentRepository
 
 	ObjectStorage ObjectStorage
