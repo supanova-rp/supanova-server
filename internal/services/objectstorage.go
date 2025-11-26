@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"log/slog"
 	"os"
 	"time"
 
@@ -14,20 +13,23 @@ import (
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/cloudfront/sign"
-	"github.com/aws/aws-sdk-go-v2/service/cloudfront"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
 )
 
+const (
+	URLExpiry = time.Hour * 6
+	CDNExpiry = time.Hour * 2
+)
+
 type Store struct {
 	client     *s3.Client
 	bucketName string
-	CDN        *CDNStore
+	CDN        *CDN
 }
 
-type CDNStore struct {
-	client *cloudfront.Client
+type CDN struct {
 	signer *sign.URLSigner
 	domain string
 }
@@ -44,7 +46,6 @@ func New(ctx context.Context, c *config.AWS) (*Store, error) {
 			),
 		))
 	if err != nil {
-		slog.Error("failed to load aws config", slog.Any("error", err))
 		return nil, fmt.Errorf("failed to load aws config: %v", err)
 	}
 
@@ -54,8 +55,7 @@ func New(ctx context.Context, c *config.AWS) (*Store, error) {
 	}
 	cfSigner := sign.NewURLSigner(c.CDNKeyPairID, cfKey)
 
-	CDN := &CDNStore{
-		client: cloudfront.NewFromConfig(cfg),
+	CDN := &CDN{
 		domain: c.CDNDomain,
 		signer: cfSigner,
 	}
@@ -72,23 +72,13 @@ func (s *Store) GenerateUploadURL(ctx context.Context, key string, contentType *
 		Bucket: aws.String(s.bucketName),
 		Key:    aws.String(key),
 	}
-
 	if contentType != nil {
 		input.ContentType = contentType
 	}
 
-	_, err := s.client.PutObject(ctx, input)
-	if err != nil {
-		return "", fmt.Errorf("failed to upload file key to s3: %v", err)
-	}
-
 	presignClient := s3.NewPresignClient(s.client)
 
-	const URLexpiry = time.Hour * 6
-	req, err := presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(s.bucketName),
-		Key:    aws.String(key),
-	}, s3.WithPresignExpires(URLexpiry))
+	req, err := presignClient.PresignPutObject(ctx, input, s3.WithPresignExpires(URLExpiry))
 	if err != nil {
 		return "", fmt.Errorf("failed to generate signed s3 URL: %v", err)
 	}
@@ -97,24 +87,24 @@ func (s *Store) GenerateUploadURL(ctx context.Context, key string, contentType *
 }
 
 func parseCDNKey() (*rsa.PrivateKey, error) {
+	// TODO: remove this once AWS Secrets Manager logic is implemented
+	if os.Getenv("ENVIRONMENT") == string(config.EnvironmentTest) {
+		return nil, nil
+	}
+
 	const cfKeyPath = "./cloudfront_private_key.pem"
 	cfKeyBytes, err := os.ReadFile(cfKeyPath)
 	if err != nil {
-		slog.Error("failed to read CDN private key",
-			slog.String("path", cfKeyPath),
-			slog.Any("error", err))
 		return nil, fmt.Errorf("failed to read CDN private key from %s: %v", cfKeyPath, err)
 	}
 
 	block, _ := pem.Decode(cfKeyBytes)
 	if block == nil {
-		slog.Error("failed to decode PEM block from CDN private key")
 		return nil, fmt.Errorf("failed to decode PEM block")
 	}
 
 	cfKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		slog.Error("failed to parse CDN private key", slog.Any("error", err))
 		return nil, err
 	}
 
@@ -122,9 +112,7 @@ func parseCDNKey() (*rsa.PrivateKey, error) {
 }
 
 func (s *Store) GetCDNURL(ctx context.Context, key string) (string, error) {
-	const expiry = 2
-	expiryDuration := expiry * time.Hour
 	URL := fmt.Sprintf("https://%s/%s", s.CDN.domain, key)
 
-	return s.CDN.signer.Sign(URL, time.Now().Add(expiryDuration))
+	return s.CDN.signer.Sign(URL, time.Now().Add(CDNExpiry))
 }

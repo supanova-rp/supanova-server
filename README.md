@@ -44,3 +44,8 @@ make sqlc
 ```
 make migrate/create name=<migration_name>
 ```
+
+#### Generate mocks:
+```
+make mocks
+```

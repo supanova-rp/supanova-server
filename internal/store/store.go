@@ -14,7 +14,7 @@ type Store struct {
 	Queries *sqlc.Queries
 }
 
-func NewStore(ctx context.Context, dbUrl string, shouldRunMigrations bool) (*Store, error) {
+func New(ctx context.Context, dbUrl string) (*Store, error) {
 	poolConfig, err := pgxpool.ParseConfig(dbUrl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
@@ -30,13 +30,9 @@ func NewStore(ctx context.Context, dbUrl string, shouldRunMigrations bool) (*Sto
 		return nil, fmt.Errorf("failed to ping db: %v", err)
 	}
 
-	// Currently we don't want to run migrations in prod because they are handled by node app.
-	// In future we want to stop handling them with the node app and handle them here.
-	if shouldRunMigrations {
-		err = runMigrations(dbUrl)
-		if err != nil {
-			return nil, fmt.Errorf("failed to run migrations: %v", err)
-		}
+	err = runMigrations(dbUrl)
+	if err != nil {
+		return nil, fmt.Errorf("failed to run migrations: %v", err)
 	}
 
 	return &Store{
