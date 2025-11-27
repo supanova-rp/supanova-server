@@ -2,6 +2,7 @@ package testhelpers
 
 import (
 	"github.com/google/uuid"
+
 	"github.com/supanova-rp/supanova-server/internal/domain"
 )
 
