@@ -29,14 +29,6 @@ func (h *Handlers) GetCourse(e echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
-	enrolled, err := h.isEnrolled(ctx, courseID)
-	if err != nil {
-		return internalError(ctx, errors.Getting(courseResource), err, slog.String("id", params.ID))
-	}
-	if !enrolled {
-		return echo.NewHTTPError(http.StatusForbidden, errors.Forbidden(courseResource))
-	}
-
 	course, err := h.Course.GetCourse(ctx, courseID)
 	if err != nil {
 		if errors.IsNotFoundErr(err) {
@@ -44,6 +36,14 @@ func (h *Handlers) GetCourse(e echo.Context) error {
 		}
 
 		return internalError(ctx, errors.Getting(courseResource), err, slog.String("id", params.ID))
+	}
+
+	enrolled, err := h.isEnrolled(ctx, courseID)
+	if err != nil {
+		return internalError(ctx, errors.Getting(courseResource), err, slog.String("id", params.ID))
+	}
+	if !enrolled {
+		return echo.NewHTTPError(http.StatusForbidden, errors.Forbidden(courseResource))
 	}
 
 	return e.JSON(http.StatusOK, course)
