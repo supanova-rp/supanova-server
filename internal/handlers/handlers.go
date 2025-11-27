@@ -15,6 +15,8 @@ type Handlers struct {
 	ObjectStorage ObjectStorage
 }
 
+//go:generate moq -out ../handlers/mocks/objectstorage_mock.go -pkg mocks . ObjectStorage
+
 type ObjectStorage interface {
 	GenerateUploadURL(ctx context.Context, key string, contentType *string) (string, error)
 	GetCDNURL(ctx context.Context, key string) (string, error)

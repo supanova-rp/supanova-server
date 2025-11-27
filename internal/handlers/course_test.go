@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -20,19 +18,10 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
 	"github.com/supanova-rp/supanova-server/internal/handlers/testhelpers"
-	"github.com/supanova-rp/supanova-server/internal/middleware"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
-const testUserID = "test-user-id"
-
-type customValidator struct {
-	validator *validator.Validate
-}
-
-func (cv *customValidator) Validate(i any) error {
-	return cv.validator.Struct(i)
-}
+const courseEndpoint = "course"
 
 func TestGetCourse(t *testing.T) {
 	t.Run("returns course successfully", func(t *testing.T) {
@@ -54,7 +43,12 @@ func TestGetCourse(t *testing.T) {
 			Course:     mockCourseRepo,
 			Enrollment: mockEnrollmentRepo,
 		}
-		c, rec := setupEchoContext(t, `{"id":"`+testhelpers.Course.ID.String()+`"}`)
+		c, rec := testhelpers.SetupEchoContext(
+			t,
+			fmt.Sprintf(`{"id":%q}`, testhelpers.Course.ID),
+			courseEndpoint,
+			true,
+		)
 
 		err := h.GetCourse(c)
 		if err != nil {
@@ -86,7 +80,7 @@ func TestGetCourse(t *testing.T) {
 			Course: mockRepo,
 		}
 
-		c, _ := setupEchoContext(t, `{}`) // missing id
+		c, _ := testhelpers.SetupEchoContext(t, `{}`, courseEndpoint, true) // missing id
 
 		err := h.GetCourse(c)
 
@@ -105,7 +99,7 @@ func TestGetCourse(t *testing.T) {
 			Course: mockRepo,
 		}
 
-		c, _ := setupEchoContext(t, `{"id":"invalid-uuid"}`)
+		c, _ := testhelpers.SetupEchoContext(t, `{"id":"invalid-uuid"}`, courseEndpoint, true)
 
 		err := h.GetCourse(c)
 
@@ -126,7 +120,12 @@ func TestGetCourse(t *testing.T) {
 			Course: mockRepo,
 		}
 
-		c, _ := setupEchoContext(t, `{"id":"`+courseID.String()+`"}`)
+		c, _ := testhelpers.SetupEchoContext(
+			t,
+			fmt.Sprintf(`{"id":%q}`, courseID),
+			courseEndpoint,
+			true,
+		)
 
 		err := h.GetCourse(c)
 
@@ -147,7 +146,12 @@ func TestGetCourse(t *testing.T) {
 			Course: mockRepo,
 		}
 
-		c, _ := setupEchoContext(t, `{"id":"`+courseID.String()+`"}`)
+		c, _ := testhelpers.SetupEchoContext(
+			t,
+			fmt.Sprintf(`{"id":%q}`, courseID),
+			courseEndpoint,
+			true,
+		)
 
 		err := h.GetCourse(c)
 
@@ -173,7 +177,12 @@ func TestGetCourse(t *testing.T) {
 			Enrollment: mockEnrollmentRepo,
 		}
 
-		c, _ := setupEchoContext(t, `{"id":"`+testhelpers.Course.ID.String()+`"}`)
+		c, _ := testhelpers.SetupEchoContext(
+			t,
+			fmt.Sprintf(`{"id":%q}`, testhelpers.Course.ID),
+			courseEndpoint,
+			true,
+		)
 
 		err := h.GetCourse(c)
 
@@ -194,7 +203,12 @@ func TestAddCourse(t *testing.T) {
 		}
 
 		h := &handlers.Handlers{Course: mockRepo}
-		c, rec := setupEchoContext(t, `{"title":"New Course","description":"New Description"}`)
+		c, rec := testhelpers.SetupEchoContext(
+			t,
+			`{"title":"New Course","description":"New Description"}`,
+			courseEndpoint,
+			true,
+		)
 
 		err := h.AddCourse(c)
 		if err != nil {
@@ -227,7 +241,12 @@ func TestAddCourse(t *testing.T) {
 		}
 
 		h := &handlers.Handlers{Course: mockRepo}
-		c, _ := setupEchoContext(t, `{"description":"Test Description"}`)
+		c, _ := testhelpers.SetupEchoContext(
+			t,
+			fmt.Sprintf(`{"description":%q}`, testhelpers.Course.Description),
+			courseEndpoint,
+			true,
+		)
 
 		err := h.AddCourse(c)
 
@@ -243,7 +262,12 @@ func TestAddCourse(t *testing.T) {
 		}
 
 		h := &handlers.Handlers{Course: mockRepo}
-		c, _ := setupEchoContext(t, `{"title":"Test Title"}`)
+		c, _ := testhelpers.SetupEchoContext(
+			t,
+			fmt.Sprintf(`{"title":%q}`, testhelpers.Course.Title),
+			courseEndpoint,
+			true,
+		)
 
 		err := h.AddCourse(c)
 
@@ -259,29 +283,18 @@ func TestAddCourse(t *testing.T) {
 		}
 
 		h := &handlers.Handlers{Course: mockRepo}
-		c, _ := setupEchoContext(t, `{"title":"Test Title","description":"Test Description"}`)
+		c, _ := testhelpers.SetupEchoContext(
+			t,
+			fmt.Sprintf(`{"title":%q,"description":%q}`, testhelpers.Course.Title, testhelpers.Course.Description),
+			courseEndpoint,
+			true,
+		)
 
 		err := h.AddCourse(c)
 
 		assertHTTPError(t, err, http.StatusInternalServerError, "Error adding course")
 		assertRepoCalls(t, len(mockRepo.AddCourseCalls()), 1)
 	})
-}
-
-func setupEchoContext(t *testing.T, reqBody string) (echo.Context, *httptest.ResponseRecorder) {
-	t.Helper()
-
-	e := echo.New()
-	e.Validator = &customValidator{validator: validator.New()}
-
-	req := httptest.NewRequest(http.MethodPost, "/v2/course", strings.NewReader(reqBody))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-
-	ctx := context.WithValue(req.Context(), middleware.UserIDContextKey, testUserID)
-	req = req.WithContext(ctx)
-
-	rec := httptest.NewRecorder()
-	return e.NewContext(req, rec), rec
 }
 
 func assertHTTPError(t *testing.T, err error, expectedCode int, expectedMsg string) {
