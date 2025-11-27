@@ -25,6 +25,10 @@ test:
 sqlc:
 	go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0 generate -f internal/store/sqlc.yml
 
+mocks:
+	go install github.com/matryer/moq@latest && \
+	go generate ./...
+
 migrate/create:
 	@if [ -z "$(name)" ]; then \
 		echo "Usage: make migrate/create name=<migration_name>"; \

@@ -9,6 +9,8 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
+//go:generate moq -out ../handlers/mocks/course_mock.go -pkg mocks . CourseRepository
+
 type CourseRepository interface {
 	GetCourse(context.Context, pgtype.UUID) (*Course, error)
 	AddCourse(context.Context, sqlc.AddCourseParams) (*Course, error)
