@@ -5,6 +5,6 @@ const (
 	testUserName  = "Test User"
 	testUserEmail = "test@gmail.com"
 
-	CourseTitle       = "Course A"
-	CourseDescription = "Course description"
+	courseTitle       = "Course A"
+	courseDescription = "Course description"
 )
