@@ -158,7 +158,7 @@ func TestGetVideoUploadURL(t *testing.T) {
 		)
 		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url", false)
 
-		err := h.GetVideoURL(ctx)
+		err := h.GetVideoUploadURL(ctx)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -201,7 +201,7 @@ func TestGetVideoUploadURL(t *testing.T) {
 		)
 		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url", false)
 
-		err := h.GetVideoURL(ctx)
+		err := h.GetVideoUploadURL(ctx)
 
 		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
 		testhelpers.AssertRepoCalls(
@@ -229,7 +229,7 @@ func TestGetVideoUploadURL(t *testing.T) {
 		)
 		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url", false)
 
-		err := h.GetVideoURL(ctx)
+		err := h.GetVideoUploadURL(ctx)
 
 		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
 		testhelpers.AssertRepoCalls(
@@ -258,9 +258,9 @@ func TestGetVideoUploadURL(t *testing.T) {
 		)
 		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url", false)
 
-		err := h.GetVideoURL(ctx)
+		err := h.GetVideoUploadURL(ctx)
 
-		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("video upload url"))
+		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("upload url"))
 		testhelpers.AssertRepoCalls(
 			t,
 			len(objectStorageMock.GenerateUploadURLCalls()),
