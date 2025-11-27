@@ -24,19 +24,26 @@ func (h *Handlers) GetCourse(e echo.Context) error {
 		return err
 	}
 
-	uuid, err := pgUUID(params.ID)
+	courseID, err := pgUUID(params.ID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
-	course, err := h.Course.GetCourse(ctx, uuid)
+	course, err := h.Course.GetCourse(ctx, courseID)
 	if err != nil {
 		if errors.IsNotFoundErr(err) {
 			return echo.NewHTTPError(http.StatusNotFound, errors.NotFound(courseResource))
 		}
 
-		slog.ErrorContext(ctx, errors.Getting(courseResource), slog.Any("error", err), slog.String("id", params.ID))
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.Getting(courseResource))
+		return internalError(ctx, errors.Getting(courseResource), err, slog.String("id", params.ID))
+	}
+
+	enrolled, err := h.isEnrolled(ctx, courseID)
+	if err != nil {
+		return internalError(ctx, errors.Getting(courseResource), err, slog.String("id", params.ID))
+	}
+	if !enrolled {
+		return echo.NewHTTPError(http.StatusForbidden, errors.Forbidden(courseResource))
 	}
 
 	return e.JSON(http.StatusOK, course)
@@ -62,8 +69,7 @@ func (h *Handlers) AddCourse(e echo.Context) error {
 
 	course, err := h.Course.AddCourse(ctx, sqlcParams)
 	if err != nil {
-		slog.ErrorContext(ctx, errors.Getting(courseResource), slog.Any("error", err))
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.Getting(courseResource))
+		return internalError(ctx, errors.Creating(courseResource), err)
 	}
 
 	return e.JSON(http.StatusCreated, course)

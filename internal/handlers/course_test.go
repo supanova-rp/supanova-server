@@ -19,8 +19,12 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
+	"github.com/supanova-rp/supanova-server/internal/handlers/testhelpers"
+	"github.com/supanova-rp/supanova-server/internal/middleware"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
+
+const testUserID = "test-user-id"
 
 type customValidator struct {
 	validator *validator.Validate
@@ -32,21 +36,25 @@ func (cv *customValidator) Validate(i any) error {
 
 func TestGetCourse(t *testing.T) {
 	t.Run("returns course successfully", func(t *testing.T) {
-		courseID := uuid.New()
-		expected := &domain.Course{
-			ID:          courseID,
-			Title:       "Test Course",
-			Description: "Test Description",
-		}
+		expected := testhelpers.Course
 
-		mockRepo := &mocks.CourseRepositoryMock{
+		mockCourseRepo := &mocks.CourseRepositoryMock{
 			GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
 				return expected, nil
 			},
 		}
 
-		h := &handlers.Handlers{Course: mockRepo}
-		c, rec := setupEchoContext(t, `{"id":"`+courseID.String()+`"}`)
+		mockEnrollmentRepo := &mocks.EnrollmentRepositoryMock{
+			IsEnrolledFunc: func(ctx context.Context, params sqlc.IsUserEnrolledInCourseParams) (bool, error) {
+				return true, nil
+			},
+		}
+
+		h := &handlers.Handlers{
+			Course:     mockCourseRepo,
+			Enrollment: mockEnrollmentRepo,
+		}
+		c, rec := setupEchoContext(t, `{"id":"`+testhelpers.Course.ID.String()+`"}`)
 
 		err := h.GetCourse(c)
 		if err != nil {
@@ -146,16 +154,38 @@ func TestGetCourse(t *testing.T) {
 		assertHTTPError(t, err, http.StatusInternalServerError, "Error getting course")
 		assertRepoCalls(t, len(mockRepo.GetCourseCalls()), 1)
 	})
+
+	t.Run("forbidden - user not enrolled", func(t *testing.T) {
+		mockCourseRepo := &mocks.CourseRepositoryMock{
+			GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
+				return testhelpers.Course, nil
+			},
+		}
+
+		mockEnrollmentRepo := &mocks.EnrollmentRepositoryMock{
+			IsEnrolledFunc: func(ctx context.Context, params sqlc.IsUserEnrolledInCourseParams) (bool, error) {
+				return false, nil
+			},
+		}
+
+		h := &handlers.Handlers{
+			Course:     mockCourseRepo,
+			Enrollment: mockEnrollmentRepo,
+		}
+
+		c, _ := setupEchoContext(t, `{"id":"`+testhelpers.Course.ID.String()+`"}`)
+
+		err := h.GetCourse(c)
+
+		assertHTTPError(t, err, http.StatusForbidden, "No permissions for course")
+		assertRepoCalls(t, len(mockCourseRepo.GetCourseCalls()), 1)
+		assertRepoCalls(t, len(mockEnrollmentRepo.IsEnrolledCalls()), 1)
+	})
 }
 
 func TestAddCourse(t *testing.T) {
 	t.Run("adds course successfully", func(t *testing.T) {
-		courseID := uuid.New()
-		expected := &domain.Course{
-			ID:          courseID,
-			Title:       "New Course",
-			Description: "New Description",
-		}
+		expected := testhelpers.Course
 
 		mockRepo := &mocks.CourseRepositoryMock{
 			AddCourseFunc: func(ctx context.Context, params sqlc.AddCourseParams) (*domain.Course, error) {
@@ -233,10 +263,8 @@ func TestAddCourse(t *testing.T) {
 
 		err := h.AddCourse(c)
 
-		assertHTTPError(t, err, http.StatusInternalServerError, "Error getting course")
-		if len(mockRepo.AddCourseCalls()) != 1 {
-			t.Errorf("expected 1 call to AddCourse, got %d", len(mockRepo.AddCourseCalls()))
-		}
+		assertHTTPError(t, err, http.StatusInternalServerError, "Error adding course")
+		assertRepoCalls(t, len(mockRepo.AddCourseCalls()), 1)
 	})
 }
 
@@ -248,6 +276,9 @@ func setupEchoContext(t *testing.T, reqBody string) (echo.Context, *httptest.Res
 
 	req := httptest.NewRequest(http.MethodPost, "/v2/course", strings.NewReader(reqBody))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+	ctx := context.WithValue(req.Context(), middleware.UserIDContextKey, testUserID)
+	req = req.WithContext(ctx)
 
 	rec := httptest.NewRecorder()
 	return e.NewContext(req, rec), rec

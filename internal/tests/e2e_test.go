@@ -44,9 +44,20 @@ func TestMain(m *testing.M) {
 func TestCourse(t *testing.T) {
 	t.Run("course - happy path", func(t *testing.T) {
 		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
-			Title:       CourseTitle,
-			Description: CourseDescription,
+			Title:       courseTitle,
+			Description: courseDescription,
 		})
+
+		// TODO: replace this with a call the EnrollUserInCourse endpoint once that is implemented
+		_, err := testResources.DB.ExecContext(
+			t.Context(),
+			"INSERT INTO usercourses (user_id, course_id) VALUES ($1, $2)",
+			testUserID,
+			created.ID,
+		)
+		if err != nil {
+			t.Fatalf("failed to insert into usercourses: %v", err)
+		}
 
 		actual := getCourse(t, testResources.AppURL, created.ID)
 
@@ -74,7 +85,6 @@ func TestProgress(t *testing.T) {
 		// TODO: remove this once test is implemented
 		t.Skip("Skipping this test until update-progress is implemented")
 
-		_ = os.Getenv("TEST_ENVIRONMENT_USER_ID")
 		courseID := uuid.New()
 
 		// TODO: call add-course endpoint

@@ -25,7 +25,7 @@ func pgText(text string) pgtype.Text {
 	}
 }
 
-func userID(ctx context.Context) (string, bool) {
+func getUserID(ctx context.Context) (string, bool) {
 	id, ok := ctx.Value(middleware.UserIDContextKey).(string)
 	if !ok || id == "" {
 		slog.ErrorContext(ctx, errors.UserIDCtxNotFound)
@@ -45,4 +45,14 @@ func bindAndValidate(c echo.Context, params any) error {
 	}
 
 	return nil
+}
+
+func internalError(ctx context.Context, message string, err error, attrs ...slog.Attr) error {
+	logAttrs := []any{slog.Any("error", err)}
+	for _, attr := range attrs {
+		logAttrs = append(logAttrs, attr)
+	}
+
+	slog.ErrorContext(ctx, message, logAttrs...)
+	return echo.NewHTTPError(http.StatusInternalServerError, message)
 }

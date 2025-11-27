@@ -37,3 +37,11 @@ func IsNotFoundErr(err error) bool {
 func InvalidFormat(resource string) string {
 	return fmt.Sprintf("Invalid %s format", resource)
 }
+
+func Forbidden(resource string) string {
+	return fmt.Sprintf("No permissions for %s", resource)
+}
+
+func Wrap(text string) error {
+	return stdErrors.New(text)
+}
