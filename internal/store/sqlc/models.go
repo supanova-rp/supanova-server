@@ -37,6 +37,7 @@ type Quizquestion struct {
 	Question      pgtype.Text
 	Position      pgtype.Int4
 	QuizSectionID pgtype.UUID
+	IsMultiAnswer bool
 }
 
 type Quizsection struct {

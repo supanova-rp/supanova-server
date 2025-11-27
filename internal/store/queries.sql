@@ -1,5 +1,11 @@
 -- name: GetCourse :one
-SELECT id, title, description FROM courses WHERE id = $1;
+SELECT
+  id,
+  title,
+  description,
+  completion_title,
+  completion_message
+FROM courses WHERE id = $1;
 
 -- name: AddCourse :one
 INSERT INTO courses (title, description) VALUES ($1, $2) RETURNING id;
