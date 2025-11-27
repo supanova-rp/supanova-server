@@ -59,6 +59,8 @@ func TestGetVideoURL(t *testing.T) {
 		if diff := cmp.Diff(expected, &actual); diff != "" {
 			t.Errorf("url mismatch (-want +got):\n%s", diff)
 		}
+		
+		testhelpers.AssertRepoCalls(t, len(objectStorageMock.GetCDNURLCalls()), 1, testhelpers.GetVideoUrlHandlerName)
 	})
 
 	t.Run("validation error - missing courseId", func(t *testing.T) {
@@ -81,6 +83,7 @@ func TestGetVideoURL(t *testing.T) {
 		err := h.GetVideoURL(ctx)
 
 		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
+		testhelpers.AssertRepoCalls(t, len(objectStorageMock.GetCDNURLCalls()), 0, testhelpers.GetVideoUrlHandlerName)
 	})
 
 	t.Run("validation error - missing storageKey", func(t *testing.T) {
@@ -103,6 +106,7 @@ func TestGetVideoURL(t *testing.T) {
 		err := h.GetVideoURL(ctx)
 
 		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
+		testhelpers.AssertRepoCalls(t, len(objectStorageMock.GetCDNURLCalls()), 0, testhelpers.GetVideoUrlHandlerName)
 	})
 
 	t.Run("internal server error", func(t *testing.T) {
@@ -126,5 +130,6 @@ func TestGetVideoURL(t *testing.T) {
 		err := h.GetVideoURL(ctx)
 
 		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("video url"))
+		testhelpers.AssertRepoCalls(t, len(objectStorageMock.GetCDNURLCalls()), 1, testhelpers.GetVideoUrlHandlerName)
 	})
 }

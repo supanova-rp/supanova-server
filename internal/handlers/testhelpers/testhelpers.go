@@ -18,9 +18,10 @@ import (
 )
 
 const (
-	testUserID           = "test-user-id"
-	AddCourseHandlerName = "AddCourse"
-	GetCourseHandlerName = "GetCourse"
+	testUserID             = "test-user-id"
+	AddCourseHandlerName   = "AddCourse"
+	GetCourseHandlerName   = "GetCourse"
+	GetVideoUrlHandlerName = "GetVideoURL"
 )
 
 var Course = &domain.Course{

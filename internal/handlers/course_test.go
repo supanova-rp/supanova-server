@@ -65,6 +65,9 @@ func TestGetCourse(t *testing.T) {
 		if diff := cmp.Diff(expected, &actual); diff != "" {
 			t.Errorf("course mismatch (-want +got):\n%s", diff)
 		}
+
+		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseCalls()), 1, testhelpers.GetCourseHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.IsEnrolledCalls()), 1, testhelpers.GetCourseHandlerName)
 	})
 
 	t.Run("validation error - missing id", func(t *testing.T) {
