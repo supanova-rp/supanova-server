@@ -10,27 +10,50 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 )
 
-type GetVideoURLParams struct {
+type VideoURLParams struct {
 	CourseID   string `json:"courseId" validate:"required"`
 	StorageKey string `json:"storageKey" validate:"required"`
 }
 
-const videoResource = "video"
-
-func (h *Handlers) GetVideoURL(e echo.Context) error {
+func (h *Handlers) GetVideoUploadURL(e echo.Context) error {
 	ctx := e.Request().Context()
 
-	var params GetVideoURLParams
+	var params VideoURLParams
 	if err := bindAndValidate(e, &params); err != nil {
 		return err
 	}
 
-	videoKey := fmt.Sprintf("%s/videos/%s", params.CourseID, params.StorageKey)
+	videoKey := getVideoKey(params)
+	URL, err := h.ObjectStorage.GenerateUploadURL(ctx, videoKey, nil)
+	if err != nil {
+		return internalError(
+			ctx,
+			errors.Getting("upload url"),
+			err,
+			slog.String("id", params.CourseID), slog.String("storageKey", params.StorageKey),
+		)
+	}
+
+	return e.JSON(http.StatusOK, map[string]string{
+		"uploadUrl": URL,
+	})
+}
+
+func (h *Handlers) GetVideoURL(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	var params VideoURLParams
+	if err := bindAndValidate(e, &params); err != nil {
+		return err
+	}
+
+	videoKey := getVideoKey(params)
 	URL, err := h.ObjectStorage.GetCDNURL(ctx, videoKey)
 	if err != nil {
 		return internalError(
 			ctx,
-			errors.Getting(videoResource),
+			errors.Getting("video"),
+
 			err,
 			slog.String("id", params.CourseID), slog.String("storageKey", params.StorageKey),
 		)
@@ -39,4 +62,8 @@ func (h *Handlers) GetVideoURL(e echo.Context) error {
 	return e.JSON(http.StatusOK, map[string]string{
 		"url": URL,
 	})
+}
+
+func getVideoKey(params VideoURLParams) string {
+	return fmt.Sprintf("%s/videos/%s", params.CourseID, params.StorageKey)
 }
