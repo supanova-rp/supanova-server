@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+
 	"github.com/labstack/echo/v4"
 
 	"github.com/supanova-rp/supanova-server/internal/domain"

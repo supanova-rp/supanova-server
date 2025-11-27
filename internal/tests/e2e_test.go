@@ -44,8 +44,8 @@ func TestMain(m *testing.M) {
 func TestCourse(t *testing.T) {
 	t.Run("course - happy path", func(t *testing.T) {
 		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
-			Title:       CourseTitle,
-			Description: CourseDescription,
+			Title:       courseTitle,
+			Description: courseDescription,
 		})
 
 		// TODO: replace this with a call the EnrollUserInCourse endpoint once that is implemented
