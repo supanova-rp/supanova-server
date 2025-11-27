@@ -52,7 +52,7 @@ func (h *Handlers) GetVideoURL(e echo.Context) error {
 	if err != nil {
 		return internalError(
 			ctx,
-			errors.Getting("video"),
+			errors.Getting("video url"),
 
 			err,
 			slog.String("id", params.CourseID), slog.String("storageKey", params.StorageKey),

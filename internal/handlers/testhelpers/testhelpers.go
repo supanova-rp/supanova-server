@@ -17,7 +17,11 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/middleware"
 )
 
-const testUserID = "test-user-id"
+const (
+	testUserID           = "test-user-id"
+	AddCourseHandlerName = "AddCourse"
+	GetCourseHandlerName = "GetCourse"
+)
 
 var Course = &domain.Course{
 	ID:          uuid.New(),
@@ -58,4 +62,33 @@ func SetupEchoContext(t *testing.T, reqBody, endpoint string, withContextValue b
 
 	rec := httptest.NewRecorder()
 	return e.NewContext(req, rec), rec
+}
+
+func AssertHTTPError(t *testing.T, err error, expectedCode int, expectedMsg string) {
+	t.Helper()
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	httpErr, ok := err.(*echo.HTTPError)
+	if !ok {
+		t.Fatalf("expected *echo.HTTPError, got %T", err)
+	}
+
+	if httpErr.Code != expectedCode {
+		t.Errorf("expected status %d, got %d", expectedCode, httpErr.Code)
+	}
+
+	if httpErr.Message != expectedMsg {
+		t.Errorf("expected message %q, got %v", expectedMsg, httpErr.Message)
+	}
+}
+
+func AssertRepoCalls(t *testing.T, got, expected int, handlerName string) {
+	t.Helper()
+
+	if got != expected {
+		t.Errorf("expected %d calls to %s, got %d", expected, handlerName, got)
+	}
 }

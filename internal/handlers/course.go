@@ -69,7 +69,7 @@ func (h *Handlers) AddCourse(e echo.Context) error {
 
 	course, err := h.Course.AddCourse(ctx, sqlcParams)
 	if err != nil {
-		return internalError(ctx, errors.Creating(courseResource), err)
+		return internalError(ctx, errors.Adding(courseResource), err)
 	}
 
 	return e.JSON(http.StatusCreated, course)

@@ -3,6 +3,7 @@ package handlers_test
 import (
 	"context"
 	"encoding/json"
+	stdErrors "errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/supanova-rp/supanova-server/internal/handlers"
+	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
 	"github.com/supanova-rp/supanova-server/internal/handlers/testhelpers"
 )
@@ -59,8 +61,70 @@ func TestGetVideoURL(t *testing.T) {
 		}
 	})
 
-	// TODO: 404 not found case
-	// TODO: 400 courseId missing
-	// TODO: 400 storageKey missing
-	// TODO: 500 internal server error
+	t.Run("validation error - missing courseId", func(t *testing.T) {
+		objectStorageMock := &mocks.ObjectStorageMock{
+			GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
+				return "", nil
+			},
+		}
+
+		h := &handlers.Handlers{
+			ObjectStorage: objectStorageMock,
+		}
+
+		reqBody := fmt.Sprintf(
+			`{"storageKey":%q}`,
+			testhelpers.VideoURLParams.StorageKey,
+		)
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url", false)
+
+		err := h.GetVideoURL(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
+	})
+
+	t.Run("validation error - missing storageKey", func(t *testing.T) {
+		objectStorageMock := &mocks.ObjectStorageMock{
+			GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
+				return "", nil
+			},
+		}
+
+		h := &handlers.Handlers{
+			ObjectStorage: objectStorageMock,
+		}
+
+		reqBody := fmt.Sprintf(
+			`{"courseId":%q}`,
+			testhelpers.VideoURLParams.CourseID,
+		)
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url", false)
+
+		err := h.GetVideoURL(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
+	})
+
+	t.Run("internal server error", func(t *testing.T) {
+		objectStorageMock := &mocks.ObjectStorageMock{
+			GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
+				return "", stdErrors.New("crypto/rsa: message too long for RSA key size")
+			},
+		}
+
+		h := &handlers.Handlers{
+			ObjectStorage: objectStorageMock,
+		}
+
+		reqBody := fmt.Sprintf(
+			`{"courseId":%q,"storageKey":%q}`,
+			testhelpers.VideoURLParams.CourseID,
+			testhelpers.VideoURLParams.StorageKey,
+		)
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url", false)
+
+		err := h.GetVideoURL(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("video url"))
+	})
 }

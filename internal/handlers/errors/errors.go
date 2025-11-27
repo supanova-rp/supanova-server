@@ -18,7 +18,7 @@ func Getting(resource string) string {
 	return fmt.Sprintf("Error getting %s", resource)
 }
 
-func Creating(resource string) string {
+func Adding(resource string) string {
 	return fmt.Sprintf("Error adding %s", resource)
 }
 
