@@ -10,9 +10,9 @@ func UUIDFrom(pgUUID pgtype.UUID) uuid.UUID {
 }
 
 func PGUUIDFrom(id string) (pgtype.UUID, error) {
-	var uuid pgtype.UUID
-	err := uuid.Scan(id)
-	return uuid, err
+	var pgUUID pgtype.UUID
+	err := pgUUID.Scan(id)
+	return pgUUID, err
 }
 
 func PGTextFrom(text string) pgtype.Text {

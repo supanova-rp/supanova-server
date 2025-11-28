@@ -54,10 +54,10 @@ type VideoSection struct {
 }
 
 // Implements CourseSection interface
-func (v VideoSection) GetID() uuid.UUID     { return v.ID }
-func (v VideoSection) GetTitle() string     { return v.Title }
-func (v VideoSection) GetPosition() int     { return v.Position }
-func (v VideoSection) GetType() SectionType { return v.Type }
+func (v *VideoSection) GetID() uuid.UUID     { return v.ID }
+func (v *VideoSection) GetTitle() string     { return v.Title }
+func (v *VideoSection) GetPosition() int     { return v.Position }
+func (v *VideoSection) GetType() SectionType { return v.Type }
 
 type QuizSection struct {
 	ID        uuid.UUID      `json:"id"`
@@ -68,10 +68,10 @@ type QuizSection struct {
 }
 
 // Implements CourseSection interface
-func (q QuizSection) GetID() uuid.UUID     { return q.ID }
-func (q QuizSection) GetTitle() string     { return q.Title }
-func (q QuizSection) GetPosition() int     { return q.Position }
-func (q QuizSection) GetType() SectionType { return q.Type }
+func (q *QuizSection) GetID() uuid.UUID     { return q.ID }
+func (q *QuizSection) GetTitle() string     { return q.Title }
+func (q *QuizSection) GetPosition() int     { return q.Position }
+func (q *QuizSection) GetType() SectionType { return q.Type }
 
 type QuizQuestion struct {
 	ID            uuid.UUID    `json:"id"`

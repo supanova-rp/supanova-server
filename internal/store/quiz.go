@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 	"github.com/supanova-rp/supanova-server/internal/utils"
@@ -29,30 +30,33 @@ type SqlcQuizAnswer struct {
 	Position      int    `json:"position"`
 }
 
-func (s *Store) GetQuizSections(ctx context.Context, courseID pgtype.UUID) ([]domain.QuizSection, error) {
+func (s *Store) GetQuizSections(ctx context.Context, courseID pgtype.UUID) ([]*domain.QuizSection, error) {
 	rows, err := s.Queries.GetCourseQuizSections(ctx, courseID)
 	if err != nil {
 		return nil, err
 	}
 
 	sections, err := utils.MapToWithError(quizSectionFrom, rows)
+	if err != nil {
+		return nil, err
+	}
 
 	return sections, nil
 }
 
-func quizSectionFrom(q sqlc.GetCourseQuizSectionsRow) (domain.QuizSection, error) {
+func quizSectionFrom(q sqlc.GetCourseQuizSectionsRow) (*domain.QuizSection, error) {
 	var sqlcQuestions []SqlcQuizQuestion
 	err := json.Unmarshal(q.Questions, &sqlcQuestions)
 	if err != nil {
-		return domain.QuizSection{}, err
+		return nil, err
 	}
 
 	questions, err := utils.MapToWithError(quizQuestionFrom, sqlcQuestions)
 	if err != nil {
-		return domain.QuizSection{}, fmt.Errorf("failed to map questions: %w", err)
+		return nil, fmt.Errorf("failed to map questions: %w", err)
 	}
 
-	return domain.QuizSection{
+	return &domain.QuizSection{
 		ID:        utils.UUIDFrom(q.ID),
 		Title:     fmt.Sprintf("Quiz %d", q.Position.Int32),
 		Position:  int(q.Position.Int32),

@@ -33,9 +33,9 @@ func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, 
 		return nil, err
 	}
 
-	sections := make([]domain.CourseSection, 0, len(videos) + len(quizzes))
+	sections := make([]domain.CourseSection, 0, len(videos)+len(quizzes))
 	for _, v := range videos {
-		sections = append(sections, courseVideoSectionFrom(v))
+		sections = append(sections, courseVideoSectionFrom(&v))
 	}
 	for _, q := range quizzes {
 		sections = append(sections, q)
@@ -79,8 +79,8 @@ func courseMaterialFrom(m sqlc.GetCourseMaterialsRow) domain.CourseMaterial {
 	}
 }
 
-func courseVideoSectionFrom(v sqlc.GetCourseVideoSectionsRow) domain.VideoSection {
-	return domain.VideoSection{
+func courseVideoSectionFrom(v *sqlc.GetCourseVideoSectionsRow) *domain.VideoSection {
+	return &domain.VideoSection{
 		ID:         utils.UUIDFrom(v.ID),
 		Title:      v.Title.String,
 		Position:   int(v.Position.Int32),
