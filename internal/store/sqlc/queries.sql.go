@@ -28,20 +28,170 @@ func (q *Queries) AddCourse(ctx context.Context, arg AddCourseParams) (pgtype.UU
 }
 
 const getCourse = `-- name: GetCourse :one
-SELECT id, title, description FROM courses WHERE id = $1
+SELECT
+  id,
+  title,
+  description,
+  completion_title,
+  completion_message
+FROM courses WHERE id = $1
 `
 
-type GetCourseRow struct {
-	ID          pgtype.UUID
-	Title       pgtype.Text
-	Description pgtype.Text
+func (q *Queries) GetCourse(ctx context.Context, id pgtype.UUID) (Course, error) {
+	row := q.db.QueryRow(ctx, getCourse, id)
+	var i Course
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Description,
+		&i.CompletionTitle,
+		&i.CompletionMessage,
+	)
+	return i, err
 }
 
-func (q *Queries) GetCourse(ctx context.Context, id pgtype.UUID) (GetCourseRow, error) {
-	row := q.db.QueryRow(ctx, getCourse, id)
-	var i GetCourseRow
-	err := row.Scan(&i.ID, &i.Title, &i.Description)
-	return i, err
+const getCourseMaterials = `-- name: GetCourseMaterials :many
+SELECT
+  id, name, position, storage_key
+FROM course_materials
+WHERE course_id = $1
+ORDER BY position
+`
+
+type GetCourseMaterialsRow struct {
+	ID         pgtype.UUID
+	Name       string
+	Position   pgtype.Int4
+	StorageKey pgtype.UUID
+}
+
+func (q *Queries) GetCourseMaterials(ctx context.Context, courseID pgtype.UUID) ([]GetCourseMaterialsRow, error) {
+	rows, err := q.db.Query(ctx, getCourseMaterials, courseID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetCourseMaterialsRow
+	for rows.Next() {
+		var i GetCourseMaterialsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Position,
+			&i.StorageKey,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getCourseQuizSections = `-- name: GetCourseQuizSections :many
+SELECT 
+  qs.id,
+  qs.position,
+  qs.course_id,
+  json_agg(
+    json_build_object(
+      'id', qq.id,
+      'question', qq.question,
+      'position', qq.position,
+      'is_multi_answer', qq.is_multi_answer,
+      'answers', (
+        SELECT json_agg(
+          json_build_object(
+            'id', qa.id,
+            'answer', qa.answer,
+            'correct_answer', qa.correct_answer,
+            'position', qa.position
+          ) ORDER BY qa.position
+        )
+        FROM quizanswers qa
+        WHERE qa.quiz_question_id = qq.id
+      )
+    ) ORDER BY qq.position
+  ) AS questions
+FROM quizsections qs
+LEFT JOIN quizquestions qq ON qq.quiz_section_id = qs.id
+WHERE qs.course_id = $1
+GROUP BY qs.id, qs.position, qs.course_id
+ORDER BY qs.position
+`
+
+type GetCourseQuizSectionsRow struct {
+	ID        pgtype.UUID
+	Position  pgtype.Int4
+	CourseID  pgtype.UUID
+	Questions []byte
+}
+
+func (q *Queries) GetCourseQuizSections(ctx context.Context, courseID pgtype.UUID) ([]GetCourseQuizSectionsRow, error) {
+	rows, err := q.db.Query(ctx, getCourseQuizSections, courseID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetCourseQuizSectionsRow
+	for rows.Next() {
+		var i GetCourseQuizSectionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Position,
+			&i.CourseID,
+			&i.Questions,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getCourseVideoSections = `-- name: GetCourseVideoSections :many
+SELECT
+  id, title, position, storage_key
+FROM videosections
+WHERE course_id = $1
+ORDER BY position
+`
+
+type GetCourseVideoSectionsRow struct {
+	ID         pgtype.UUID
+	Title      pgtype.Text
+	Position   pgtype.Int4
+	StorageKey pgtype.UUID
+}
+
+func (q *Queries) GetCourseVideoSections(ctx context.Context, courseID pgtype.UUID) ([]GetCourseVideoSectionsRow, error) {
+	rows, err := q.db.Query(ctx, getCourseVideoSections, courseID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetCourseVideoSectionsRow
+	for rows.Next() {
+		var i GetCourseVideoSectionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Position,
+			&i.StorageKey,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getProgress = `-- name: GetProgress :one

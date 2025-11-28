@@ -5,25 +5,11 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
 
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/middleware"
 )
-
-func pgUUID(id string) (pgtype.UUID, error) {
-	var uuid pgtype.UUID
-	err := uuid.Scan(id)
-	return uuid, err
-}
-
-func pgText(text string) pgtype.Text {
-	return pgtype.Text{
-		String: text,
-		Valid:  true,
-	}
-}
 
 func getUserID(ctx context.Context) (string, bool) {
 	id, ok := ctx.Value(middleware.UserIDContextKey).(string)

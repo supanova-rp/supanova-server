@@ -7,6 +7,7 @@ import (
 
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
+	"github.com/supanova-rp/supanova-server/internal/utils"
 )
 
 func (h *Handlers) isEnrolled(ctx context.Context, courseID pgtype.UUID) (bool, error) {
@@ -18,7 +19,7 @@ func (h *Handlers) isEnrolled(ctx context.Context, courseID pgtype.UUID) (bool, 
 	}
 
 	return h.Enrollment.IsEnrolled(ctx, sqlc.IsUserEnrolledInCourseParams{
-		UserID:   pgText(userID),
+		UserID:   utils.PGTextFrom(userID),
 		CourseID: courseID,
 	})
 }

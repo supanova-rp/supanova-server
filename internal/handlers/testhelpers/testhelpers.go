@@ -7,7 +7,11 @@ import (
 )
 
 var Course = &domain.Course{
-	ID:          uuid.New(),
-	Title:       "Test Course",
-	Description: "Test Description",
+	ID:                uuid.New(),
+	Title:             "Test Course",
+	Description:       "Test Description",
+	CompletionTitle:   "Completion Title",
+	CompletionMessage: "Completion Message",
+	Sections:          []domain.CourseSection{},
+	Materials:         []domain.CourseMaterial{},
 }

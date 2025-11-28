@@ -60,11 +60,11 @@ func (v VideoSection) GetPosition() int     { return v.Position }
 func (v VideoSection) GetType() SectionType { return v.Type }
 
 type QuizSection struct {
-	ID       uuid.UUID   `json:"id"`
-	Title    string      `json:"title"`
-	Position int         `json:"position"`
-	Type     SectionType `json:"type"`
-	// Questions []Question `json:"questions"` // TODO: add later
+	ID        uuid.UUID      `json:"id"`
+	Title     string         `json:"title"`
+	Position  int            `json:"position"`
+	Type      SectionType    `json:"type"`
+	Questions []QuizQuestion `json:"questions"`
 }
 
 // Implements CourseSection interface
@@ -72,3 +72,18 @@ func (q QuizSection) GetID() uuid.UUID     { return q.ID }
 func (q QuizSection) GetTitle() string     { return q.Title }
 func (q QuizSection) GetPosition() int     { return q.Position }
 func (q QuizSection) GetType() SectionType { return q.Type }
+
+type QuizQuestion struct {
+	ID            uuid.UUID    `json:"id"`
+	Question      string       `json:"question"`
+	Position      int          `json:"position"`
+	IsMultiAnswer bool         `json:"isMultiAnswer"`
+	Answers       []QuizAnswer `json:"answers"`
+}
+
+type QuizAnswer struct {
+	ID              uuid.UUID `json:"id"`
+	Answer          string    `json:"answer"`
+	Position        int       `json:"position"`
+	IsCorrectAnswer bool      `json:"isCorrectAnswer"`
+}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
+	"github.com/supanova-rp/supanova-server/internal/utils"
 )
 
 const progressResource = "user progress"
@@ -29,7 +30,7 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 		return err
 	}
 
-	courseID, err := pgUUID(params.CourseID)
+	courseID, err := utils.PGUUIDFrom(params.CourseID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}

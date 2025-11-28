@@ -8,6 +8,7 @@ import (
 
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
+	"github.com/supanova-rp/supanova-server/internal/utils"
 )
 
 const courseResource = "course"
@@ -24,7 +25,7 @@ func (h *Handlers) GetCourse(e echo.Context) error {
 		return err
 	}
 
-	courseID, err := pgUUID(params.ID)
+	courseID, err := utils.PGUUIDFrom(params.ID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
@@ -63,8 +64,8 @@ func (h *Handlers) AddCourse(e echo.Context) error {
 	}
 
 	sqlcParams := sqlc.AddCourseParams{
-		Title:       pgText(params.Title),
-		Description: pgText(params.Description),
+		Title:       utils.PGTextFrom(params.Title),
+		Description: utils.PGTextFrom(params.Description),
 	}
 
 	course, err := h.Course.AddCourse(ctx, sqlcParams)

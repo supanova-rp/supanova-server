@@ -2,13 +2,14 @@ package store
 
 import (
 	"context"
+	"sort"
 
-	"github.com/IBM/fp-go/array"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
+	"github.com/supanova-rp/supanova-server/internal/utils"
 )
 
 func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
@@ -27,19 +28,22 @@ func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, 
 		return nil, err
 	}
 
-	// quizzes, err := s.Queries.GetCourseQuizSections(ctx, id)
+	quizzes, err := s.GetQuizSections(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 
-	// GetQuizSections for that course
-
-	// TODO: add type: 'quiz' field
-	// TODO: add title: `Quiz ${position}`, field
-
-	var sections []domain.CourseSection // TODO: could pre-allocate based on length of quizzes + videos
+	sections := make([]domain.CourseSection, 0, len(videos) + len(quizzes))
 	for _, v := range videos {
 		sections = append(sections, courseVideoSectionFrom(v))
 	}
+	for _, q := range quizzes {
+		sections = append(sections, q)
+	}
 
-	// TODO: sort sections by position
+	sort.Slice(sections, func(i, j int) bool {
+		return sections[i].GetPosition() < sections[j].GetPosition()
+	})
 
 	return &domain.Course{
 		ID:                uuid.UUID(course.ID.Bytes),
@@ -47,8 +51,8 @@ func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, 
 		Description:       course.Description.String,
 		CompletionTitle:   course.CompletionTitle.String,
 		CompletionMessage: course.CompletionMessage.String,
-		Sections:          []domain.CourseSection{},
-		Materials:         array.Map(courseMaterialFrom)(materials),
+		Sections:          sections,
+		Materials:         utils.Map(courseMaterialFrom, materials),
 	}, nil
 }
 
@@ -68,24 +72,19 @@ func (s *Store) AddCourse(ctx context.Context, course sqlc.AddCourseParams) (*do
 
 func courseMaterialFrom(m sqlc.GetCourseMaterialsRow) domain.CourseMaterial {
 	return domain.CourseMaterial{
-		ID:         uuidFrom(m.ID),
+		ID:         utils.UUIDFrom(m.ID),
 		Name:       m.Name,
 		Position:   int(m.Position.Int32),
-		StorageKey: uuidFrom(m.StorageKey),
+		StorageKey: utils.UUIDFrom(m.StorageKey),
 	}
 }
 
 func courseVideoSectionFrom(v sqlc.GetCourseVideoSectionsRow) domain.VideoSection {
 	return domain.VideoSection{
-		ID:         uuidFrom(v.ID),
+		ID:         utils.UUIDFrom(v.ID),
 		Title:      v.Title.String,
 		Position:   int(v.Position.Int32),
-		StorageKey: uuidFrom(v.StorageKey),
+		StorageKey: utils.UUIDFrom(v.StorageKey),
 		Type:       domain.SectionTypeVideo,
 	}
-}
-
-// TODO: where to put this?
-func uuidFrom(pgUUID pgtype.UUID) uuid.UUID {
-	return uuid.UUID(pgUUID.Bytes)
 }
