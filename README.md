@@ -2,6 +2,10 @@
 
 Go server for Supanova Radiation Protection Services learning platform
 
+#### Prerequisite files:
+- .env
+- init.sql
+
 #### Setup:
 ```
 make dep

@@ -2,3 +2,4 @@
 bin/
 *pem
 .idea
+init.sql
