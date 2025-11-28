@@ -10,19 +10,16 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
 	"github.com/supanova-rp/supanova-server/internal/handlers/testhelpers"
 )
 
-type VideoURL struct {
-	URL string `json:"url"`
-}
-
 func TestGetVideoURL(t *testing.T) {
 	t.Run("returns video URL successfully", func(t *testing.T) {
-		expected := &VideoURL{URL: "https://mycdnurl.com"}
+		expected := &domain.VideoURL{URL: "https://mycdnurl.com"}
 
 		objectStorageMock := &mocks.ObjectStorageMock{
 			GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
@@ -50,7 +47,7 @@ func TestGetVideoURL(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
 		}
 
-		var actual VideoURL
+		var actual domain.VideoURL
 		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
@@ -133,17 +130,13 @@ func TestGetVideoURL(t *testing.T) {
 	})
 }
 
-type VideoUploadURL struct {
-	URL string `json:"uploadUrl"`
-}
-
 func TestGetVideoUploadURL(t *testing.T) {
 	t.Run("returns video upload URL successfully", func(t *testing.T) {
-		expected := &VideoUploadURL{URL: "https://s3uploadurl.com"}
+		expected := &domain.VideoUploadURL{UploadURL: "https://s3uploadurl.com"}
 
 		objectStorageMock := &mocks.ObjectStorageMock{
 			GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
-				return expected.URL, nil
+				return expected.UploadURL, nil
 			},
 		}
 
@@ -167,7 +160,7 @@ func TestGetVideoUploadURL(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
 		}
 
-		var actual VideoUploadURL
+		var actual domain.VideoUploadURL
 		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}

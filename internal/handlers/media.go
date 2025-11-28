@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 )
 
@@ -34,8 +35,8 @@ func (h *Handlers) GetVideoUploadURL(e echo.Context) error {
 		)
 	}
 
-	return e.JSON(http.StatusOK, map[string]string{
-		"uploadUrl": URL,
+	return e.JSON(http.StatusOK, &domain.VideoUploadURL{
+		UploadURL: URL,
 	})
 }
 
@@ -53,14 +54,13 @@ func (h *Handlers) GetVideoURL(e echo.Context) error {
 		return internalError(
 			ctx,
 			errors.Getting("video url"),
-
 			err,
 			slog.String("id", params.CourseID), slog.String("storageKey", params.StorageKey),
 		)
 	}
 
-	return e.JSON(http.StatusOK, map[string]string{
-		"url": URL,
+	return e.JSON(http.StatusOK, &domain.VideoURL{
+		URL: URL,
 	})
 }
 

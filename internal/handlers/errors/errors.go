@@ -18,8 +18,8 @@ func Getting(resource string) string {
 	return fmt.Sprintf("Error getting %s", resource)
 }
 
-func Adding(resource string) string {
-	return fmt.Sprintf("Error adding %s", resource)
+func Creating(resource string) string {
+	return fmt.Sprintf("Error creating %s", resource)
 }
 
 func Deleting(resource string) string {

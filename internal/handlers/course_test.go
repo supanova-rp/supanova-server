@@ -291,7 +291,7 @@ func TestAddCourse(t *testing.T) {
 
 		err := h.AddCourse(ctx)
 
-		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Adding("course"))
+		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Creating("course"))
 		testhelpers.AssertRepoCalls(t, len(mockRepo.AddCourseCalls()), 1, testhelpers.AddCourseHandlerName)
 	})
 }
