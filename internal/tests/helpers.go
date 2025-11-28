@@ -15,6 +15,15 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 )
 
+const (
+	testUserID    = "test-user-id"
+	testUserName  = "Test User"
+	testUserEmail = "test@gmail.com"
+
+	courseTitle       = "Course A"
+	courseDescription = "Course description"
+)
+
 func getCourse(t *testing.T, baseURL string, id uuid.UUID) *domain.Course {
 	t.Helper()
 

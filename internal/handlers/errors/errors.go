@@ -19,7 +19,7 @@ func Getting(resource string) string {
 }
 
 func Creating(resource string) string {
-	return fmt.Sprintf("Error adding %s", resource)
+	return fmt.Sprintf("Error creating %s", resource)
 }
 
 func Deleting(resource string) string {
