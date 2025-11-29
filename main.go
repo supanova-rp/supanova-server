@@ -50,19 +50,19 @@ func run() error {
 	}
 	defer st.Close()
 
-	awsCfg, err := newAWSCfg(ctx, cfg.AWS)
+	AWSCfg, err := newAWSCfg(ctx, cfg.AWS)
 	if err != nil {
-		return fmt.Errorf("failed to load aws config: %v", err)
+		return fmt.Errorf("failed to load AWS config: %v", err)
 	}
 
-	secretsManager := secrets.New(ctx, awsCfg)
+	secretsManager := secrets.New(ctx, AWSCfg)
 
 	CDNKey, err := secretsManager.Get(ctx, cfg.AWS.CDNKeyName)
 	if err != nil {
 		return fmt.Errorf("failed to fetch CDN key: %v", err)
 	}
 
-	objectStore, err := objectstorage.New(ctx, cfg.AWS, awsCfg, CDNKey)
+	objectStore, err := objectstorage.New(ctx, cfg.AWS, AWSCfg, CDNKey)
 	if err != nil {
 		return fmt.Errorf("failed to create object store: %v", err)
 	}

@@ -31,7 +31,7 @@ type CDN struct {
 	domain string
 }
 
-func New(ctx context.Context, customCfg *config.AWS, awsCfg *aws.Config, CDNKey string) (*Store, error) {
+func New(ctx context.Context, customCfg *config.AWS, AWSCfg *aws.Config, CDNKey string) (*Store, error) {
 	parsedCDNKey, err := parseCDNKey(CDNKey)
 	if err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func New(ctx context.Context, customCfg *config.AWS, awsCfg *aws.Config, CDNKey 
 	}
 
 	return &Store{
-		client:     s3.NewFromConfig(*awsCfg),
+		client:     s3.NewFromConfig(*AWSCfg),
 		bucketName: customCfg.BucketName,
 		CDN:        CDN,
 	}, nil
