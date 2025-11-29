@@ -1,9 +1,9 @@
 package utils
 
-func Map[T, S any](f func(S) T, ts []S) []T {
-	mapped := make([]T, len(ts))
-	for i, v := range ts {
-		mapped[i] = f(v)
+func Map[T, S any](f func(S) T, items []S) []T {
+	mapped := make([]T, len(items))
+	for i, item := range items {
+		mapped[i] = f(item)
 	}
 
 	return mapped
@@ -12,11 +12,11 @@ func Map[T, S any](f func(S) T, ts []S) []T {
 // MapToWithError transforms a slice given the mapping function 'f'.
 // It will return the first error when the result from 'f' returns an error.
 // Otherwise returns a new slice with the result of the function calls.
-func MapToWithError[T, S any](f func(S) (T, error), ts []S) ([]T, error) {
-	mapped := make([]T, len(ts))
+func MapToWithError[T, S any](f func(S) (T, error), items []S) ([]T, error) {
+	mapped := make([]T, len(items))
 
-	for i, v := range ts {
-		result, err := f(v)
+	for i, item := range items {
+		result, err := f(item)
 		if err != nil {
 			return nil, err
 		}

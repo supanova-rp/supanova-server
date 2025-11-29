@@ -68,7 +68,7 @@ func quizSectionFrom(q sqlc.GetCourseQuizSectionsRow) (*domain.QuizSection, erro
 func quizQuestionFrom(q SqlcQuizQuestion) (domain.QuizQuestion, error) {
 	id, err := uuid.Parse(q.ID)
 	if err != nil {
-		return domain.QuizQuestion{}, fmt.Errorf("parsing question ID: %w", err)
+		return domain.QuizQuestion{}, fmt.Errorf("failed to parse question ID: %w", err)
 	}
 
 	answers, err := utils.MapToWithError(quizAnswerFrom, q.Answers)
@@ -88,7 +88,7 @@ func quizQuestionFrom(q SqlcQuizQuestion) (domain.QuizQuestion, error) {
 func quizAnswerFrom(q SqlcQuizAnswer) (domain.QuizAnswer, error) {
 	id, err := uuid.Parse(q.ID)
 	if err != nil {
-		return domain.QuizAnswer{}, fmt.Errorf("parsing answer ID: %w", err)
+		return domain.QuizAnswer{}, fmt.Errorf("failed to parse answer ID: %w", err)
 	}
 
 	return domain.QuizAnswer{
