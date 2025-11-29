@@ -13,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
-	"github.com/supanova-rp/supanova-server/internal/services/secrets"
 )
 
 const (
@@ -32,12 +31,7 @@ type CDN struct {
 	domain string
 }
 
-func New(ctx context.Context, customCfg *config.Aws, awsCfg *aws.Config, secretsManager *secrets.SecretsManager) (*Store, error) {
-	CDNKey, err := secretsManager.Get(ctx, customCfg.CDNKeyName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch CDN key from secrets manager: %v", err)
-	}
-
+func New(ctx context.Context, customCfg *config.AWS, awsCfg *aws.Config, CDNKey string) (*Store, error) {
 	parsedCDNKey, err := parseCDNKey(CDNKey)
 	if err != nil {
 		return nil, err
@@ -75,18 +69,18 @@ func (s *Store) GenerateUploadURL(ctx context.Context, key string, contentType *
 	return req.URL, nil
 }
 
-func parseCDNKey(key string) (*rsa.PrivateKey, error) {
-	block, _ := pem.Decode([]byte(key))
+func parseCDNKey(pemKey string) (*rsa.PrivateKey, error) {
+	block, _ := pem.Decode([]byte(pemKey))
 	if block == nil {
 		return nil, fmt.Errorf("failed to decode PEM block")
 	}
 
-	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
 		return nil, err
 	}
 
-	return privateKey, nil
+	return key, nil
 }
 
 func (s *Store) GetCDNURL(ctx context.Context, key string) (string, error) {

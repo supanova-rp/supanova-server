@@ -11,10 +11,10 @@ type SecretsManager struct {
 	client *secretsmanager.Client
 }
 
-func New(ctx context.Context, cfg *aws.Config) (*SecretsManager, error) {
+func New(ctx context.Context, cfg *aws.Config) *SecretsManager {
 	return &SecretsManager{
 		client: secretsmanager.NewFromConfig(*cfg),
-	}, nil
+	}
 }
 
 func (s *SecretsManager) Get(ctx context.Context, name string) (string, error) {

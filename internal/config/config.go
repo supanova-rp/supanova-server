@@ -15,7 +15,7 @@ type App struct {
 	DatabaseURL string
 	LogLevel    slog.Level
 	Environment Environment
-	Aws         *Aws
+	AWS         *AWS
 }
 
 type Environment string
@@ -32,7 +32,7 @@ var validEnvironments = []Environment{
 	EnvironmentTest,
 }
 
-type Aws struct {
+type AWS struct {
 	Region       string
 	AccessKey    string
 	SecretKey    string
@@ -90,7 +90,7 @@ func ParseEnv() (*App, error) {
 		Port:        envVars["SERVER_PORT"],
 		DatabaseURL: envVars["DATABASE_URL"],
 		LogLevel:    logLevel,
-		Aws: &Aws{
+		AWS: &AWS{
 			Region:       envVars["AWS_REGION"],
 			AccessKey:    envVars["AWS_ACCESS_KEY_ID"],
 			SecretKey:    envVars["AWS_SECRET_ACCESS_KEY"],
