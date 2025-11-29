@@ -45,6 +45,7 @@ CREATE TABLE quizquestions (
   question TEXT,
   position INT,
   quiz_section_id UUID,
+  is_multi_answer BOOLEAN DEFAULT FALSE NOT NULL,
 
   CONSTRAINT fk_quizsections FOREIGN KEY(quiz_section_id) REFERENCES quizsections(id) ON DELETE CASCADE
 );
