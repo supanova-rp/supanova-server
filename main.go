@@ -9,10 +9,10 @@ import (
 	"syscall"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
+	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 
-	customConfig "github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/server"
 	"github.com/supanova-rp/supanova-server/internal/services/objectstorage"
@@ -34,7 +34,7 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	cfg, err := customConfig.ParseEnv()
+	cfg, err := config.ParseEnv()
 	if err != nil {
 		return fmt.Errorf("failed to parse env: %v", err)
 	}
@@ -97,11 +97,11 @@ func run() error {
 	return err
 }
 
-func newAWSCfg(ctx context.Context, cfg *customConfig.AWS) (*aws.Config, error) {
-	newCfg, err := config.LoadDefaultConfig(
+func newAWSCfg(ctx context.Context, cfg *config.AWS) (*aws.Config, error) {
+	newCfg, err := awsConfig.LoadDefaultConfig(
 		ctx,
-		config.WithRegion(cfg.Region),
-		config.WithCredentialsProvider(
+		awsConfig.WithRegion(cfg.Region),
+		awsConfig.WithCredentialsProvider(
 			credentials.NewStaticCredentialsProvider(
 				cfg.AccessKey,
 				cfg.SecretKey,

@@ -31,21 +31,21 @@ type CDN struct {
 	domain string
 }
 
-func New(ctx context.Context, customCfg *config.AWS, awsCfg *aws.Config, cdnKey string) (*Store, error) {
+func New(ctx context.Context, cfg *config.AWS, awsCfg *aws.Config, cdnKey string) (*Store, error) {
 	parsedCDNKey, err := parseCDNKey(cdnKey)
 	if err != nil {
 		return nil, err
 	}
 
-	CDNSigner := sign.NewURLSigner(customCfg.CDNKeyPairID, parsedCDNKey)
+	CDNSigner := sign.NewURLSigner(cfg.CDNKeyPairID, parsedCDNKey)
 	CDN := &CDN{
-		domain: customCfg.CDNDomain,
+		domain: cfg.CDNDomain,
 		signer: CDNSigner,
 	}
 
 	return &Store{
 		client:     s3.NewFromConfig(*awsCfg),
-		bucketName: customCfg.BucketName,
+		bucketName: cfg.BucketName,
 		CDN:        CDN,
 	}, nil
 }
