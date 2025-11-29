@@ -5,10 +5,17 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
-	"testing"
+	"net/http"
+	"time"
 
 	"github.com/testcontainers/testcontainers-go/modules/compose"
+
+	"github.com/supanova-rp/supanova-server/internal/app"
+	"github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
 )
+
+const testPort = "3001"
 
 type TestResources struct {
 	ComposeStack *compose.DockerCompose
@@ -17,8 +24,7 @@ type TestResources struct {
 }
 
 // setupTestResources creates and starts all required containers for testing
-func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, error) {
-	t.Helper()
+func setupTestResources(ctx context.Context) (*TestResources, error) {
 	composeStack, err := compose.NewDockerCompose("./docker-compose.yml")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create compose stack: %w", err)
@@ -41,14 +47,41 @@ func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, erro
 		return nil, err
 	}
 
-	appURL, err := getAppURL(ctx, composeStack)
-	if err != nil {
-		return nil, err
-	}
-
 	db, err := sql.Open("postgres", postgresURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
+	}
+
+	mockObjectStorage := &mocks.ObjectStorageMock{
+		GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
+			return "https://mock-upload-url.com/" + key, nil
+		},
+		GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
+			return "https://mock-cdn-url.com/" + key, nil
+		},
+	}
+
+	cfg := &config.App{
+		Port:        testPort,
+		DatabaseURL: postgresURL,
+		Environment: config.EnvironmentTest,
+		AWS:         nil, // Not needed for tests with mock object storage
+	}
+	appURL := fmt.Sprintf("http://localhost:%s", testPort)
+
+	// Start the app in a goroutine
+	go func() {
+		err := app.Run(ctx, cfg, app.Dependencies{
+			ObjectStorage: mockObjectStorage,
+		})
+		if err != nil {
+			slog.Error("app error", slog.Any("error", err))
+		}
+	}()
+
+	err = waitForAppHealthy(ctx, time.Second*3, fmt.Sprintf("%s/v2/health", appURL))
+	if err != nil {
+		return nil, fmt.Errorf("failed to start app: %v", err)
 	}
 
 	err = insertSetupData(ctx, db)
@@ -63,7 +96,7 @@ func setupTestResources(ctx context.Context, t *testing.T) (*TestResources, erro
 	}, nil
 }
 
-func (tr *TestResources) Cleanup(ctx context.Context, t *testing.T) {
+func (tr *TestResources) Cleanup(ctx context.Context) {
 	if tr == nil {
 		return
 	}
@@ -71,14 +104,14 @@ func (tr *TestResources) Cleanup(ctx context.Context, t *testing.T) {
 	if tr.DB != nil {
 		err := tr.DB.Close()
 		if err != nil {
-			t.Logf("failed to close db: %v", err)
+			fmt.Printf("failed to close db: %v\n", err)
 		}
 	}
 
 	if tr.ComposeStack != nil {
 		err := tr.ComposeStack.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal)
 		if err != nil {
-			t.Logf("failed to tear down compose stack: %v", err)
+			fmt.Printf("failed to tear down compose stack: %v\n", err)
 		}
 	}
 }
@@ -106,25 +139,6 @@ func getPostgresURL(ctx context.Context, composeStack *compose.DockerCompose) (s
 	), nil
 }
 
-func getAppURL(ctx context.Context, composeStack *compose.DockerCompose) (string, error) {
-	appContainer, err := composeStack.ServiceContainer(ctx, "supanova-server")
-	if err != nil {
-		return "", fmt.Errorf("failed to get app container: %w", err)
-	}
-
-	appPort, err := appContainer.MappedPort(ctx, "3001")
-	if err != nil {
-		return "", fmt.Errorf("failed to get app mapped port: %w", err)
-	}
-
-	appHost, err := appContainer.Host(ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to get app host: %w", err)
-	}
-
-	return fmt.Sprintf("http://%s:%s", appHost, appPort.Port()), nil
-}
-
 func insertSetupData(ctx context.Context, db *sql.DB) error {
 	_, err := db.ExecContext(
 		ctx,
@@ -135,4 +149,47 @@ func insertSetupData(ctx context.Context, db *sql.DB) error {
 	)
 
 	return err
+}
+
+// waitForAppHealthy calls the specified endpoint until it gets a 200
+// response or until the context is cancelled or the timeout is reached.
+func waitForAppHealthy(
+	parentCtx context.Context,
+	timeout time.Duration,
+	endpoint string,
+) error {
+	ctx, cancel := context.WithTimeout(parentCtx, timeout)
+	defer cancel()
+
+	client := http.Client{}
+
+	for {
+		req, err := http.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			endpoint,
+			nil,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to create request: %w", err)
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Printf("error making request: %s\n", err.Error())
+			continue
+		}
+		if resp.StatusCode == http.StatusOK {
+			resp.Body.Close()
+			return nil
+		}
+		resp.Body.Close()
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(250 * time.Millisecond):
+			// retry
+		}
+	}
 }
