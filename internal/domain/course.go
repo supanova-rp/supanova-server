@@ -22,7 +22,7 @@ type Course struct {
 	Description       string           `json:"description"`
 	CompletionTitle   string           `json:"completionTitle"`
 	CompletionMessage string           `json:"completionMessage"`
-	Sections          []CourseSection  `json:"section"`
+	Sections          []CourseSection  `json:"sections"`
 	Materials         []CourseMaterial `json:"materials"`
 }
 
