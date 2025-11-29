@@ -52,7 +52,7 @@ func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, 
 		CompletionTitle:   course.CompletionTitle.String,
 		CompletionMessage: course.CompletionMessage.String,
 		Sections:          sections,
-		Materials:         utils.Map(courseMaterialFrom, materials),
+		Materials:         utils.Map(materials, courseMaterialFrom),
 	}, nil
 }
 

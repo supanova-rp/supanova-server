@@ -36,7 +36,7 @@ func (s *Store) GetQuizSections(ctx context.Context, courseID pgtype.UUID) ([]*d
 		return nil, err
 	}
 
-	sections, err := utils.MapToWithError(quizSectionFrom, rows)
+	sections, err := utils.MapToWithError(rows, quizSectionFrom)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func quizSectionFrom(q sqlc.GetCourseQuizSectionsRow) (*domain.QuizSection, erro
 		return nil, err
 	}
 
-	questions, err := utils.MapToWithError(quizQuestionFrom, sqlcQuestions)
+	questions, err := utils.MapToWithError(sqlcQuestions, quizQuestionFrom)
 	if err != nil {
 		return nil, fmt.Errorf("failed to map questions: %w", err)
 	}
@@ -71,7 +71,7 @@ func quizQuestionFrom(q SqlcQuizQuestion) (domain.QuizQuestion, error) {
 		return domain.QuizQuestion{}, fmt.Errorf("failed to parse question ID: %w", err)
 	}
 
-	answers, err := utils.MapToWithError(quizAnswerFrom, q.Answers)
+	answers, err := utils.MapToWithError(q.Answers, quizAnswerFrom)
 	if err != nil {
 		return domain.QuizQuestion{}, fmt.Errorf("failed to map answers: %w", err)
 	}
