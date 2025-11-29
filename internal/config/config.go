@@ -39,6 +39,7 @@ type AWS struct {
 	BucketName   string
 	CDNDomain    string
 	CDNKeyPairID string
+	CDNKeyName   string
 }
 
 var logLevelMap = map[string]slog.Level{
@@ -63,6 +64,7 @@ func ParseEnv() (*App, error) {
 		"AWS_BUCKET_NAME":        "",
 		"CLOUDFRONT_DOMAIN":      "",
 		"CLOUDFRONT_KEY_PAIR_ID": "",
+		"CLOUDFRONT_KEY_NAME":    "",
 		"ENVIRONMENT":            "",
 	}
 
@@ -95,6 +97,7 @@ func ParseEnv() (*App, error) {
 			BucketName:   envVars["AWS_BUCKET_NAME"],
 			CDNDomain:    envVars["CLOUDFRONT_DOMAIN"],
 			CDNKeyPairID: envVars["CLOUDFRONT_KEY_PAIR_ID"],
+			CDNKeyName:   envVars["CLOUDFRONT_KEY_NAME"],
 		},
 		Environment: environment,
 	}, nil

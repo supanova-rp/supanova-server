@@ -8,10 +8,15 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsConfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+
 	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/server"
-	"github.com/supanova-rp/supanova-server/internal/services"
+	"github.com/supanova-rp/supanova-server/internal/services/objectstorage"
+	"github.com/supanova-rp/supanova-server/internal/services/secrets"
 	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
@@ -45,7 +50,19 @@ func run() error {
 	}
 	defer st.Close()
 
-	objectStore, err := objectstorage.New(ctx, cfg.AWS)
+	AWSCfg, err := newAWSCfg(ctx, cfg.AWS)
+	if err != nil {
+		return fmt.Errorf("failed to load AWS config: %v", err)
+	}
+
+	secretsManager := secrets.New(ctx, AWSCfg)
+
+	CDNKey, err := secretsManager.Get(ctx, cfg.AWS.CDNKeyName)
+	if err != nil {
+		return fmt.Errorf("failed to fetch CDN key: %v", err)
+	}
+
+	objectStore, err := objectstorage.New(ctx, cfg.AWS, AWSCfg, CDNKey)
 	if err != nil {
 		return fmt.Errorf("failed to create object store: %v", err)
 	}
@@ -78,4 +95,22 @@ func run() error {
 	}
 
 	return err
+}
+
+func newAWSCfg(ctx context.Context, cfg *config.AWS) (*aws.Config, error) {
+	newCfg, err := awsConfig.LoadDefaultConfig(
+		ctx,
+		awsConfig.WithRegion(cfg.Region),
+		awsConfig.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(
+				cfg.AccessKey,
+				cfg.SecretKey,
+				"",
+			),
+		))
+	if err != nil {
+		return nil, err
+	}
+
+	return &newCfg, nil
 }
