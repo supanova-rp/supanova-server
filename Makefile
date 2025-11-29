@@ -46,8 +46,14 @@ docker/local-build:
 	DOCKER_BUILDKIT=1 docker buildx build \
 	-t $(DOCKER_USER)/$(IMAGE_NAME):local .
 
+# For CI caching
+CACHE_FROM ?=
+CACHE_TO ?=
+
 docker/ci-build:
 	DOCKER_BUILDKIT=1 docker buildx build \
+	$(CACHE_FROM) \
+	$(CACHE_TO) \
 	--platform linux/amd64 \
 	-t $(DOCKER_USER)/$(IMAGE_NAME):latest \
 	-t $(DOCKER_USER)/$(IMAGE_NAME):$(GIT_HASH) .
