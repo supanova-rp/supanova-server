@@ -59,7 +59,7 @@ func run() error {
 
 	CDNKey, err := secretsManager.Get(ctx, cfg.AWS.CDNKeyName)
 	if err != nil {
-		return fmt.Errorf("failed to fetch cdn key: %v", err)
+		return fmt.Errorf("failed to fetch CDN key: %v", err)
 	}
 
 	objectStore, err := objectstorage.New(ctx, cfg.AWS, awsCfg, CDNKey)
