@@ -8,10 +8,15 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+
+	customConfig "github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/server"
-	"github.com/supanova-rp/supanova-server/internal/services"
+	"github.com/supanova-rp/supanova-server/internal/services/objectstorage"
+	"github.com/supanova-rp/supanova-server/internal/services/secrets"
 	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
@@ -29,7 +34,7 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	cfg, err := config.ParseEnv()
+	cfg, err := customConfig.ParseEnv()
 	if err != nil {
 		return fmt.Errorf("failed to parse env: %v", err)
 	}
@@ -45,7 +50,17 @@ func run() error {
 	}
 	defer st.Close()
 
-	objectStore, err := objectstorage.New(ctx, cfg.AWS)
+	awsCfg, err := newAwsCfg(ctx, cfg.Aws)
+	if err != nil {
+		return fmt.Errorf("failed to load aws config: %v", err)
+	}
+
+	secretsManager, err := secrets.New(ctx, awsCfg)
+	if err != nil {
+		return fmt.Errorf("failed to create secrets manager: %v", err)
+	}
+
+	objectStore, err := objectstorage.New(ctx, cfg.Aws, awsCfg, secretsManager)
 	if err != nil {
 		return fmt.Errorf("failed to create object store: %v", err)
 	}
@@ -78,4 +93,22 @@ func run() error {
 	}
 
 	return err
+}
+
+func newAwsCfg(ctx context.Context, cfg *customConfig.Aws) (*aws.Config, error) {
+	newCfg, err := config.LoadDefaultConfig(
+		ctx,
+		config.WithRegion(cfg.Region),
+		config.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(
+				cfg.AccessKey,
+				cfg.SecretKey,
+				"",
+			),
+		))
+	if err != nil {
+		return nil, err
+	}
+
+	return &newCfg, nil
 }

@@ -6,16 +6,14 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	awsCfg "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/cloudfront/sign"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/supanova-rp/supanova-server/internal/services/secrets"
 )
 
 const (
@@ -34,35 +32,26 @@ type CDN struct {
 	domain string
 }
 
-func New(ctx context.Context, c *config.AWS) (*Store, error) {
-	cfg, err := awsCfg.LoadDefaultConfig(
-		ctx,
-		awsCfg.WithRegion(c.Region),
-		awsCfg.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider(
-				c.AccessKey,
-				c.SecretKey,
-				"",
-			),
-		))
+func New(ctx context.Context, customCfg *config.Aws, awsCfg *aws.Config, secretsManager *secrets.SecretsManager) (*Store, error) {
+	CDNKey, err := secretsManager.Get(ctx, customCfg.CDNKeyName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load aws config: %v", err)
+		return nil, fmt.Errorf("failed to fetch CDN key from secrets manager: %v", err)
 	}
 
-	cfKey, err := parseCDNKey()
+	parsedCDNKey, err := parseCDNKey(CDNKey)
 	if err != nil {
 		return nil, err
 	}
-	cfSigner := sign.NewURLSigner(c.CDNKeyPairID, cfKey)
 
+	CDNSigner := sign.NewURLSigner(customCfg.CDNKeyPairID, parsedCDNKey)
 	CDN := &CDN{
-		domain: c.CDNDomain,
-		signer: cfSigner,
+		domain: customCfg.CDNDomain,
+		signer: CDNSigner,
 	}
 
 	return &Store{
-		client:     s3.NewFromConfig(cfg),
-		bucketName: c.BucketName,
+		client:     s3.NewFromConfig(*awsCfg),
+		bucketName: customCfg.BucketName,
 		CDN:        CDN,
 	}, nil
 }
@@ -86,29 +75,18 @@ func (s *Store) GenerateUploadURL(ctx context.Context, key string, contentType *
 	return req.URL, nil
 }
 
-func parseCDNKey() (*rsa.PrivateKey, error) {
-	// TODO: remove this once AWS Secrets Manager logic is implemented
-	if os.Getenv("ENVIRONMENT") == string(config.EnvironmentTest) {
-		return nil, nil
-	}
-
-	const cfKeyPath = "./cloudfront_private_key.pem"
-	cfKeyBytes, err := os.ReadFile(cfKeyPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read CDN private key from %s: %v", cfKeyPath, err)
-	}
-
-	block, _ := pem.Decode(cfKeyBytes)
+func parseCDNKey(key string) (*rsa.PrivateKey, error) {
+	block, _ := pem.Decode([]byte(key))
 	if block == nil {
 		return nil, fmt.Errorf("failed to decode PEM block")
 	}
 
-	cfKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
 		return nil, err
 	}
 
-	return cfKey, nil
+	return privateKey, nil
 }
 
 func (s *Store) GetCDNURL(ctx context.Context, key string) (string, error) {
