@@ -12,9 +12,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
-	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
+	"github.com/supanova-rp/supanova-server/internal/middleware"
 )
 
 const (
@@ -59,7 +59,7 @@ func SetupEchoContext(t *testing.T, reqBody, endpoint string, withContextValue b
 
 	var ctx context.Context
 	if withContextValue {
-		ctx = context.WithValue(req.Context(), config.UserIDContextKey, testUserID)
+		ctx = context.WithValue(req.Context(), middleware.UserIDContextKey, testUserID)
 	} else {
 		ctx = req.Context()
 	}

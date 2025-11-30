@@ -10,15 +10,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type ContextKey string
-type RoleKey string
-
 type Role string
-
-const (
-	UserIDContextKey ContextKey = "userID"
-	RoleContextKey   RoleKey    = "role"
-)
 
 const (
 	AdminRole Role = "admin"

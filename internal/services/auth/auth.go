@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"fmt"
 
 	"firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
@@ -41,12 +40,12 @@ func New(ctx context.Context, credentials string) (*AuthProvider, error) {
 func (a *AuthProvider) GetUserFromIDToken(ctx context.Context, accessToken string) (*User, error) {
 	token, err := a.verifyToken(ctx, accessToken)
 	if err != nil {
-		return nil, fmt.Errorf("invalid auth provider token: %v", err)
+		return nil, err
 	}
 
 	userRecord, err := a.client.GetUser(ctx, token.UID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch auth provider user: %v", err)
+		return nil, err
 	}
 
 	return &User{

@@ -21,7 +21,7 @@ func (h *Handlers) GetCourse(e echo.Context) error {
 	ctx := e.Request().Context()
 
 	var params GetCourseParams
-	if err := BindAndValidate(e, &params); err != nil {
+	if err := bindAndValidate(e, &params); err != nil {
 		return err
 	}
 
@@ -59,7 +59,7 @@ func (h *Handlers) AddCourse(e echo.Context) error {
 	ctx := e.Request().Context()
 
 	var params AddCourseParams
-	if err := BindAndValidate(e, &params); err != nil {
+	if err := bindAndValidate(e, &params); err != nil {
 		return err
 	}
 

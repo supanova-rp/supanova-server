@@ -7,21 +7,31 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
+	"github.com/supanova-rp/supanova-server/internal/middleware"
 )
 
 func getUserID(ctx context.Context) (string, bool) {
-	id, ok := ctx.Value(config.UserIDContextKey).(string)
+	id, ok := ctx.Value(middleware.UserIDContextKey).(string)
 	if !ok || id == "" {
-		slog.ErrorContext(ctx, errors.UserIDCtxNotFound)
+		slog.ErrorContext(ctx, errors.NotFoundInCtx("user"))
 		return "", false
 	}
 
 	return id, true
 }
 
-func BindAndValidate(c echo.Context, params any) error {
+func getUserRole(ctx context.Context) (string, bool) {
+	role, ok := ctx.Value(middleware.RoleContextKey).(string)
+	if !ok || role == "" {
+		slog.ErrorContext(ctx, errors.NotFoundInCtx("role"))
+		return "", false
+	}
+
+	return role, true
+}
+
+func bindAndValidate(c echo.Context, params any) error {
 	if err := c.Bind(params); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidRequestBody)
 	}
