@@ -6,8 +6,9 @@ import (
 
 	"firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
-	"github.com/supanova-rp/supanova-server/internal/config"
 	"google.golang.org/api/option"
+
+	"github.com/supanova-rp/supanova-server/internal/config"
 )
 
 type Token string
