@@ -83,7 +83,7 @@ func setupTestResources(ctx context.Context) (*TestResources, error) {
 		}
 	}()
 
-	err = waitForAppReady(ctx, appStartTimeout, fmt.Sprintf("%s/v2/health", appURL))
+	err = waitForAppHealthy(ctx, appURL, appStartTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start app: %v", err)
 	}
@@ -155,12 +155,12 @@ func insertSetupData(ctx context.Context, db *sql.DB) error {
 	return err
 }
 
-// waitForAppReady calls the specified endpoint until it gets a 200
+// waitForAppHealthy calls the /health endpoint until it gets a 200
 // response or until the context is cancelled or the timeout is reached.
-func waitForAppReady(
+func waitForAppHealthy(
 	parentCtx context.Context,
+	appURL string,
 	timeout time.Duration,
-	endpoint string,
 ) error {
 	ctx, cancel := context.WithTimeout(parentCtx, timeout)
 	defer cancel()
@@ -171,7 +171,7 @@ func waitForAppReady(
 		req, err := http.NewRequestWithContext(
 			ctx,
 			http.MethodGet,
-			endpoint,
+			fmt.Sprintf("%s/v2/health", appURL),
 			http.NoBody,
 		)
 		if err != nil {
