@@ -2,14 +2,22 @@ package auth
 
 import (
 	"context"
+	"fmt"
 
-	"cloud.google.com/go/firestore"
 	"firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"google.golang.org/api/option"
 )
 
+type Token string
+
 type AuthProvider struct {
-	Client *firestore.Client
+	client *auth.Client
+}
+
+type User struct {
+	ID      string
+	IsAdmin bool
 }
 
 func New(ctx context.Context, credentials string) (*AuthProvider, error) {
@@ -18,13 +26,48 @@ func New(ctx context.Context, credentials string) (*AuthProvider, error) {
 		return nil, err
 	}
 
-	client, err := app.Firestore(ctx)
+	client, err := app.Auth(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close() //nolint:errcheck
 
 	return &AuthProvider{
-		Client: client,
+		client: client,
 	}, nil
+}
+
+func (a *AuthProvider) GetUserFromIDToken(ctx context.Context, accessToken string) (*User, error) {
+	token, err := a.verifyToken(ctx, accessToken)
+	if err != nil {
+		return nil, fmt.Errorf("invalid auth provider token: %v", err)
+	}
+
+	userRecord, err := a.client.GetUser(ctx, token.UID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch auth provider user: %v", err)
+	}
+
+	return &User{
+		ID:      userRecord.UID,
+		IsAdmin: isAdmin(token),
+	}, nil
+}
+
+func (a *AuthProvider) verifyToken(ctx context.Context, idToken string) (*auth.Token, error) {
+	token, err := a.client.VerifyIDToken(ctx, idToken)
+	if err != nil {
+		return token, err
+	}
+
+	return token, nil
+}
+
+func isAdmin(token *auth.Token) bool {
+	adminValue, ok := token.Claims["admin"]
+	if !ok {
+		return false
+	}
+
+	isAdmin, ok := adminValue.(bool)
+	return ok && isAdmin
 }

@@ -12,6 +12,7 @@ const (
 	Validation         = "validation failed"
 	InvalidRequestBody = "invalid request body"
 	UserIDCtxNotFound  = "user not found in context"
+	Unauthorised       = "Unauthorised"
 )
 
 func Getting(resource string) string {

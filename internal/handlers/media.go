@@ -20,7 +20,7 @@ func (h *Handlers) GetVideoUploadURL(e echo.Context) error {
 	ctx := e.Request().Context()
 
 	var params VideoURLParams
-	if err := bindAndValidate(e, &params); err != nil {
+	if err := BindAndValidate(e, &params); err != nil {
 		return err
 	}
 
@@ -44,7 +44,7 @@ func (h *Handlers) GetVideoURL(e echo.Context) error {
 	ctx := e.Request().Context()
 
 	var params VideoURLParams
-	if err := bindAndValidate(e, &params); err != nil {
+	if err := BindAndValidate(e, &params); err != nil {
 		return err
 	}
 

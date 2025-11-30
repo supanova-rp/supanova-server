@@ -10,6 +10,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type ContextKey string
+type RoleKey string
+
+const UserIDContextKey ContextKey = "userID"
+const RoleContextKey RoleKey = "role"
+
+const (
+	APIVersion = "v2"
+)
+
 type App struct {
 	Port                    string
 	DatabaseURL             string

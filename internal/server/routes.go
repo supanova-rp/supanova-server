@@ -6,16 +6,16 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 )
 
-func RegisterCourseRoutes(e *echo.Echo, h *handlers.Handlers) {
-	e.POST(getRoute("v2", "course"), h.GetCourse)
-	e.POST(getRoute("v2", "add-course"), h.AddCourse)
+func RegisterCourseRoutes(e *echo.Echo, h *handlers.Handlers, apiVersion string) {
+	e.POST(getRoute(apiVersion, "course"), h.GetCourse)
+	e.POST(getRoute(apiVersion, "add-course"), h.AddCourse)
 }
 
-func RegisterProgressRoutes(e *echo.Echo, h *handlers.Handlers) {
-	e.POST(getRoute("v2", "get-progress"), h.GetProgress)
+func RegisterProgressRoutes(e *echo.Echo, h *handlers.Handlers, apiVersion string) {
+	e.POST(getRoute(apiVersion, "get-progress"), h.GetProgress)
 }
 
-func RegisterMediaRoutes(e *echo.Echo, h *handlers.Handlers) {
-	e.POST(getRoute("v2", "video-url"), h.GetVideoURL)
-	e.POST(getRoute("v2", "get-video-upload-url"), h.GetVideoUploadURL)
+func RegisterMediaRoutes(e *echo.Echo, h *handlers.Handlers, apiVersion string) {
+	e.POST(getRoute(apiVersion, "video-url"), h.GetVideoURL)
+	e.POST(getRoute(apiVersion, "get-video-upload-url"), h.GetVideoUploadURL)
 }

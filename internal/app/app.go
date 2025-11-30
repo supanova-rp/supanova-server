@@ -32,7 +32,7 @@ func Run(ctx context.Context, cfg *config.App, deps Dependencies) error {
 		deps.ObjectStorage,
 	)
 
-	svr := server.New(h, cfg.Port, cfg.Environment, deps.AuthProvider)
+	svr := server.New(h, deps.AuthProvider, cfg.Port, cfg.Environment)
 	serverErr := make(chan error, 1)
 
 	go func() {

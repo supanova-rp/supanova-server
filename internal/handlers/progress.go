@@ -26,7 +26,7 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 	}
 
 	var params GetProgressParams
-	if err := bindAndValidate(e, &params); err != nil {
+	if err := BindAndValidate(e, &params); err != nil {
 		return err
 	}
 
