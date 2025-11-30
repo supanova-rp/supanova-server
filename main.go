@@ -14,6 +14,7 @@ import (
 
 	"github.com/supanova-rp/supanova-server/internal/app"
 	"github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/supanova-rp/supanova-server/internal/services/auth"
 	"github.com/supanova-rp/supanova-server/internal/services/objectstorage"
 	"github.com/supanova-rp/supanova-server/internal/services/secrets"
 )
@@ -59,8 +60,14 @@ func run() error {
 		return fmt.Errorf("failed to create object store: %v", err)
 	}
 
+	authProvider, err := auth.New(ctx, cfg.AuthProviderCredentials)
+	if err != nil {
+		return fmt.Errorf("failed to initialise auth provider: %v", err)
+	}
+
 	return app.Run(ctx, cfg, app.Dependencies{
 		ObjectStorage: objectStore,
+		AuthProvider:  authProvider,
 	})
 }
 

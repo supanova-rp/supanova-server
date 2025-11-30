@@ -8,11 +8,13 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/server"
+	"github.com/supanova-rp/supanova-server/internal/services/auth"
 	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
 type Dependencies struct {
 	ObjectStorage handlers.ObjectStorage
+	AuthProvider  *auth.AuthProvider
 }
 
 func Run(ctx context.Context, cfg *config.App, deps Dependencies) error {
@@ -30,7 +32,7 @@ func Run(ctx context.Context, cfg *config.App, deps Dependencies) error {
 		deps.ObjectStorage,
 	)
 
-	svr := server.New(h, cfg.Port, cfg.Environment)
+	svr := server.New(h, cfg.Port, cfg.Environment, deps.AuthProvider)
 	serverErr := make(chan error, 1)
 
 	go func() {

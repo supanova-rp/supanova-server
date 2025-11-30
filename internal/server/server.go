@@ -14,6 +14,7 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/middleware"
+	"github.com/supanova-rp/supanova-server/internal/services/auth"
 )
 
 const (
@@ -27,7 +28,7 @@ type Server struct {
 	port string
 }
 
-func New(h *handlers.Handlers, port string, env config.Environment) *Server {
+func New(h *handlers.Handlers, port string, env config.Environment, authProvider *auth.AuthProvider) *Server {
 	e := echo.New()
 	e.Validator = &customValidator{validator: validator.New()}
 	e.HideBanner = true // Prevents startup banner from being logged
