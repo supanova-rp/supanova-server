@@ -15,7 +15,11 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
 )
 
-const testPort = "3001"
+const (
+	testPort                = "3001"
+	appStartTimeout         = 3 * time.Second
+	readyCheckRetryInterval = 250 * time.Millisecond
+)
 
 type TestResources struct {
 	ComposeStack *compose.DockerCompose
@@ -79,7 +83,7 @@ func setupTestResources(ctx context.Context) (*TestResources, error) {
 		}
 	}()
 
-	err = waitForAppHealthy(ctx, time.Second*3, fmt.Sprintf("%s/v2/health", appURL))
+	err = waitForAppReady(ctx, appStartTimeout, fmt.Sprintf("%s/v2/health", appURL))
 	if err != nil {
 		return nil, fmt.Errorf("failed to start app: %v", err)
 	}
@@ -151,9 +155,9 @@ func insertSetupData(ctx context.Context, db *sql.DB) error {
 	return err
 }
 
-// waitForAppHealthy calls the specified endpoint until it gets a 200
+// waitForAppReady calls the specified endpoint until it gets a 200
 // response or until the context is cancelled or the timeout is reached.
-func waitForAppHealthy(
+func waitForAppReady(
 	parentCtx context.Context,
 	timeout time.Duration,
 	endpoint string,
@@ -168,7 +172,7 @@ func waitForAppHealthy(
 			ctx,
 			http.MethodGet,
 			endpoint,
-			nil,
+			http.NoBody,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to create request: %w", err)
@@ -180,15 +184,15 @@ func waitForAppHealthy(
 			continue
 		}
 		if resp.StatusCode == http.StatusOK {
-			resp.Body.Close()
+			resp.Body.Close() //nolint
 			return nil
 		}
-		resp.Body.Close()
+		resp.Body.Close() //nolint
 
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-time.After(250 * time.Millisecond):
+		case <-time.After(readyCheckRetryInterval):
 			// retry
 		}
 	}
