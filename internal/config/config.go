@@ -13,8 +13,17 @@ import (
 type ContextKey string
 type RoleKey string
 
-const UserIDContextKey ContextKey = "userID"
-const RoleContextKey RoleKey = "role"
+type Role string
+
+const (
+	UserIDContextKey ContextKey = "userID"
+	RoleContextKey   RoleKey    = "role"
+)
+
+const (
+	AdminRole Role = "admin"
+	UserRole  Role = "user"
+)
 
 const (
 	APIVersion = "v2"

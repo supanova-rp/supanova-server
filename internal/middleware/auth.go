@@ -18,11 +18,6 @@ type AuthParams struct {
 	AccessToken string `json:"access_token" validate:"required"`
 }
 
-type Role string
-
-const adminRole Role = "admin"
-const userRole Role = "user"
-
 var nonAdminPaths = []string{
 	fmt.Sprintf("%s/course", config.APIVersion),
 	fmt.Sprintf("%s/assigned-course-titles", config.APIVersion),
@@ -80,10 +75,10 @@ func TestAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func getRole(isAdmin bool) Role {
+func getRole(isAdmin bool) config.Role {
 	if isAdmin {
-		return adminRole
+		return config.AdminRole
 	}
 
-	return userRole
+	return config.UserRole
 }

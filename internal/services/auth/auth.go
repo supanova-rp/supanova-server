@@ -6,6 +6,7 @@ import (
 
 	"firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
+	"github.com/supanova-rp/supanova-server/internal/config"
 	"google.golang.org/api/option"
 )
 
@@ -63,7 +64,7 @@ func (a *AuthProvider) verifyToken(ctx context.Context, idToken string) (*auth.T
 }
 
 func isAdmin(token *auth.Token) bool {
-	adminValue, ok := token.Claims["admin"]
+	adminValue, ok := token.Claims[string(config.AdminRole)]
 	if !ok {
 		return false
 	}
