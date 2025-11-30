@@ -54,7 +54,10 @@ func AuthMiddleware(next echo.HandlerFunc, authProvider *auth.AuthProvider) echo
 		c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 		var params AuthParams
-		json.Unmarshal(bodyBytes, &params)
+		if err := json.Unmarshal(bodyBytes, &params); err != nil {
+			slog.Error("failed to unmarshal auth middleware request body", slog.Any("error", err))
+			return echo.NewHTTPError(http.StatusUnauthorized, errors.Unauthorised)
+		}
 
 		user, err := authProvider.GetUserFromIDToken(ctx, params.AccessToken)
 		if err != nil {
