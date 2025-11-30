@@ -12,12 +12,11 @@ import (
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 
+	"github.com/supanova-rp/supanova-server/internal/app"
 	"github.com/supanova-rp/supanova-server/internal/config"
-	"github.com/supanova-rp/supanova-server/internal/handlers"
-	"github.com/supanova-rp/supanova-server/internal/server"
+	"github.com/supanova-rp/supanova-server/internal/services/auth"
 	"github.com/supanova-rp/supanova-server/internal/services/objectstorage"
 	"github.com/supanova-rp/supanova-server/internal/services/secrets"
-	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
 func main() {
@@ -44,61 +43,36 @@ func run() error {
 	}))
 	slog.SetDefault(logger)
 
-	st, err := store.New(ctx, cfg.DatabaseURL)
-	if err != nil {
-		return fmt.Errorf("failed to connect to database: %v", err)
-	}
-	defer st.Close()
-
-	AWSCfg, err := newAWSCfg(ctx, cfg.AWS)
+	awsCfg, err := newAWSConfig(ctx, cfg.AWS)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %v", err)
 	}
 
-	secretsManager := secrets.New(ctx, AWSCfg)
+	secretsManager := secrets.New(ctx, awsCfg)
 
-	CDNKey, err := secretsManager.Get(ctx, cfg.AWS.CDNKeyName)
+	cdnKey, err := secretsManager.Get(ctx, cfg.AWS.CDNKeyName)
 	if err != nil {
 		return fmt.Errorf("failed to fetch CDN key: %v", err)
 	}
 
-	objectStore, err := objectstorage.New(ctx, cfg.AWS, AWSCfg, CDNKey)
+	objectStore, err := objectstorage.New(ctx, cfg.AWS, awsCfg, cdnKey)
 	if err != nil {
 		return fmt.Errorf("failed to create object store: %v", err)
 	}
 
-	h := handlers.NewHandlers(
-		st,
-		st,
-		st,
-		st,
-		objectStore,
-	)
-
-	svr := server.New(h, cfg.Port, cfg.Environment)
-	serverErr := make(chan error, 1)
-
-	go func() {
-		serverErr <- svr.Start()
-	}()
-
-	select {
-	case <-ctx.Done(): // Blocks until server error OR signal received (e.g. by ctrl-C or process killed)
-		slog.Info("context cancelled")
-	case svrErr := <-serverErr:
-		err = svrErr
+	authProvider, err := auth.New(ctx, cfg.AuthProviderCredentials)
+	if err != nil {
+		return fmt.Errorf("failed to initialise auth provider: %v", err)
 	}
 
-	shutdownErr := svr.Stop()
-	if shutdownErr != nil {
-		slog.Error("server shutdown error", slog.Any("error", shutdownErr))
-	}
-
-	return err
+	return app.Run(ctx, cfg, app.Dependencies{
+		ObjectStorage: objectStore,
+		AuthProvider:  authProvider,
+	})
 }
 
-func newAWSCfg(ctx context.Context, cfg *config.AWS) (*aws.Config, error) {
-	newCfg, err := awsConfig.LoadDefaultConfig(
+func newAWSConfig(ctx context.Context, cfg *config.AWS) (*aws.Config, error) {
+	awsCfg, err := awsConfig.LoadDefaultConfig(
 		ctx,
 		awsConfig.WithRegion(cfg.Region),
 		awsConfig.WithCredentialsProvider(
@@ -112,5 +86,5 @@ func newAWSCfg(ctx context.Context, cfg *config.AWS) (*aws.Config, error) {
 		return nil, err
 	}
 
-	return &newCfg, nil
+	return &awsCfg, nil
 }

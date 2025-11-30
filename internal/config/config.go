@@ -11,11 +11,12 @@ import (
 )
 
 type App struct {
-	Port        string
-	DatabaseURL string
-	LogLevel    slog.Level
-	Environment Environment
-	AWS         *AWS
+	Port                    string
+	DatabaseURL             string
+	LogLevel                slog.Level
+	Environment             Environment
+	AWS                     *AWS
+	AuthProviderCredentials string
 }
 
 type Environment string
@@ -66,6 +67,7 @@ func ParseEnv() (*App, error) {
 		"CLOUDFRONT_KEY_PAIR_ID": "",
 		"CLOUDFRONT_KEY_NAME":    "",
 		"ENVIRONMENT":            "",
+		"FIREBASE_CREDENTIALS":   "",
 	}
 
 	for key := range envVars {
@@ -99,6 +101,7 @@ func ParseEnv() (*App, error) {
 			CDNKeyPairID: envVars["CLOUDFRONT_KEY_PAIR_ID"],
 			CDNKeyName:   envVars["CLOUDFRONT_KEY_NAME"],
 		},
-		Environment: environment,
+		Environment:             environment,
+		AuthProviderCredentials: envVars["FIREBASE_CREDENTIALS"],
 	}, nil
 }
