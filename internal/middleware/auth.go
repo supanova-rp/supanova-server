@@ -61,18 +61,17 @@ func AuthMiddleware(next echo.HandlerFunc, authProvider *auth.AuthProvider) echo
 
 		user, err := authProvider.GetUserFromIDToken(ctx, params.AccessToken)
 		if err != nil {
-			slog.Error("failed to fetch user from auth provider", slog.Any("error", err))
+			slog.Error(err.Error())
 			return echo.NewHTTPError(http.StatusUnauthorized, errors.Unauthorised)
 		}
 
 		if user == nil {
-			slog.Error("failed to fetch user from auth provider", slog.Any("error", err))
 			return echo.NewHTTPError(http.StatusUnauthorized, errors.Unauthorised)
 		}
 
 		isAdminPath := !slices.Contains(nonAdminPaths, c.Request().URL.Path)
 		if isAdminPath && !user.IsAdmin {
-			slog.Error("unauthorised access", slog.String("user id", user.ID))
+			slog.Warn("unauthorised access", slog.String("user id", user.ID))
 			return echo.NewHTTPError(http.StatusUnauthorized, errors.Unauthorised)
 		}
 

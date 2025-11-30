@@ -18,7 +18,7 @@ func (h *Handlers) isEnrolled(ctx context.Context, courseID pgtype.UUID) (bool, 
 	}
 
 	// Admins are enrolled in every course
-	if role == string(config.AdminRole) {
+	if role == config.AdminRole {
 		return true, nil
 	}
 
