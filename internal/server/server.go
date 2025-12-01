@@ -27,7 +27,7 @@ type Server struct {
 	port string
 }
 
-func New(h *handlers.Handlers, port string, env config.Environment) *Server {
+func New(h *handlers.Handlers, authProvider middleware.AuthProvider, port string, env config.Environment) *Server {
 	e := echo.New()
 	e.Validator = &customValidator{validator: validator.New()}
 	e.HideBanner = true // Prevents startup banner from being logged
@@ -44,7 +44,9 @@ func New(h *handlers.Handlers, port string, env config.Environment) *Server {
 	if env == config.EnvironmentTest {
 		e.Use(middleware.TestAuthMiddleware)
 	} else {
-		e.Use(middleware.AuthMiddleware)
+		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+			return middleware.AuthMiddleware(next, authProvider)
+		})
 	}
 
 	registerRoutes(e, h)
@@ -73,13 +75,12 @@ func (s *Server) Stop() error {
 }
 
 func registerRoutes(e *echo.Echo, h *handlers.Handlers) {
-	e.GET(getRoute("v2", "health"), h.HealthCheck)
-	RegisterCourseRoutes(e, h)
-	RegisterProgressRoutes(e, h)
-	RegisterMediaRoutes(e, h)
+	e.GET(getRoute(config.APIVersion, "health"), h.HealthCheck)
+	RegisterCourseRoutes(e, h, config.APIVersion)
+	RegisterProgressRoutes(e, h, config.APIVersion)
+	RegisterMediaRoutes(e, h, config.APIVersion)
 }
 
-//nolint:unparam // prefix will vary in the future
 func getRoute(prefix, route string) string {
 	return fmt.Sprintf("/%s/%s", prefix, route)
 }

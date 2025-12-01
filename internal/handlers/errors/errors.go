@@ -11,7 +11,7 @@ const (
 	InvalidUUID        = "invalid uuid format"
 	Validation         = "validation failed"
 	InvalidRequestBody = "invalid request body"
-	UserIDCtxNotFound  = "user not found in context"
+	Unauthorised       = "Unauthorised"
 )
 
 func Getting(resource string) string {
@@ -28,6 +28,10 @@ func Deleting(resource string) string {
 
 func NotFound(resource string) string {
 	return fmt.Sprintf("%s not found", resource)
+}
+
+func NotFoundInCtx(resource string) string {
+	return fmt.Sprintf("%s not found in context", resource)
 }
 
 func IsNotFoundErr(err error) bool {

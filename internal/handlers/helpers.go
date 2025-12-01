@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/middleware"
 )
@@ -14,11 +15,21 @@ import (
 func getUserID(ctx context.Context) (string, bool) {
 	id, ok := ctx.Value(middleware.UserIDContextKey).(string)
 	if !ok || id == "" {
-		slog.ErrorContext(ctx, errors.UserIDCtxNotFound)
+		slog.ErrorContext(ctx, errors.NotFoundInCtx("user"))
 		return "", false
 	}
 
 	return id, true
+}
+
+func getUserRole(ctx context.Context) (config.Role, bool) {
+	role, ok := ctx.Value(middleware.RoleContextKey).(config.Role)
+	if !ok || role == "" {
+		slog.ErrorContext(ctx, errors.NotFoundInCtx("role"))
+		return "", false
+	}
+
+	return role, true
 }
 
 func bindAndValidate(c echo.Context, params any) error {

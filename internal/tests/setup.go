@@ -147,7 +147,7 @@ func insertSetupData(ctx context.Context, db *sql.DB) error {
 	_, err := db.ExecContext(
 		ctx,
 		"INSERT INTO users (id, name, email) VALUES ($1, $2, $3)",
-		testUserID,
+		TestUserID,
 		testUserName,
 		testUserEmail,
 	)
@@ -171,7 +171,7 @@ func waitForAppHealthy(
 		req, err := http.NewRequestWithContext(
 			ctx,
 			http.MethodGet,
-			fmt.Sprintf("%s/v2/health", appURL),
+			fmt.Sprintf("%s/%s/health", appURL, config.APIVersion),
 			http.NoBody,
 		)
 		if err != nil {

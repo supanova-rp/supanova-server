@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
@@ -22,7 +23,46 @@ import (
 )
 
 func TestGetCourse(t *testing.T) {
-	t.Run("returns course successfully", func(t *testing.T) {
+	t.Run("returns course successfully - admin user", func(t *testing.T) {
+		expected := testhelpers.Course
+
+		mockCourseRepo := &mocks.CourseRepositoryMock{
+			GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
+				return expected, nil
+			},
+		}
+
+		h := &handlers.Handlers{
+			Course: mockCourseRepo,
+		}
+		ctx, rec := testhelpers.SetupEchoContext(
+			t,
+			fmt.Sprintf(`{"id":%q}`, testhelpers.Course.ID),
+			"course",
+		)
+
+		err := h.GetCourse(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		var actual domain.Course
+		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+			t.Fatalf("failed to unmarshal response: %v", err)
+		}
+
+		if diff := cmp.Diff(expected, &actual); diff != "" {
+			t.Errorf("course mismatch (-want +got):\n%s", diff)
+		}
+
+		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseCalls()), 1, testhelpers.GetCourseHandlerName)
+	})
+
+	t.Run("returns course successfully - non admin user", func(t *testing.T) {
 		expected := testhelpers.Course
 
 		mockCourseRepo := &mocks.CourseRepositoryMock{
@@ -45,7 +85,7 @@ func TestGetCourse(t *testing.T) {
 			t,
 			fmt.Sprintf(`{"id":%q}`, testhelpers.Course.ID),
 			"course",
-			true,
+			testhelpers.WithRole(config.UserRole),
 		)
 
 		err := h.GetCourse(ctx)
@@ -67,7 +107,7 @@ func TestGetCourse(t *testing.T) {
 		}
 
 		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseCalls()), 1, testhelpers.GetCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.IsEnrolledCalls()), 1, testhelpers.GetCourseHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.IsEnrolledCalls()), 1, testhelpers.IsEnrolledHandlerName)
 	})
 
 	t.Run("validation error - missing id", func(t *testing.T) {
@@ -81,7 +121,7 @@ func TestGetCourse(t *testing.T) {
 			Course: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, `{}`, "course", true) // missing id
+		ctx, _ := testhelpers.SetupEchoContext(t, `{}`, "course") // missing id
 
 		err := h.GetCourse(ctx)
 
@@ -100,7 +140,7 @@ func TestGetCourse(t *testing.T) {
 			Course: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, `{"id":"invalid-uuid"}`, "course", true)
+		ctx, _ := testhelpers.SetupEchoContext(t, `{"id":"invalid-uuid"}`, "course")
 
 		err := h.GetCourse(ctx)
 
@@ -125,7 +165,6 @@ func TestGetCourse(t *testing.T) {
 			t,
 			fmt.Sprintf(`{"id":%q}`, courseID),
 			"course",
-			true,
 		)
 
 		err := h.GetCourse(ctx)
@@ -151,7 +190,6 @@ func TestGetCourse(t *testing.T) {
 			t,
 			fmt.Sprintf(`{"id":%q}`, courseID),
 			"course",
-			true,
 		)
 
 		err := h.GetCourse(ctx)
@@ -182,14 +220,14 @@ func TestGetCourse(t *testing.T) {
 			t,
 			fmt.Sprintf(`{"id":%q}`, testhelpers.Course.ID),
 			"course",
-			true,
+			testhelpers.WithRole(config.UserRole),
 		)
 
 		err := h.GetCourse(ctx)
 
 		testhelpers.AssertHTTPError(t, err, http.StatusForbidden, errors.Forbidden("course"))
 		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseCalls()), 1, testhelpers.GetCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.IsEnrolledCalls()), 1, testhelpers.GetCourseHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.IsEnrolledCalls()), 1, testhelpers.IsEnrolledHandlerName)
 	})
 }
 
@@ -208,7 +246,6 @@ func TestAddCourse(t *testing.T) {
 			t,
 			`{"title":"New Course","description":"New Description"}`,
 			"course",
-			true,
 		)
 
 		err := h.AddCourse(ctx)
@@ -244,7 +281,6 @@ func TestAddCourse(t *testing.T) {
 			t,
 			fmt.Sprintf(`{"description":%q}`, testhelpers.Course.Description),
 			"course",
-			true,
 		)
 
 		err := h.AddCourse(ctx)
@@ -265,7 +301,6 @@ func TestAddCourse(t *testing.T) {
 			t,
 			fmt.Sprintf(`{"title":%q}`, testhelpers.Course.Title),
 			"course",
-			true,
 		)
 
 		err := h.AddCourse(ctx)
@@ -286,7 +321,6 @@ func TestAddCourse(t *testing.T) {
 			t,
 			fmt.Sprintf(`{"title":%q,"description":%q}`, testhelpers.Course.Title, testhelpers.Course.Description),
 			"course",
-			true,
 		)
 
 		err := h.AddCourse(ctx)
