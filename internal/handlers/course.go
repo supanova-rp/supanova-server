@@ -14,7 +14,7 @@ import (
 const courseResource = "course"
 
 type GetCourseParams struct {
-	ID string `json:"id" validate:"required"`
+	ID string `json:"courseId" validate:"required"`
 }
 
 func (h *Handlers) GetCourse(e echo.Context) error {

@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"slices"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -28,6 +29,7 @@ type App struct {
 	Environment             Environment
 	AWS                     *AWS
 	AuthProviderCredentials string
+	ClientURLs              []string
 }
 
 type Environment string
@@ -79,6 +81,7 @@ func ParseEnv() (*App, error) {
 		"CLOUDFRONT_KEY_NAME":    "",
 		"ENVIRONMENT":            "",
 		"FIREBASE_CREDENTIALS":   "",
+		"CLIENT_URLS":            "",
 	}
 
 	for key := range envVars {
@@ -99,6 +102,15 @@ func ParseEnv() (*App, error) {
 		return nil, errors.New("ENVIRONMENT should be one of development|production|test")
 	}
 
+	clientURLsRaw := strings.Split(envVars["CLIENT_URLS"], ",")
+	clientURLs := make([]string, 0, len(clientURLsRaw))
+	for _, url := range clientURLsRaw {
+		trimmed := strings.TrimSpace(url)
+		if trimmed != "" {
+			clientURLs = append(clientURLs, trimmed)
+		}
+	}
+
 	return &App{
 		Port:        envVars["SERVER_PORT"],
 		DatabaseURL: envVars["DATABASE_URL"],
@@ -114,5 +126,6 @@ func ParseEnv() (*App, error) {
 		},
 		Environment:             environment,
 		AuthProviderCredentials: envVars["FIREBASE_CREDENTIALS"],
+		ClientURLs:              clientURLs,
 	}, nil
 }

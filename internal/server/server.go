@@ -28,10 +28,14 @@ type Server struct {
 	port string
 }
 
-func New(h *handlers.Handlers, authProvider *auth.AuthProvider, port string, env config.Environment) *Server {
+func New(h *handlers.Handlers, authProvider *auth.AuthProvider, cfg *config.App) *Server {
 	e := echo.New()
 	e.Validator = &customValidator{validator: validator.New()}
 	e.HideBanner = true // Prevents startup banner from being logged
+
+	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
+		AllowOrigins: cfg.ClientURLs,
+	}))
 
 	// limits each unique IP to 60 requests per minute with a burst of 120.
 	e.Use(echoMiddleware.RateLimiter(echoMiddleware.NewRateLimiterMemoryStoreWithConfig(
@@ -42,7 +46,7 @@ func New(h *handlers.Handlers, authProvider *auth.AuthProvider, port string, env
 		},
 	)))
 
-	if env == config.EnvironmentTest {
+	if cfg.Environment == config.EnvironmentTest {
 		e.Use(middleware.TestAuthMiddleware)
 	} else {
 		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -54,7 +58,7 @@ func New(h *handlers.Handlers, authProvider *auth.AuthProvider, port string, env
 
 	return &Server{
 		echo: e,
-		port: port,
+		port: cfg.Port,
 	}
 }
 

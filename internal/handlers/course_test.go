@@ -37,7 +37,7 @@ func TestGetCourse(t *testing.T) {
 		}
 		ctx, rec := testhelpers.SetupEchoContext(
 			t,
-			fmt.Sprintf(`{"id":%q}`, testhelpers.Course.ID),
+			fmt.Sprintf(`{"courseId":%q}`, testhelpers.Course.ID),
 			"course",
 		)
 
@@ -83,7 +83,7 @@ func TestGetCourse(t *testing.T) {
 		}
 		ctx, rec := testhelpers.SetupEchoContext(
 			t,
-			fmt.Sprintf(`{"id":%q}`, testhelpers.Course.ID),
+			fmt.Sprintf(`{"courseId":%q}`, testhelpers.Course.ID),
 			"course",
 			testhelpers.WithRole(config.UserRole),
 		)
@@ -140,7 +140,7 @@ func TestGetCourse(t *testing.T) {
 			Course: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, `{"id":"invalid-uuid"}`, "course")
+		ctx, _ := testhelpers.SetupEchoContext(t, `{"courseId":"invalid-uuid"}`, "course")
 
 		err := h.GetCourse(ctx)
 
@@ -163,7 +163,7 @@ func TestGetCourse(t *testing.T) {
 
 		ctx, _ := testhelpers.SetupEchoContext(
 			t,
-			fmt.Sprintf(`{"id":%q}`, courseID),
+			fmt.Sprintf(`{"courseId":%q}`, courseID),
 			"course",
 		)
 
@@ -188,7 +188,7 @@ func TestGetCourse(t *testing.T) {
 
 		ctx, _ := testhelpers.SetupEchoContext(
 			t,
-			fmt.Sprintf(`{"id":%q}`, courseID),
+			fmt.Sprintf(`{"courseId":%q}`, courseID),
 			"course",
 		)
 
@@ -218,7 +218,7 @@ func TestGetCourse(t *testing.T) {
 
 		ctx, _ := testhelpers.SetupEchoContext(
 			t,
-			fmt.Sprintf(`{"id":%q}`, testhelpers.Course.ID),
+			fmt.Sprintf(`{"courseId":%q}`, testhelpers.Course.ID),
 			"course",
 			testhelpers.WithRole(config.UserRole),
 		)

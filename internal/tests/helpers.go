@@ -29,7 +29,7 @@ func getCourse(t *testing.T, baseURL string, id uuid.UUID) *domain.Course {
 	t.Helper()
 
 	resp := makePOSTRequest(t, baseURL, "course", map[string]uuid.UUID{
-		"id": id,
+		"courseId": id,
 	})
 	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode != http.StatusOK {
@@ -55,7 +55,7 @@ func getProgress(t *testing.T, baseURL string, courseID uuid.UUID) *domain.Progr
 	t.Helper()
 
 	resp := makePOSTRequest(t, baseURL, "get-progress", map[string]uuid.UUID{
-		"id": courseID,
+		"courseId": courseID,
 	})
 	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode != http.StatusOK {
