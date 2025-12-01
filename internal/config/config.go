@@ -13,12 +13,9 @@ import (
 type Role string
 
 const (
-	AdminRole Role = "admin"
-	UserRole  Role = "user"
-)
-
-const (
-	APIVersion = "v2"
+	AdminRole  Role = "admin"
+	UserRole   Role = "user"
+	APIVersion      = "v2"
 )
 
 type App struct {
