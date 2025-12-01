@@ -38,7 +38,7 @@ func New(ctx context.Context, credentials string) (*AuthProvider, error) {
 }
 
 func (a *AuthProvider) GetUserFromIDToken(ctx context.Context, accessToken string) (*User, error) {
-	token, err := a.verifyToken(ctx, accessToken)
+	token, err := a.client.VerifyIDToken(ctx, accessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -52,15 +52,6 @@ func (a *AuthProvider) GetUserFromIDToken(ctx context.Context, accessToken strin
 		ID:      userRecord.UID,
 		IsAdmin: isAdmin(token),
 	}, nil
-}
-
-func (a *AuthProvider) verifyToken(ctx context.Context, idToken string) (*auth.Token, error) {
-	token, err := a.client.VerifyIDToken(ctx, idToken)
-	if err != nil {
-		return token, err
-	}
-
-	return token, nil
 }
 
 func isAdmin(token *auth.Token) bool {
