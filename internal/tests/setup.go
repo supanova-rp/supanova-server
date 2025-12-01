@@ -171,7 +171,7 @@ func waitForAppHealthy(
 		req, err := http.NewRequestWithContext(
 			ctx,
 			http.MethodGet,
-			fmt.Sprintf("%s/v2/health", appURL),
+			fmt.Sprintf("%s/%s/health", appURL, config.APIVersion),
 			http.NoBody,
 		)
 		if err != nil {

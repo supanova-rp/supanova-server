@@ -68,7 +68,7 @@ func getProgress(t *testing.T, baseURL string, courseID uuid.UUID) *domain.Progr
 func makePOSTRequest(t *testing.T, baseURL, endpoint string, resource any) *http.Response {
 	t.Helper()
 
-	parsedURL, err := url.Parse(fmt.Sprintf("%s/v2/%s", baseURL, endpoint))
+	parsedURL, err := url.Parse(fmt.Sprintf("%s/%s/%s", baseURL, config.APIVersion, endpoint))
 	if err != nil {
 		t.Fatalf("failed to parse URL: %v", err)
 	}

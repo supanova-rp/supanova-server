@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
+	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/middleware"
@@ -21,6 +22,7 @@ const (
 	testUserID                   = "test-user-id"
 	AddCourseHandlerName         = "AddCourse"
 	GetCourseHandlerName         = "GetCourse"
+	IsEnrolledHandlerName        = "IsEnrolled"
 	GetVideoURLHandlerName       = "GetVideoURL"
 	GetVideoUploadURLHandlerName = "GetVideoUploadURL"
 )
@@ -48,21 +50,50 @@ func (cv *customValidator) Validate(i any) error {
 	return cv.validator.Struct(i)
 }
 
-func SetupEchoContext(t *testing.T, reqBody, endpoint string, withContextValue bool) (echo.Context, *httptest.ResponseRecorder) {
+type setupOptions struct {
+	userID *string
+	role   *config.Role
+}
+
+type option func(*setupOptions)
+
+func WithUserID(id string) option {
+	return func(o *setupOptions) {
+		o.userID = &id
+	}
+}
+
+func WithRole(role config.Role) option {
+	return func(o *setupOptions) {
+		o.role = &role
+	}
+}
+
+func SetupEchoContext(t *testing.T, reqBody, endpoint string, opts ...option) (echo.Context, *httptest.ResponseRecorder) {
 	t.Helper()
+
+	adminRole := config.AdminRole
+	defaultUserID := testUserID
+
+	o := &setupOptions{
+		userID: &defaultUserID,
+		role:   &adminRole,
+	}
+
+	for _, opt := range opts {
+		opt(o)
+	}
 
 	e := echo.New()
 	e.Validator = &customValidator{validator: validator.New()}
 
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/v2/%s", endpoint), strings.NewReader(reqBody))
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/%s/%s", config.APIVersion, endpoint), strings.NewReader(reqBody))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
-	var ctx context.Context
-	if withContextValue {
-		ctx = context.WithValue(req.Context(), middleware.UserIDContextKey, testUserID)
-	} else {
-		ctx = req.Context()
-	}
+	ctx := req.Context()
+
+	ctx = context.WithValue(ctx, middleware.UserIDContextKey, *o.userID)
+	ctx = context.WithValue(ctx, middleware.RoleContextKey, *o.role)
 
 	req = req.WithContext(ctx)
 

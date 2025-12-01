@@ -36,7 +36,7 @@ func TestGetVideoURL(t *testing.T) {
 			testhelpers.VideoURLParams.CourseID,
 			testhelpers.VideoURLParams.StorageKey,
 		)
-		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "video-url", false)
+		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "video-url")
 
 		err := h.GetVideoURL(ctx)
 		if err != nil {
@@ -74,7 +74,7 @@ func TestGetVideoURL(t *testing.T) {
 			`{"storageKey":%q}`,
 			testhelpers.VideoURLParams.StorageKey,
 		)
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url", false)
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url")
 
 		err := h.GetVideoURL(ctx)
 
@@ -97,7 +97,7 @@ func TestGetVideoURL(t *testing.T) {
 			`{"courseId":%q}`,
 			testhelpers.VideoURLParams.CourseID,
 		)
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url", false)
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url")
 
 		err := h.GetVideoURL(ctx)
 
@@ -121,7 +121,7 @@ func TestGetVideoURL(t *testing.T) {
 			testhelpers.VideoURLParams.CourseID,
 			testhelpers.VideoURLParams.StorageKey,
 		)
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url", false)
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url")
 
 		err := h.GetVideoURL(ctx)
 
@@ -149,7 +149,7 @@ func TestGetVideoUploadURL(t *testing.T) {
 			testhelpers.VideoURLParams.CourseID,
 			testhelpers.VideoURLParams.StorageKey,
 		)
-		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url", false)
+		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url")
 
 		err := h.GetVideoUploadURL(ctx)
 		if err != nil {
@@ -192,7 +192,7 @@ func TestGetVideoUploadURL(t *testing.T) {
 			`{"storageKey":%q}`,
 			testhelpers.VideoURLParams.StorageKey,
 		)
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url", false)
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url")
 
 		err := h.GetVideoUploadURL(ctx)
 
@@ -220,7 +220,7 @@ func TestGetVideoUploadURL(t *testing.T) {
 			`{"courseId":%q}`,
 			testhelpers.VideoURLParams.CourseID,
 		)
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url", false)
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url")
 
 		err := h.GetVideoUploadURL(ctx)
 
@@ -249,7 +249,7 @@ func TestGetVideoUploadURL(t *testing.T) {
 			testhelpers.VideoURLParams.CourseID,
 			testhelpers.VideoURLParams.StorageKey,
 		)
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url", false)
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url")
 
 		err := h.GetVideoUploadURL(ctx)
 

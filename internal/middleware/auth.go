@@ -97,7 +97,7 @@ func TestAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		ctx := c.Request().Context()
 		ctx = context.WithValue(ctx, UserIDContextKey, userID)
-		ctx = context.WithValue(ctx, RoleContextKey, role)
+		ctx = context.WithValue(ctx, RoleContextKey, config.Role(role))
 		c.SetRequest(c.Request().WithContext(ctx))
 
 		return next(c)
