@@ -17,6 +17,12 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/services/auth"
 )
 
+//go:generate moq -out ./mocks/authprovider_mock.go -pkg mocks . AuthProvider
+
+type AuthProvider interface {
+	GetUserFromIDToken(ctx context.Context, token string) (*auth.User, error)
+}
+
 type ContextKey string
 
 const (
@@ -87,8 +93,11 @@ func AuthMiddleware(next echo.HandlerFunc, authProvider *auth.AuthProvider) echo
 func TestAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		userID := c.Request().Header.Get("X-Test-User-ID")
+		role := c.Request().Header.Get("X-Test-User-Role")
 
-		ctx := context.WithValue(c.Request().Context(), UserIDContextKey, userID)
+		ctx := c.Request().Context()
+		ctx = context.WithValue(ctx, UserIDContextKey, userID)
+		ctx = context.WithValue(ctx, RoleContextKey, role)
 		c.SetRequest(c.Request().WithContext(ctx))
 
 		return next(c)

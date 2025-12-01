@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 )
@@ -84,6 +85,7 @@ func makePOSTRequest(t *testing.T, baseURL, endpoint string, resource any) *http
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Test-User-ID", testUserID)
+	req.Header.Set("X-Test-User-Role", string(config.AdminRole))
 
 	client := &http.Client{}
 	res, err := client.Do(req)
