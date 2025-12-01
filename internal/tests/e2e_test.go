@@ -52,7 +52,7 @@ func TestCourse(t *testing.T) {
 		_, err := testResources.DB.ExecContext(
 			t.Context(),
 			"INSERT INTO usercourses (user_id, course_id) VALUES ($1, $2)",
-			testUserID,
+			TestUserID,
 			created.ID,
 		)
 		if err != nil {

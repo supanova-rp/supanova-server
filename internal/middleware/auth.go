@@ -48,7 +48,7 @@ var nonAdminPaths = []string{
 	fmt.Sprintf("/%s/increment-attempts", config.APIVersion),
 }
 
-func AuthMiddleware(next echo.HandlerFunc, authProvider *auth.AuthProvider) echo.HandlerFunc {
+func AuthMiddleware(next echo.HandlerFunc, authProvider AuthProvider) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
 		bodyBytes, err := io.ReadAll(c.Request().Body)

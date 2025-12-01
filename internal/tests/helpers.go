@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	testUserID    = "test-user-id"
+	TestUserID    = "test-user-id"
 	testUserName  = "Test User"
 	testUserEmail = "test@gmail.com"
 
@@ -84,7 +84,7 @@ func makePOSTRequest(t *testing.T, baseURL, endpoint string, resource any) *http
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Test-User-ID", testUserID)
+	req.Header.Set("X-Test-User-ID", TestUserID)
 	req.Header.Set("X-Test-User-Role", string(config.AdminRole))
 
 	client := &http.Client{}
