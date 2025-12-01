@@ -16,10 +16,10 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/middleware"
+	"github.com/supanova-rp/supanova-server/internal/tests"
 )
 
 const (
-	testUserID                   = "test-user-id"
 	AddCourseHandlerName         = "AddCourse"
 	GetCourseHandlerName         = "GetCourse"
 	IsEnrolledHandlerName        = "IsEnrolled"
@@ -73,7 +73,7 @@ func SetupEchoContext(t *testing.T, reqBody, endpoint string, opts ...option) (e
 	t.Helper()
 
 	adminRole := config.AdminRole
-	defaultUserID := testUserID
+	defaultUserID := tests.TestUserID
 
 	o := &setupOptions{
 		userID: &defaultUserID,
