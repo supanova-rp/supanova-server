@@ -13,6 +13,7 @@ func RegisterCourseRoutes(e *echo.Echo, h *handlers.Handlers, apiVersion string)
 
 func RegisterProgressRoutes(e *echo.Echo, h *handlers.Handlers, apiVersion string) {
 	e.POST(getRoute(apiVersion, "get-progress"), h.GetProgress)
+	e.POST(getRoute(apiVersion, "update-progress"), h.UpdateProgress)
 }
 
 func RegisterMediaRoutes(e *echo.Echo, h *handlers.Handlers, apiVersion string) {

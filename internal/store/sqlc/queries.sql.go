@@ -91,7 +91,7 @@ func (q *Queries) GetCourseMaterials(ctx context.Context, courseID pgtype.UUID) 
 }
 
 const getCourseQuizSections = `-- name: GetCourseQuizSections :many
-SELECT 
+SELECT
   qs.id,
   qs.position,
   qs.course_id,
@@ -229,4 +229,23 @@ func (q *Queries) IsUserEnrolledInCourse(ctx context.Context, arg IsUserEnrolled
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
+}
+
+const updateProgress = `-- name: UpdateProgress :exec
+INSERT INTO userprogress (user_id, course_id, completed_section_ids)
+VALUES ($1, $2, ARRAY[$3::uuid])
+ON CONFLICT (user_id, course_id)
+DO UPDATE SET completed_section_ids = array_append(userprogress.completed_section_ids, $3::uuid)
+WHERE NOT ($3 = ANY(userprogress.completed_section_ids))
+`
+
+type UpdateProgressParams struct {
+	UserID    string
+	CourseID  pgtype.UUID
+	SectionID pgtype.UUID
+}
+
+func (q *Queries) UpdateProgress(ctx context.Context, arg UpdateProgressParams) error {
+	_, err := q.db.Exec(ctx, updateProgress, arg.UserID, arg.CourseID, arg.SectionID)
+	return err
 }
