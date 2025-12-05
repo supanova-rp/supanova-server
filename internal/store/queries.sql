@@ -61,6 +61,8 @@ WHERE qs.course_id = $1
 GROUP BY qs.id, qs.position, qs.course_id
 ORDER BY qs.position;
 
+-- Insert section_id into completed_section_ids array if no entry exists
+-- or append section_id to the existing array if it's not already present
 -- name: UpdateProgress :exec
 INSERT INTO userprogress (user_id, course_id, completed_section_ids)
 VALUES (sqlc.arg('user_id'), sqlc.arg('course_id'), ARRAY[sqlc.arg('section_id')::uuid])
