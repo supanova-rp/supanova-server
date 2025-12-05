@@ -100,7 +100,6 @@ func TestProgress(t *testing.T) {
 			CompletedIntro: true,
 		}
 
-
 		actual := getProgress(t, testResources.AppURL, courseID)
 
 		if diff := cmp.Diff(expected, actual); diff != "" {
