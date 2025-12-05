@@ -83,6 +83,7 @@ func registerRoutes(e *echo.Echo, h *handlers.Handlers) {
 	RegisterCourseRoutes(e, h, config.APIVersion)
 	RegisterProgressRoutes(e, h, config.APIVersion)
 	RegisterMediaRoutes(e, h, config.APIVersion)
+	RegisterEnrollmentRoutes(e, h, config.APIVersion)
 }
 
 func getRoute(prefix, route string) string {

@@ -20,6 +20,12 @@ var _ domain.EnrollmentRepository = &EnrollmentRepositoryMock{}
 //
 //		// make and configure a mocked domain.EnrollmentRepository
 //		mockedEnrollmentRepository := &EnrollmentRepositoryMock{
+//			DisenrollUserInCourseFunc: func(ctx context.Context, params sqlc.DisenrollUserInCourseParams) error {
+//				panic("mock out the DisenrollUserInCourse method")
+//			},
+//			EnrollUserInCourseFunc: func(ctx context.Context, params sqlc.EnrollUserInCourseParams) error {
+//				panic("mock out the EnrollUserInCourse method")
+//			},
 //			IsEnrolledFunc: func(ctx context.Context, params sqlc.IsUserEnrolledInCourseParams) (bool, error) {
 //				panic("mock out the IsEnrolled method")
 //			},
@@ -30,11 +36,31 @@ var _ domain.EnrollmentRepository = &EnrollmentRepositoryMock{}
 //
 //	}
 type EnrollmentRepositoryMock struct {
+	// DisenrollUserInCourseFunc mocks the DisenrollUserInCourse method.
+	DisenrollUserInCourseFunc func(ctx context.Context, params sqlc.DisenrollUserInCourseParams) error
+
+	// EnrollUserInCourseFunc mocks the EnrollUserInCourse method.
+	EnrollUserInCourseFunc func(ctx context.Context, params sqlc.EnrollUserInCourseParams) error
+
 	// IsEnrolledFunc mocks the IsEnrolled method.
 	IsEnrolledFunc func(ctx context.Context, params sqlc.IsUserEnrolledInCourseParams) (bool, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// DisenrollUserInCourse holds details about calls to the DisenrollUserInCourse method.
+		DisenrollUserInCourse []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Params is the params argument value.
+			Params sqlc.DisenrollUserInCourseParams
+		}
+		// EnrollUserInCourse holds details about calls to the EnrollUserInCourse method.
+		EnrollUserInCourse []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Params is the params argument value.
+			Params sqlc.EnrollUserInCourseParams
+		}
 		// IsEnrolled holds details about calls to the IsEnrolled method.
 		IsEnrolled []struct {
 			// Ctx is the ctx argument value.
@@ -43,7 +69,81 @@ type EnrollmentRepositoryMock struct {
 			Params sqlc.IsUserEnrolledInCourseParams
 		}
 	}
-	lockIsEnrolled sync.RWMutex
+	lockDisenrollUserInCourse sync.RWMutex
+	lockEnrollUserInCourse    sync.RWMutex
+	lockIsEnrolled            sync.RWMutex
+}
+
+// DisenrollUserInCourse calls DisenrollUserInCourseFunc.
+func (mock *EnrollmentRepositoryMock) DisenrollUserInCourse(ctx context.Context, params sqlc.DisenrollUserInCourseParams) error {
+	if mock.DisenrollUserInCourseFunc == nil {
+		panic("EnrollmentRepositoryMock.DisenrollUserInCourseFunc: method is nil but EnrollmentRepository.DisenrollUserInCourse was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Params sqlc.DisenrollUserInCourseParams
+	}{
+		Ctx:    ctx,
+		Params: params,
+	}
+	mock.lockDisenrollUserInCourse.Lock()
+	mock.calls.DisenrollUserInCourse = append(mock.calls.DisenrollUserInCourse, callInfo)
+	mock.lockDisenrollUserInCourse.Unlock()
+	return mock.DisenrollUserInCourseFunc(ctx, params)
+}
+
+// DisenrollUserInCourseCalls gets all the calls that were made to DisenrollUserInCourse.
+// Check the length with:
+//
+//	len(mockedEnrollmentRepository.DisenrollUserInCourseCalls())
+func (mock *EnrollmentRepositoryMock) DisenrollUserInCourseCalls() []struct {
+	Ctx    context.Context
+	Params sqlc.DisenrollUserInCourseParams
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Params sqlc.DisenrollUserInCourseParams
+	}
+	mock.lockDisenrollUserInCourse.RLock()
+	calls = mock.calls.DisenrollUserInCourse
+	mock.lockDisenrollUserInCourse.RUnlock()
+	return calls
+}
+
+// EnrollUserInCourse calls EnrollUserInCourseFunc.
+func (mock *EnrollmentRepositoryMock) EnrollUserInCourse(ctx context.Context, params sqlc.EnrollUserInCourseParams) error {
+	if mock.EnrollUserInCourseFunc == nil {
+		panic("EnrollmentRepositoryMock.EnrollUserInCourseFunc: method is nil but EnrollmentRepository.EnrollUserInCourse was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Params sqlc.EnrollUserInCourseParams
+	}{
+		Ctx:    ctx,
+		Params: params,
+	}
+	mock.lockEnrollUserInCourse.Lock()
+	mock.calls.EnrollUserInCourse = append(mock.calls.EnrollUserInCourse, callInfo)
+	mock.lockEnrollUserInCourse.Unlock()
+	return mock.EnrollUserInCourseFunc(ctx, params)
+}
+
+// EnrollUserInCourseCalls gets all the calls that were made to EnrollUserInCourse.
+// Check the length with:
+//
+//	len(mockedEnrollmentRepository.EnrollUserInCourseCalls())
+func (mock *EnrollmentRepositoryMock) EnrollUserInCourseCalls() []struct {
+	Ctx    context.Context
+	Params sqlc.EnrollUserInCourseParams
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Params sqlc.EnrollUserInCourseParams
+	}
+	mock.lockEnrollUserInCourse.RLock()
+	calls = mock.calls.EnrollUserInCourse
+	mock.lockEnrollUserInCourse.RUnlock()
+	return calls
 }
 
 // IsEnrolled calls IsEnrolledFunc.

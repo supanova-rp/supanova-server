@@ -27,6 +27,34 @@ func (q *Queries) AddCourse(ctx context.Context, arg AddCourseParams) (pgtype.UU
 	return id, err
 }
 
+const disenrollUserInCourse = `-- name: DisenrollUserInCourse :exec
+DELETE FROM usercourses WHERE user_id = $1 AND course_id = $2
+`
+
+type DisenrollUserInCourseParams struct {
+	UserID   pgtype.Text
+	CourseID pgtype.UUID
+}
+
+func (q *Queries) DisenrollUserInCourse(ctx context.Context, arg DisenrollUserInCourseParams) error {
+	_, err := q.db.Exec(ctx, disenrollUserInCourse, arg.UserID, arg.CourseID)
+	return err
+}
+
+const enrollUserInCourse = `-- name: EnrollUserInCourse :exec
+INSERT INTO usercourses (user_id, course_id) VALUES ($1, $2)
+`
+
+type EnrollUserInCourseParams struct {
+	UserID   pgtype.Text
+	CourseID pgtype.UUID
+}
+
+func (q *Queries) EnrollUserInCourse(ctx context.Context, arg EnrollUserInCourseParams) error {
+	_, err := q.db.Exec(ctx, enrollUserInCourse, arg.UserID, arg.CourseID)
+	return err
+}
+
 const getCourse = `-- name: GetCourse :one
 SELECT
   id,

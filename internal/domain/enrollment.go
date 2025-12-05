@@ -10,4 +10,6 @@ import (
 
 type EnrollmentRepository interface {
 	IsEnrolled(ctx context.Context, params sqlc.IsUserEnrolledInCourseParams) (bool, error)
+	EnrollUserInCourse(ctx context.Context, params sqlc.EnrollUserInCourseParams) error
+	DisenrollUserInCourse(ctx context.Context, params sqlc.DisenrollUserInCourseParams) error
 }

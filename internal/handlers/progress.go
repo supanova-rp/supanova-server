@@ -22,7 +22,7 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 
 	userID, ok := getUserID(ctx)
 	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.Getting(progressResource))
+		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
 	}
 
 	var params GetProgressParams

@@ -2,14 +2,63 @@ package handlers
 
 import (
 	"context"
+	"log/slog"
+	"net/http"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/labstack/echo/v4"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 	"github.com/supanova-rp/supanova-server/internal/utils"
 )
+
+const enrollmentResource = "enrollment"
+
+type UpdateUserCourseEnrollmentParams struct {
+	CourseID   string `json:"course_id" validate:"required"`
+	IsAssigned bool   `json:"isAssigned" validate:"required"`
+}
+
+func (h *Handlers) UpdateUserCourseEnrollment(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	var params UpdateUserCourseEnrollmentParams
+	if err := bindAndValidate(e, &params); err != nil {
+		return err
+	}
+
+	userID, ok := getUserID(ctx)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+	}
+
+	courseID, err := utils.PGUUIDFrom(params.CourseID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+	}
+
+	if params.IsAssigned {
+		err = h.Enrollment.DisenrollUserInCourse(ctx, sqlc.DisenrollUserInCourseParams{
+			UserID:   utils.PGTextFrom(userID),
+			CourseID: courseID,
+		})
+		if err != nil {
+			return internalError(ctx, errors.Deleting(enrollmentResource), err, slog.String("course_id", params.CourseID))
+		}
+	} else {
+		err = h.Enrollment.EnrollUserInCourse(ctx, sqlc.EnrollUserInCourseParams{
+			UserID:   utils.PGTextFrom(userID),
+			CourseID: courseID,
+		})
+		if err != nil {
+			return internalError(ctx, errors.Creating(enrollmentResource), err, slog.String("course_id", params.CourseID))
+		}
+	}
+
+	return e.NoContent(http.StatusOK)
+}
 
 func (h *Handlers) isEnrolled(ctx context.Context, courseID pgtype.UUID) (bool, error) {
 	role, ok := getUserRole(ctx)

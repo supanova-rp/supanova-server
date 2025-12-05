@@ -19,3 +19,7 @@ func RegisterMediaRoutes(e *echo.Echo, h *handlers.Handlers, apiVersion string) 
 	e.POST(getRoute(apiVersion, "video-url"), h.GetVideoURL)
 	e.POST(getRoute(apiVersion, "get-video-upload-url"), h.GetVideoUploadURL)
 }
+
+func RegisterEnrollmentRoutes(e *echo.Echo, h *handlers.Handlers, apiVersion string) {
+	e.POST(getRoute(apiVersion, "update-users-to-courses"), h.UpdateUserCourseEnrollment)
+}
