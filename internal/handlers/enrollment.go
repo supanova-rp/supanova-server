@@ -18,7 +18,7 @@ const enrollmentResource = "enrollment"
 
 type UpdateUserCourseEnrollmentParams struct {
 	CourseID   string `json:"course_id" validate:"required"`
-	IsAssigned bool   `json:"isAssigned" validate:"required"`
+	IsAssigned bool   `json:"isAssigned"`
 }
 
 func (h *Handlers) UpdateUserCourseEnrollment(e echo.Context) error {
