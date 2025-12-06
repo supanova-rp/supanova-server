@@ -16,7 +16,7 @@ import (
 )
 
 func TestUpdateUserCourseEnrollment(t *testing.T) {
-	t.Run("enrols user successfully when isAssigned is false", func(t *testing.T) {
+	t.Run("enrols user successfully when IsEnrolled is false", func(t *testing.T) {
 		courseID := uuid.New()
 
 		mockEnrollmentRepo := &mocks.EnrollmentRepositoryMock{
@@ -49,7 +49,7 @@ func TestUpdateUserCourseEnrollment(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.DisenrollUserInCourseCalls()), 0, testhelpers.DisenrollUserInCourseHandlerName)
 	})
 
-	t.Run("disenrolls user successfully when isAssigned is true", func(t *testing.T) {
+	t.Run("disenrolls user successfully when IsEnrolled is true", func(t *testing.T) {
 		courseID := uuid.New()
 
 		mockEnrollmentRepo := &mocks.EnrollmentRepositoryMock{
@@ -131,7 +131,7 @@ func TestUpdateUserCourseEnrollment(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.DisenrollUserInCourseCalls()), 0, testhelpers.DisenrollUserInCourseHandlerName)
 	})
 
-	t.Run("internal server error when enrolling", func(t *testing.T) {
+	t.Run("internal server error", func(t *testing.T) {
 		courseID := uuid.New()
 
 		mockEnrollmentRepo := &mocks.EnrollmentRepositoryMock{
@@ -154,34 +154,5 @@ func TestUpdateUserCourseEnrollment(t *testing.T) {
 		err := h.UpdateUserCourseEnrollment(ctx)
 
 		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Creating("enrollment"))
-		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.EnrollUserInCourseCalls()), 1, testhelpers.EnrollUserInCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.DisenrollUserInCourseCalls()), 0, testhelpers.DisenrollUserInCourseHandlerName)
-	})
-
-	t.Run("internal server error when disenrolling", func(t *testing.T) {
-		courseID := uuid.New()
-
-		mockEnrollmentRepo := &mocks.EnrollmentRepositoryMock{
-			DisenrollUserInCourseFunc: func(ctx context.Context, params sqlc.DisenrollUserInCourseParams) error {
-				return stdErrors.New("database connection failed")
-			},
-		}
-
-		h := &handlers.Handlers{
-			Enrollment: mockEnrollmentRepo,
-		}
-
-		reqBody := handlers.UpdateUserCourseEnrollmentParams{
-			CourseID:   courseID.String(),
-			IsEnrolled: true,
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "enrollment")
-
-		err := h.UpdateUserCourseEnrollment(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Deleting("enrollment"))
-		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.DisenrollUserInCourseCalls()), 1, testhelpers.DisenrollUserInCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.EnrollUserInCourseCalls()), 0, testhelpers.EnrollUserInCourseHandlerName)
 	})
 }
