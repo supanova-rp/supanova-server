@@ -18,7 +18,7 @@ const enrollmentResource = "enrollment"
 
 type UpdateUserCourseEnrollmentParams struct {
 	CourseID   string `json:"course_id" validate:"required"`
-	IsAssigned bool   `json:"isAssigned"`
+	IsEnrolled bool   `json:"isAssigned"`
 }
 
 func (h *Handlers) UpdateUserCourseEnrollment(e echo.Context) error {
@@ -39,7 +39,7 @@ func (h *Handlers) UpdateUserCourseEnrollment(e echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
-	if params.IsAssigned {
+	if params.IsEnrolled {
 		err = h.Enrollment.DisenrollUserInCourse(ctx, sqlc.DisenrollUserInCourseParams{
 			UserID:   utils.PGTextFrom(userID),
 			CourseID: courseID,

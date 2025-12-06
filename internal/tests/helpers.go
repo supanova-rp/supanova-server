@@ -70,7 +70,7 @@ func enrollUserInCourse(t *testing.T, baseURL string, courseID uuid.UUID) {
 
 	resp := makePOSTRequest(t, baseURL, "update-users-to-courses", &handlers.UpdateUserCourseEnrollmentParams{
 		CourseID:   courseID.String(),
-		IsAssigned: false,
+		IsEnrolled: false,
 	})
 	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode != http.StatusOK {
