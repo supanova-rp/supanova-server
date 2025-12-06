@@ -17,6 +17,11 @@ type GetProgressParams struct {
 	CourseID string `json:"courseId" validate:"required"`
 }
 
+type UpdateProgressParams struct {
+	CourseID  string `json:"courseId" validate:"required"`
+	SectionID string `json:"sectionId" validate:"required"`
+}
+
 func (h *Handlers) GetProgress(e echo.Context) error {
 	ctx := e.Request().Context()
 
@@ -50,4 +55,43 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 	}
 
 	return e.JSON(http.StatusOK, progress)
+}
+
+func (h *Handlers) UpdateProgress(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	userID, ok := getUserID(ctx)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+	}
+
+	var params UpdateProgressParams
+	if err := bindAndValidate(e, &params); err != nil {
+		return err
+	}
+
+	courseID, err := utils.PGUUIDFrom(params.CourseID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+	}
+
+	sectionID, err := utils.PGUUIDFrom(params.SectionID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+	}
+
+	sqlcParams := sqlc.UpdateProgressParams{
+		UserID:    userID,
+		CourseID:  courseID,
+		SectionID: sectionID,
+	}
+
+	err = h.Progress.UpdateProgress(ctx, sqlcParams)
+	if err != nil {
+		return internalError(ctx, errors.Updating(progressResource), err,
+			slog.String("courseId", params.CourseID),
+			slog.String("sectionId", params.SectionID))
+	}
+
+	return e.NoContent(http.StatusOK)
 }

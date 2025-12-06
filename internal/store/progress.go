@@ -25,3 +25,7 @@ func (s *Store) GetProgress(ctx context.Context, args sqlc.GetProgressParams) (*
 		CompletedIntro:      progress.CompletedIntro.Bool,
 	}, nil
 }
+
+func (s *Store) UpdateProgress(ctx context.Context, args sqlc.UpdateProgressParams) error {
+	return s.Queries.UpdateProgress(ctx, args)
+}

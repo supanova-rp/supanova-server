@@ -13,6 +13,7 @@ func RegisterCourseRoutes(private *echo.Group, h *handlers.Handlers) {
 
 func RegisterProgressRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/get-progress", h.GetProgress)
+	private.POST("/update-progress", h.UpdateProgress)
 }
 
 func RegisterMediaRoutes(private *echo.Group, h *handlers.Handlers) {

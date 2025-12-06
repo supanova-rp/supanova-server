@@ -26,6 +26,10 @@ func Deleting(resource string) string {
 	return fmt.Sprintf("Error deleting %s", resource)
 }
 
+func Updating(resource string) string {
+	return fmt.Sprintf("Error updating %s", resource)
+}
+
 func NotFound(resource string) string {
 	return fmt.Sprintf("%s not found", resource)
 }
