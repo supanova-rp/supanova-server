@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	stdErrors "errors"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -33,11 +32,12 @@ func TestGetProgress(t *testing.T) {
 		h := &handlers.Handlers{
 			Progress: mockProgressRepo,
 		}
-		ctx, rec := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"courseId":%q}`, uuid.New().String()),
-			"progress",
-		)
+
+		params := handlers.GetProgressParams{
+			CourseID: uuid.New().String(),
+		}
+
+		ctx, rec := testhelpers.SetupEchoContext(t, params, "progress")
 
 		err := h.GetProgress(ctx)
 		if err != nil {
@@ -71,7 +71,9 @@ func TestGetProgress(t *testing.T) {
 			Progress: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, `{}`, "progress")
+		params := handlers.GetProgressParams{}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, params, "progress")
 
 		err := h.GetProgress(ctx)
 
@@ -90,7 +92,11 @@ func TestGetProgress(t *testing.T) {
 			Progress: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, `{"courseId":"invalid-uuid"}`, "progress")
+		params := handlers.GetProgressParams{
+			CourseID: "invalid-uuid",
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, params, "progress")
 
 		err := h.GetProgress(ctx)
 
@@ -111,11 +117,11 @@ func TestGetProgress(t *testing.T) {
 			Progress: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"courseId":%q}`, courseID),
-			"progress",
-		)
+		params := handlers.GetProgressParams{
+			CourseID: courseID.String(),
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, params, "progress")
 
 		err := h.GetProgress(ctx)
 
@@ -136,11 +142,11 @@ func TestGetProgress(t *testing.T) {
 			Progress: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"courseId":%q}`, courseID),
-			"progress",
-		)
+		params := handlers.GetProgressParams{
+			CourseID: courseID.String(),
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, params, "progress")
 
 		err := h.GetProgress(ctx)
 
@@ -163,11 +169,13 @@ func TestUpdateProgress(t *testing.T) {
 		h := &handlers.Handlers{
 			Progress: mockProgressRepo,
 		}
-		ctx, rec := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"courseId":%q,"sectionId":%q}`, courseID, sectionID),
-			"progress",
-		)
+
+		params := handlers.UpdateProgressParams{
+			CourseID:  courseID.String(),
+			SectionID: sectionID.String(),
+		}
+
+		ctx, rec := testhelpers.SetupEchoContext(t, params, "progress")
 
 		err := h.UpdateProgress(ctx)
 		if err != nil {
@@ -194,11 +202,11 @@ func TestUpdateProgress(t *testing.T) {
 			Progress: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"sectionId":%q}`, sectionID),
-			"progress",
-		)
+		params := handlers.UpdateProgressParams{
+			SectionID: sectionID.String(),
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, params, "progress")
 
 		err := h.UpdateProgress(ctx)
 
@@ -219,11 +227,11 @@ func TestUpdateProgress(t *testing.T) {
 			Progress: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"courseId":%q}`, courseID),
-			"progress",
-		)
+		params := handlers.UpdateProgressParams{
+			CourseID: courseID.String(),
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, params, "progress")
 
 		err := h.UpdateProgress(ctx)
 
@@ -244,11 +252,12 @@ func TestUpdateProgress(t *testing.T) {
 			Progress: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"courseId":"invalid-uuid","sectionId":%q}`, sectionID),
-			"progress",
-		)
+		params := handlers.UpdateProgressParams{
+			CourseID:  "invalid-uuid",
+			SectionID: sectionID.String(),
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, params, "progress")
 
 		err := h.UpdateProgress(ctx)
 
@@ -269,11 +278,12 @@ func TestUpdateProgress(t *testing.T) {
 			Progress: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"courseId":%q,"sectionId":"invalid-uuid"}`, courseID),
-			"progress",
-		)
+		params := handlers.UpdateProgressParams{
+			CourseID:  courseID.String(),
+			SectionID: "invalid-uuid",
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, params, "progress")
 
 		err := h.UpdateProgress(ctx)
 
@@ -295,11 +305,12 @@ func TestUpdateProgress(t *testing.T) {
 			Progress: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"courseId":%q,"sectionId":%q}`, courseID, sectionID),
-			"progress",
-		)
+		params := handlers.UpdateProgressParams{
+			CourseID:  courseID.String(),
+			SectionID: sectionID.String(),
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, params, "progress")
 
 		err := h.UpdateProgress(ctx)
 
