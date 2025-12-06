@@ -2,6 +2,7 @@ package testhelpers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -72,7 +73,7 @@ func WithRole(role config.Role) option {
 	}
 }
 
-func SetupEchoContext(t *testing.T, reqBody, endpoint string, opts ...option) (echo.Context, *httptest.ResponseRecorder) {
+func SetupEchoContext(t *testing.T, reqBody interface{}, endpoint string, opts ...option) (echo.Context, *httptest.ResponseRecorder) {
 	t.Helper()
 
 	adminRole := config.AdminRole
@@ -90,7 +91,12 @@ func SetupEchoContext(t *testing.T, reqBody, endpoint string, opts ...option) (e
 	e := echo.New()
 	e.Validator = &customValidator{validator: validator.New()}
 
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/%s/%s", config.APIVersion, endpoint), strings.NewReader(reqBody))
+	jsonBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		t.Fatalf("failed to marshal reqBody: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/%s/%s", config.APIVersion, endpoint), strings.NewReader(string(jsonBytes)))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 	ctx := req.Context()

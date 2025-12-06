@@ -3,7 +3,6 @@ package middleware_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -31,11 +30,12 @@ func TestMiddleware(t *testing.T) {
 			},
 		}
 
-		c := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"id":%q,"access_token":%q}`, uuid.New(), accessToken),
-			"course",
-		)
+		reqBody := map[string]interface{}{
+			"id":           uuid.New().String(),
+			"access_token": accessToken,
+		}
+
+		c := testhelpers.SetupEchoContext(t, reqBody, "course")
 
 		err := middleware.AuthMiddleware(nextMock, mockAuthProvider)(c)
 		if err != nil {
@@ -63,11 +63,12 @@ func TestMiddleware(t *testing.T) {
 			},
 		}
 
-		c := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"id":%q,"access_token":%q}`, uuid.New(), accessToken),
-			"course",
-		)
+		reqBody := map[string]interface{}{
+			"id":           uuid.New().String(),
+			"access_token": accessToken,
+		}
+
+		c := testhelpers.SetupEchoContext(t, reqBody, "course")
 
 		err := middleware.AuthMiddleware(nextMock, mockAuthProvider)(c)
 		if err != nil {
@@ -95,11 +96,12 @@ func TestMiddleware(t *testing.T) {
 			},
 		}
 
-		c := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"id":%q,"access_token":%q}`, uuid.New(), accessToken),
-			"add-course",
-		)
+		reqBody := map[string]interface{}{
+			"id":           uuid.New().String(),
+			"access_token": accessToken,
+		}
+
+		c := testhelpers.SetupEchoContext(t, reqBody, "add-course")
 
 		err := middleware.AuthMiddleware(nextMock, mockAuthProvider)(c)
 		if err == nil {
@@ -119,11 +121,12 @@ func TestMiddleware(t *testing.T) {
 			},
 		}
 
-		c := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"id":%q,"access_token":%q}`, uuid.New(), accessToken),
-			"add-course",
-		)
+		reqBody := map[string]interface{}{
+			"id":           uuid.New().String(),
+			"access_token": accessToken,
+		}
+
+		c := testhelpers.SetupEchoContext(t, reqBody, "add-course")
 
 		err := middleware.AuthMiddleware(nextMock, mockAuthProvider)(c)
 		if err == nil {

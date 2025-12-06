@@ -93,8 +93,8 @@ func TestUpdateUserCourseEnrollment(t *testing.T) {
 			Enrollment: mockEnrollmentRepo,
 		}
 
-		reqBody := map[string]interface{}{
-			"isAssigned": false,
+		reqBody := handlers.UpdateUserCourseEnrollmentParams{
+			IsEnrolled: false,
 		}
 
 		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "enrollment")
