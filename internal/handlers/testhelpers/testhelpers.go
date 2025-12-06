@@ -21,14 +21,14 @@ import (
 )
 
 const (
-	AddCourseHandlerName                = "AddCourse"
-	GetCourseHandlerName                = "GetCourse"
-	IsEnrolledHandlerName               = "IsEnrolled"
-	GetVideoURLHandlerName              = "GetVideoURL"
-	GetVideoUploadURLHandlerName        = "GetVideoUploadURL"
-	UpdateUserCourseEnrollmentHandler   = "UpdateUserCourseEnrollment"
-	EnrollUserInCourseHandlerName       = "EnrollUserInCourse"
-	DisenrollUserInCourseHandlerName    = "DisenrollUserInCourse"
+	AddCourseHandlerName              = "AddCourse"
+	GetCourseHandlerName              = "GetCourse"
+	IsEnrolledHandlerName             = "IsEnrolled"
+	GetVideoURLHandlerName            = "GetVideoURL"
+	GetVideoUploadURLHandlerName      = "GetVideoUploadURL"
+	UpdateUserCourseEnrollmentHandler = "UpdateUserCourseEnrollment"
+	EnrollUserInCourseHandlerName     = "EnrollUserInCourse"
+	DisenrollUserInCourseHandlerName  = "DisenrollUserInCourse"
 )
 
 var Course = &domain.Course{

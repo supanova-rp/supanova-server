@@ -16,7 +16,7 @@ import (
 )
 
 func TestUpdateUserCourseEnrollment(t *testing.T) {
-	t.Run("enrolls user successfully when isAssigned is false", func(t *testing.T) {
+	t.Run("enrols user successfully when isAssigned is false", func(t *testing.T) {
 		courseID := uuid.New()
 
 		mockEnrollmentRepo := &mocks.EnrollmentRepositoryMock{
