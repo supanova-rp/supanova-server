@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -46,10 +45,10 @@ func New(h *handlers.Handlers, authProvider middleware.AuthProvider, cfg *config
 	)))
 
 	// Public route (no auth middleware)
-	e.GET(getRoute(config.APIVersion, "health"), h.HealthCheck)
-
+	public := e.Group(config.APIVersion)
 	// Private group with auth middleware
-	private := e.Group("")
+	private := e.Group(config.APIVersion)
+
 	if cfg.Environment == config.EnvironmentTest {
 		private.Use(middleware.TestAuthMiddleware)
 	} else {
@@ -58,7 +57,7 @@ func New(h *handlers.Handlers, authProvider middleware.AuthProvider, cfg *config
 		})
 	}
 
-	registerRoutes(private, h)
+	registerRoutes(private, public, h)
 
 	return &Server{
 		echo: e,
@@ -83,14 +82,12 @@ func (s *Server) Stop() error {
 	return s.echo.Shutdown(shutdownCtx)
 }
 
-func registerRoutes(private *echo.Group, h *handlers.Handlers) {
-	RegisterCourseRoutes(private, h, config.APIVersion)
-	RegisterProgressRoutes(private, h, config.APIVersion)
-	RegisterMediaRoutes(private, h, config.APIVersion)
-}
+func registerRoutes(private, public *echo.Group, h *handlers.Handlers) {
+	public.GET("health", h.HealthCheck)
 
-func getRoute(prefix, route string) string {
-	return fmt.Sprintf("/%s/%s", prefix, route)
+	RegisterCourseRoutes(private, h)
+	RegisterProgressRoutes(private, h)
+	RegisterMediaRoutes(private, h)
 }
 
 type customValidator struct {
