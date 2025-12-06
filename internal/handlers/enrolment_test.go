@@ -34,7 +34,7 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 			IsEnrolled: false,
 		}
 
-		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "update-users-to-courses")
+		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "enrolment")
 
 		err := h.UpdateCourseEnrolment(ctx)
 		if err != nil {
@@ -67,7 +67,7 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 			IsEnrolled: true,
 		}
 
-		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "update-users-to-courses")
+		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "enrolment")
 
 		err := h.UpdateCourseEnrolment(ctx)
 		if err != nil {
@@ -97,7 +97,7 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 			IsEnrolled: false,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "update-users-to-courses")
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "enrolment")
 
 		err := h.UpdateCourseEnrolment(ctx)
 
@@ -122,7 +122,7 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 			IsEnrolled: false,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "update-users-to-courses")
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "enrolment")
 
 		err := h.UpdateCourseEnrolment(ctx)
 
@@ -149,10 +149,10 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 			IsEnrolled: false,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "update-users-to-courses")
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "enrolment")
 
 		err := h.UpdateCourseEnrolment(ctx)
 
-		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Creating("update-users-to-courses"))
+		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Creating("enrolment"))
 	})
 }
