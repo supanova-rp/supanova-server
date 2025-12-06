@@ -53,7 +53,8 @@ func AuthMiddleware(next echo.HandlerFunc, authProvider AuthProvider) echo.Handl
 		ctx := c.Request().Context()
 		bodyBytes, err := io.ReadAll(c.Request().Body)
 		if err != nil {
-			return err
+			slog.ErrorContext(ctx, "failed to read request body", slog.Any("error", err))
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
 
 		// Restore body so handler can use c.Bind()
@@ -61,23 +62,24 @@ func AuthMiddleware(next echo.HandlerFunc, authProvider AuthProvider) echo.Handl
 
 		var params AuthParams
 		if err := json.Unmarshal(bodyBytes, &params); err != nil {
-			slog.Error("failed to unmarshal auth middleware request body", slog.Any("error", err))
+			slog.ErrorContext(ctx, "failed to unmarshal auth middleware request body", slog.Any("error", err))
 			return echo.NewHTTPError(http.StatusUnauthorized, errors.Unauthorised)
 		}
 
 		user, err := authProvider.GetUserFromIDToken(ctx, params.AccessToken)
 		if err != nil {
-			slog.Error(err.Error())
+			slog.ErrorContext(ctx, "failed to get user from ID token", slog.Any("error", err))
 			return echo.NewHTTPError(http.StatusUnauthorized, errors.Unauthorised)
 		}
 
 		if user == nil {
+			slog.WarnContext(ctx, "user not found for access token")
 			return echo.NewHTTPError(http.StatusUnauthorized, errors.Unauthorised)
 		}
 
 		isAdminPath := !slices.Contains(nonAdminPaths, c.Request().URL.Path)
 		if isAdminPath && !user.IsAdmin {
-			slog.Warn("unauthorised access", slog.String("user id", user.ID))
+			slog.WarnContext(ctx, "unauthorised access", slog.String("user id", user.ID))
 			return echo.NewHTTPError(http.StatusUnauthorized, errors.Unauthorised)
 		}
 
