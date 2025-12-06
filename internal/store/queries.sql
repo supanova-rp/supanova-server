@@ -16,10 +16,10 @@ SELECT completed_intro, completed_section_ids FROM userprogress WHERE user_id = 
 -- name: IsUserEnrolledInCourse :one
 SELECT EXISTS(SELECT 1 FROM usercourses WHERE user_id = $1 AND course_id = $2);
 
--- name: EnrollUserInCourse :exec
+-- name: EnrolInCourse :exec
 INSERT INTO usercourses (user_id, course_id) VALUES ($1, $2);
 
--- name: DisenrollUserInCourse :exec
+-- name: DisenrolInCourse :exec
 DELETE FROM usercourses WHERE user_id = $1 AND course_id = $2;
 
 -- name: GetCourseMaterials :many

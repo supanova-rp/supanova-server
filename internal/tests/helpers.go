@@ -68,7 +68,7 @@ func getProgress(t *testing.T, baseURL string, courseID uuid.UUID) *domain.Progr
 func enrollUserInCourse(t *testing.T, baseURL string, courseID uuid.UUID) {
 	t.Helper()
 
-	resp := makePOSTRequest(t, baseURL, "update-users-to-courses", &handlers.UpdateUserCourseEnrollmentParams{
+	resp := makePOSTRequest(t, baseURL, "update-users-to-courses", &handlers.UpdateCourseEnrolmentParams{
 		CourseID:   courseID.String(),
 		IsEnrolled: false,
 	})

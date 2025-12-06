@@ -71,15 +71,15 @@ func TestGetCourse(t *testing.T) {
 			},
 		}
 
-		mockEnrollmentRepo := &mocks.EnrollmentRepositoryMock{
+		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
 			IsEnrolledFunc: func(ctx context.Context, params sqlc.IsUserEnrolledInCourseParams) (bool, error) {
 				return true, nil
 			},
 		}
 
 		h := &handlers.Handlers{
-			Course:     mockCourseRepo,
-			Enrollment: mockEnrollmentRepo,
+			Course:    mockCourseRepo,
+			Enrolment: mockEnrolmentRepo,
 		}
 
 		reqBody := handlers.GetCourseParams{
@@ -107,7 +107,7 @@ func TestGetCourse(t *testing.T) {
 		}
 
 		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseCalls()), 1, testhelpers.GetCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.IsEnrolledCalls()), 1, testhelpers.IsEnrolledHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.IsEnrolledCalls()), 1, testhelpers.IsEnrolledHandlerName)
 	})
 
 	t.Run("validation error - missing id", func(t *testing.T) {
@@ -211,15 +211,15 @@ func TestGetCourse(t *testing.T) {
 			},
 		}
 
-		mockEnrollmentRepo := &mocks.EnrollmentRepositoryMock{
+		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
 			IsEnrolledFunc: func(ctx context.Context, params sqlc.IsUserEnrolledInCourseParams) (bool, error) {
 				return false, nil
 			},
 		}
 
 		h := &handlers.Handlers{
-			Course:     mockCourseRepo,
-			Enrollment: mockEnrollmentRepo,
+			Course:    mockCourseRepo,
+			Enrolment: mockEnrolmentRepo,
 		}
 
 		reqBody := handlers.GetCourseParams{
@@ -232,7 +232,7 @@ func TestGetCourse(t *testing.T) {
 
 		testhelpers.AssertHTTPError(t, err, http.StatusForbidden, errors.Forbidden("course"))
 		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseCalls()), 1, testhelpers.GetCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.IsEnrolledCalls()), 1, testhelpers.IsEnrolledHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.IsEnrolledCalls()), 1, testhelpers.IsEnrolledHandlerName)
 	})
 }
 

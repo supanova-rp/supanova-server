@@ -22,5 +22,5 @@ func RegisterMediaRoutes(private *echo.Group, h *handlers.Handlers) {
 }
 
 func RegisterEnrollmentRoutes(private *echo.Group, h *handlers.Handlers) {
-	private.POST("/update-users-to-courses", h.UpdateUserCourseEnrollment)
+	private.POST("/update-users-to-courses", h.UpdateCourseEnrolment)
 }

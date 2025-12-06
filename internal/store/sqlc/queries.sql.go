@@ -27,31 +27,31 @@ func (q *Queries) AddCourse(ctx context.Context, arg AddCourseParams) (pgtype.UU
 	return id, err
 }
 
-const disenrollUserInCourse = `-- name: DisenrollUserInCourse :exec
+const disenrolInCourse = `-- name: DisenrolInCourse :exec
 DELETE FROM usercourses WHERE user_id = $1 AND course_id = $2
 `
 
-type DisenrollUserInCourseParams struct {
+type DisenrolInCourseParams struct {
 	UserID   pgtype.Text
 	CourseID pgtype.UUID
 }
 
-func (q *Queries) DisenrollUserInCourse(ctx context.Context, arg DisenrollUserInCourseParams) error {
-	_, err := q.db.Exec(ctx, disenrollUserInCourse, arg.UserID, arg.CourseID)
+func (q *Queries) DisenrolInCourse(ctx context.Context, arg DisenrolInCourseParams) error {
+	_, err := q.db.Exec(ctx, disenrolInCourse, arg.UserID, arg.CourseID)
 	return err
 }
 
-const enrollUserInCourse = `-- name: EnrollUserInCourse :exec
+const enrolInCourse = `-- name: EnrolInCourse :exec
 INSERT INTO usercourses (user_id, course_id) VALUES ($1, $2)
 `
 
-type EnrollUserInCourseParams struct {
+type EnrolInCourseParams struct {
 	UserID   pgtype.Text
 	CourseID pgtype.UUID
 }
 
-func (q *Queries) EnrollUserInCourse(ctx context.Context, arg EnrollUserInCourseParams) error {
-	_, err := q.db.Exec(ctx, enrollUserInCourse, arg.UserID, arg.CourseID)
+func (q *Queries) EnrolInCourse(ctx context.Context, arg EnrolInCourseParams) error {
+	_, err := q.db.Exec(ctx, enrolInCourse, arg.UserID, arg.CourseID)
 	return err
 }
 
@@ -273,6 +273,8 @@ type UpdateProgressParams struct {
 	SectionID pgtype.UUID
 }
 
+// Insert section_id into completed_section_ids array if no entry exists
+// or append section_id to the existing array if it's not already present
 func (q *Queries) UpdateProgress(ctx context.Context, arg UpdateProgressParams) error {
 	_, err := q.db.Exec(ctx, updateProgress, arg.UserID, arg.CourseID, arg.SectionID)
 	return err

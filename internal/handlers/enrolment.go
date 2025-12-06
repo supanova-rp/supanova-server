@@ -16,15 +16,15 @@ import (
 
 const enrollmentResource = "enrollment"
 
-type UpdateUserCourseEnrollmentParams struct {
+type UpdateCourseEnrolmentParams struct {
 	CourseID   string `json:"course_id" validate:"required"`
 	IsEnrolled bool   `json:"isAssigned"`
 }
 
-func (h *Handlers) UpdateUserCourseEnrollment(e echo.Context) error {
+func (h *Handlers) UpdateCourseEnrolment(e echo.Context) error {
 	ctx := e.Request().Context()
 
-	var params UpdateUserCourseEnrollmentParams
+	var params UpdateCourseEnrolmentParams
 	if err := bindAndValidate(e, &params); err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (h *Handlers) UpdateUserCourseEnrollment(e echo.Context) error {
 	}
 
 	if params.IsEnrolled {
-		err = h.Enrollment.DisenrollUserInCourse(ctx, sqlc.DisenrollUserInCourseParams{
+		err = h.Enrolment.DisenrolInCourse(ctx, sqlc.DisenrolInCourseParams{
 			UserID:   utils.PGTextFrom(userID),
 			CourseID: courseID,
 		})
@@ -48,7 +48,7 @@ func (h *Handlers) UpdateUserCourseEnrollment(e echo.Context) error {
 			return internalError(ctx, errors.Deleting(enrollmentResource), err, slog.String("course_id", params.CourseID))
 		}
 	} else {
-		err = h.Enrollment.EnrollUserInCourse(ctx, sqlc.EnrollUserInCourseParams{
+		err = h.Enrolment.EnrolInCourse(ctx, sqlc.EnrolInCourseParams{
 			UserID:   utils.PGTextFrom(userID),
 			CourseID: courseID,
 		})
@@ -76,7 +76,7 @@ func (h *Handlers) isEnrolled(ctx context.Context, courseID pgtype.UUID) (bool, 
 		return false, errors.Wrap(errors.NotFoundInCtx("user"))
 	}
 
-	return h.Enrollment.IsEnrolled(ctx, sqlc.IsUserEnrolledInCourseParams{
+	return h.Enrolment.IsEnrolled(ctx, sqlc.IsUserEnrolledInCourseParams{
 		UserID:   utils.PGTextFrom(userID),
 		CourseID: courseID,
 	})
