@@ -55,9 +55,9 @@ func LoggingMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			if err == nil {
 				delete(bodyMap, "access_token") // Redact the access_token from logs
 
-				sanitized, err := json.Marshal(bodyMap)
+				sanitised, err := json.Marshal(bodyMap)
 				if err == nil {
-					attrs = append(attrs, slog.String("body", string(sanitized)))
+					attrs = append(attrs, slog.String("body", string(sanitised)))
 				}
 			}
 		}
