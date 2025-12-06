@@ -78,7 +78,10 @@ func TestProgress(t *testing.T) {
 
 		courseID := uuid.New()
 
-		// TODO: call add-course endpoint
+		// TODO: once add-course endpoint has been updated to accept sections:
+		// - call add-course endpoint to create a course for which progress can be updated
+		// - use update-progress endpoint to insert progress data for the course
+		// - use getProgress endpoint to asset that it was updated correctly
 
 		expected := domain.Progress{
 			CompletedSectionIDs: []uuid.UUID{
@@ -87,8 +90,6 @@ func TestProgress(t *testing.T) {
 			},
 			CompletedIntro: true,
 		}
-
-		// TODO: use update-progress route to insert data
 
 		actual := getProgress(t, testResources.AppURL, courseID)
 

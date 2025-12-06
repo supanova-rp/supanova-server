@@ -29,6 +29,8 @@ const (
 	UpdateUserCourseEnrollmentHandler = "UpdateUserCourseEnrollment"
 	EnrollUserInCourseHandlerName     = "EnrollUserInCourse"
 	DisenrollUserInCourseHandlerName  = "DisenrollUserInCourse"
+	GetProgressHandlerName            = "GetProgress"
+	UpdateProgressHandlerName         = "UpdateProgress"
 )
 
 var Course = &domain.Course{
@@ -44,6 +46,11 @@ var Course = &domain.Course{
 var VideoURLParams = &handlers.VideoURLParams{
 	CourseID:   uuid.New().String(),
 	StorageKey: uuid.New().String(),
+}
+
+var Progress = &domain.Progress{
+	CompletedSectionIDs: []uuid.UUID{uuid.New(), uuid.New()},
+	CompletedIntro:      true,
 }
 
 type customValidator struct {

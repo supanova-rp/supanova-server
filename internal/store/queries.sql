@@ -37,7 +37,7 @@ WHERE course_id = $1
 ORDER BY position;
 
 -- name: GetCourseQuizSections :many
-SELECT 
+SELECT
   qs.id,
   qs.position,
   qs.course_id,
@@ -66,3 +66,12 @@ LEFT JOIN quizquestions qq ON qq.quiz_section_id = qs.id
 WHERE qs.course_id = $1
 GROUP BY qs.id, qs.position, qs.course_id
 ORDER BY qs.position;
+
+-- Insert section_id into completed_section_ids array if no entry exists
+-- or append section_id to the existing array if it's not already present
+-- name: UpdateProgress :exec
+INSERT INTO userprogress (user_id, course_id, completed_section_ids)
+VALUES (sqlc.arg('user_id'), sqlc.arg('course_id'), ARRAY[sqlc.arg('section_id')::uuid])
+ON CONFLICT (user_id, course_id)
+DO UPDATE SET completed_section_ids = array_append(userprogress.completed_section_ids, sqlc.arg('section_id')::uuid)
+WHERE NOT (sqlc.arg('section_id') = ANY(userprogress.completed_section_ids));
