@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -180,7 +181,6 @@ func waitForAppHealthy(
 
 		resp, err := client.Do(req)
 		if err != nil {
-			fmt.Printf("error making request: %s\n", err.Error())
 			continue
 		}
 		if resp.StatusCode == http.StatusOK {
@@ -191,7 +191,7 @@ func waitForAppHealthy(
 
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return errors.Join(ctx.Err(), err)
 		case <-time.After(readyCheckRetryInterval):
 			// retry
 		}

@@ -1,6 +1,7 @@
 package testhelpers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -21,13 +22,18 @@ func (cv *customValidator) Validate(i any) error {
 	return cv.validator.Struct(i)
 }
 
-func SetupEchoContext(t *testing.T, reqBody, endpoint string) echo.Context {
+func SetupEchoContext(t *testing.T, reqBody interface{}, endpoint string) echo.Context {
 	t.Helper()
 
 	e := echo.New()
 	e.Validator = &customValidator{validator: validator.New()}
 
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/%s/%s", config.APIVersion, endpoint), strings.NewReader(reqBody))
+	jsonBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		t.Fatalf("failed to marshal reqBody: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/%s/%s", config.APIVersion, endpoint), strings.NewReader(string(jsonBytes)))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 	rec := httptest.NewRecorder()

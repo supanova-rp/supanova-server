@@ -7,10 +7,10 @@ import (
 )
 
 type Handlers struct {
-	System     domain.SystemRepository
-	Course     domain.CourseRepository
-	Progress   domain.ProgressRepository
-	Enrollment domain.EnrollmentRepository
+	System    domain.SystemRepository
+	Course    domain.CourseRepository
+	Progress  domain.ProgressRepository
+	Enrolment domain.EnrolmentRepository
 
 	ObjectStorage ObjectStorage
 }
@@ -26,14 +26,14 @@ func NewHandlers(
 	system domain.SystemRepository,
 	course domain.CourseRepository,
 	progress domain.ProgressRepository,
-	enrollment domain.EnrollmentRepository,
+	enrolment domain.EnrolmentRepository,
 	objectStorage ObjectStorage,
 ) *Handlers {
 	return &Handlers{
 		System:        system,
 		Course:        course,
 		Progress:      progress,
-		Enrollment:    enrollment,
+		Enrolment:     enrolment,
 		ObjectStorage: objectStorage,
 	}
 }

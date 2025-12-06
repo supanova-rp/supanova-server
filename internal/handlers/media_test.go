@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	stdErrors "errors"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -31,11 +30,11 @@ func TestGetVideoURL(t *testing.T) {
 			ObjectStorage: objectStorageMock,
 		}
 
-		reqBody := fmt.Sprintf(
-			`{"courseId":%q,"storageKey":%q}`,
-			testhelpers.VideoURLParams.CourseID,
-			testhelpers.VideoURLParams.StorageKey,
-		)
+		reqBody := handlers.VideoURLParams{
+			CourseID:   testhelpers.VideoURLParams.CourseID,
+			StorageKey: testhelpers.VideoURLParams.StorageKey,
+		}
+
 		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "video-url")
 
 		err := h.GetVideoURL(ctx)
@@ -70,10 +69,10 @@ func TestGetVideoURL(t *testing.T) {
 			ObjectStorage: objectStorageMock,
 		}
 
-		reqBody := fmt.Sprintf(
-			`{"storageKey":%q}`,
-			testhelpers.VideoURLParams.StorageKey,
-		)
+		reqBody := handlers.VideoURLParams{
+			StorageKey: testhelpers.VideoURLParams.StorageKey,
+		}
+
 		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url")
 
 		err := h.GetVideoURL(ctx)
@@ -93,10 +92,10 @@ func TestGetVideoURL(t *testing.T) {
 			ObjectStorage: objectStorageMock,
 		}
 
-		reqBody := fmt.Sprintf(
-			`{"courseId":%q}`,
-			testhelpers.VideoURLParams.CourseID,
-		)
+		reqBody := handlers.VideoURLParams{
+			CourseID: testhelpers.VideoURLParams.CourseID,
+		}
+
 		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url")
 
 		err := h.GetVideoURL(ctx)
@@ -116,11 +115,11 @@ func TestGetVideoURL(t *testing.T) {
 			ObjectStorage: objectStorageMock,
 		}
 
-		reqBody := fmt.Sprintf(
-			`{"courseId":%q,"storageKey":%q}`,
-			testhelpers.VideoURLParams.CourseID,
-			testhelpers.VideoURLParams.StorageKey,
-		)
+		reqBody := handlers.VideoURLParams{
+			CourseID:   testhelpers.VideoURLParams.CourseID,
+			StorageKey: testhelpers.VideoURLParams.StorageKey,
+		}
+
 		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url")
 
 		err := h.GetVideoURL(ctx)
@@ -144,11 +143,11 @@ func TestGetVideoUploadURL(t *testing.T) {
 			ObjectStorage: objectStorageMock,
 		}
 
-		reqBody := fmt.Sprintf(
-			`{"courseId":%q,"storageKey":%q}`,
-			testhelpers.VideoURLParams.CourseID,
-			testhelpers.VideoURLParams.StorageKey,
-		)
+		reqBody := handlers.VideoURLParams{
+			CourseID:   testhelpers.VideoURLParams.CourseID,
+			StorageKey: testhelpers.VideoURLParams.StorageKey,
+		}
+
 		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url")
 
 		err := h.GetVideoUploadURL(ctx)
@@ -188,10 +187,10 @@ func TestGetVideoUploadURL(t *testing.T) {
 			ObjectStorage: objectStorageMock,
 		}
 
-		reqBody := fmt.Sprintf(
-			`{"storageKey":%q}`,
-			testhelpers.VideoURLParams.StorageKey,
-		)
+		reqBody := handlers.VideoURLParams{
+			StorageKey: testhelpers.VideoURLParams.StorageKey,
+		}
+
 		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url")
 
 		err := h.GetVideoUploadURL(ctx)
@@ -216,10 +215,10 @@ func TestGetVideoUploadURL(t *testing.T) {
 			ObjectStorage: objectStorageMock,
 		}
 
-		reqBody := fmt.Sprintf(
-			`{"courseId":%q}`,
-			testhelpers.VideoURLParams.CourseID,
-		)
+		reqBody := handlers.VideoURLParams{
+			CourseID: testhelpers.VideoURLParams.CourseID,
+		}
+
 		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url")
 
 		err := h.GetVideoUploadURL(ctx)
@@ -244,11 +243,11 @@ func TestGetVideoUploadURL(t *testing.T) {
 			ObjectStorage: objectStorageMock,
 		}
 
-		reqBody := fmt.Sprintf(
-			`{"courseId":%q,"storageKey":%q}`,
-			testhelpers.VideoURLParams.CourseID,
-			testhelpers.VideoURLParams.StorageKey,
-		)
+		reqBody := handlers.VideoURLParams{
+			CourseID:   testhelpers.VideoURLParams.CourseID,
+			StorageKey: testhelpers.VideoURLParams.StorageKey,
+		}
+
 		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url")
 
 		err := h.GetVideoUploadURL(ctx)
