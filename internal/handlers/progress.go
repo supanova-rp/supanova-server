@@ -86,7 +86,8 @@ func (h *Handlers) UpdateProgress(e echo.Context) error {
 		SectionID: sectionID,
 	}
 
-	if err := h.Progress.UpdateProgress(ctx, sqlcParams); err != nil {
+	err = h.Progress.UpdateProgress(ctx, sqlcParams)
+	if err != nil {
 		return internalError(ctx, errors.Updating(progressResource), err,
 			slog.String("courseId", params.CourseID),
 			slog.String("sectionId", params.SectionID))
