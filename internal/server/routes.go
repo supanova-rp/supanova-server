@@ -7,15 +7,15 @@ import (
 )
 
 func RegisterCourseRoutes(private *echo.Group, h *handlers.Handlers) {
-	private.POST("course", h.GetCourse)
-	private.POST("add-course", h.AddCourse)
+	private.POST("/course", h.GetCourse)
+	private.POST("/add-course", h.AddCourse)
 }
 
 func RegisterProgressRoutes(private *echo.Group, h *handlers.Handlers) {
-	private.POST("get-progress", h.GetProgress)
+	private.POST("/get-progress", h.GetProgress)
 }
 
 func RegisterMediaRoutes(private *echo.Group, h *handlers.Handlers) {
-	private.POST("video-url", h.GetVideoURL)
-	private.POST("get-video-upload-url", h.GetVideoUploadURL)
+	private.POST("/video-url", h.GetVideoURL)
+	private.POST("/get-video-upload-url", h.GetVideoUploadURL)
 }

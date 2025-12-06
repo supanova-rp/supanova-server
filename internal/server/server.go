@@ -45,9 +45,9 @@ func New(h *handlers.Handlers, authProvider middleware.AuthProvider, cfg *config
 	)))
 
 	// Public route (no auth middleware)
-	public := e.Group(config.APIVersion)
+	public := e.Group("/" + config.APIVersion)
 	// Private group with auth middleware
-	private := e.Group(config.APIVersion)
+	private := e.Group("/" + config.APIVersion)
 
 	if cfg.Environment == config.EnvironmentTest {
 		private.Use(middleware.TestAuthMiddleware)
@@ -83,7 +83,7 @@ func (s *Server) Stop() error {
 }
 
 func registerRoutes(private, public *echo.Group, h *handlers.Handlers) {
-	public.GET("health", h.HealthCheck)
+	public.GET("/health", h.HealthCheck)
 
 	RegisterCourseRoutes(private, h)
 	RegisterProgressRoutes(private, h)
