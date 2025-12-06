@@ -14,7 +14,7 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/utils"
 )
 
-const enrollmentResource = "enrollment"
+const enrolmentResource = "enrolment"
 
 type UpdateCourseEnrolmentParams struct {
 	CourseID   string `json:"course_id" validate:"required"`
@@ -45,7 +45,7 @@ func (h *Handlers) UpdateCourseEnrolment(e echo.Context) error {
 			CourseID: courseID,
 		})
 		if err != nil {
-			return internalError(ctx, errors.Deleting(enrollmentResource), err, slog.String("course_id", params.CourseID))
+			return internalError(ctx, errors.Deleting(enrolmentResource), err, slog.String("course_id", params.CourseID))
 		}
 	} else {
 		err = h.Enrolment.EnrolInCourse(ctx, sqlc.EnrolInCourseParams{
@@ -53,7 +53,7 @@ func (h *Handlers) UpdateCourseEnrolment(e echo.Context) error {
 			CourseID: courseID,
 		})
 		if err != nil {
-			return internalError(ctx, errors.Creating(enrollmentResource), err, slog.String("course_id", params.CourseID))
+			return internalError(ctx, errors.Creating(enrolmentResource), err, slog.String("course_id", params.CourseID))
 		}
 	}
 
