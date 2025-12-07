@@ -1,13 +1,5 @@
 package cache
 
-import (
-	"errors"
-)
-
-var (
-	ErrCacheMiss = errors.New("cache miss")
-)
-
 type Cache[T any] struct {
 	itemsMap map[string]T
 }
@@ -23,12 +15,9 @@ func (c *Cache[T]) Set(key string, value T) {
 }
 
 func (c *Cache[T]) Get(key string) (T, bool) {
-	value, exists := c.itemsMap[key]
-	if !exists {
-		return value, false
-	}
+	value, ok := c.itemsMap[key]
 
-	return value, true
+	return value, ok
 }
 
 func (c *Cache[T]) Remove(key string) {
