@@ -13,8 +13,8 @@ import (
 )
 
 func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
-	cachedCourse, err := s.courseCache.Get(id.String())
-	if err == nil {
+	cachedCourse, ok := s.courseCache.Get(id.String())
+	if ok {
 		return &cachedCourse, nil
 	}
 
@@ -96,4 +96,14 @@ func courseVideoSectionFrom(v *sqlc.GetCourseVideoSectionsRow) *domain.VideoSect
 		StorageKey: utils.UUIDFrom(v.StorageKey),
 		Type:       domain.SectionTypeVideo,
 	}
+}
+
+func (s *Store) EditCourse(ctx context.Context, id pgtype.UUID) error {
+	// TODO: update course in cache when course is edited
+	return nil
+}
+
+func (s *Store) DeleteCourse(ctx context.Context, id pgtype.UUID) error {
+	// TODO: remove course from cache when course is deleted
+	return nil
 }
