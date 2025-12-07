@@ -21,16 +21,16 @@ import (
 )
 
 const (
-	AddCourseHandlerName             = "AddCourse"
-	GetCourseHandlerName             = "GetCourse"
-	IsEnrolledHandlerName            = "IsEnrolled"
-	GetVideoURLHandlerName           = "GetVideoURL"
-	GetVideoUploadURLHandlerName     = "GetVideoUploadURL"
-	UpdateCourseEnrolmentHandler     = "UpdateCourseEnrolment"
-	EnrollUserInCourseHandlerName    = "EnrolInCourse"
-	DisenrollUserInCourseHandlerName = "DisenrolInCourse"
-	GetProgressHandlerName           = "GetProgress"
-	UpdateProgressHandlerName        = "UpdateProgress"
+	AddCourseHandlerName            = "AddCourse"
+	GetCourseHandlerName            = "GetCourse"
+	IsEnrolledHandlerName           = "IsEnrolled"
+	GetVideoURLHandlerName          = "GetVideoURL"
+	GetVideoUploadURLHandlerName    = "GetVideoUploadURL"
+	UpdateCourseEnrolmentHandler    = "UpdateCourseEnrolment"
+	EnrolUserInCourseHandlerName    = "EnrolInCourse"
+	DisenrolUserInCourseHandlerName = "DisenrolInCourse"
+	GetProgressHandlerName          = "GetProgress"
+	UpdateProgressHandlerName       = "UpdateProgress"
 )
 
 var Course = &domain.Course{

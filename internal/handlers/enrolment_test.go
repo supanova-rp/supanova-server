@@ -45,11 +45,11 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
 		}
 
-		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.EnrolInCourseCalls()), 1, testhelpers.EnrollUserInCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.DisenrolInCourseCalls()), 0, testhelpers.DisenrollUserInCourseHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.EnrolInCourseCalls()), 1, testhelpers.EnrolUserInCourseHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.DisenrolInCourseCalls()), 0, testhelpers.DisenrolUserInCourseHandlerName)
 	})
 
-	t.Run("disenrolls user successfully when IsEnrolled is true", func(t *testing.T) {
+	t.Run("disenrols user successfully when IsEnrolled is true", func(t *testing.T) {
 		courseID := uuid.New()
 
 		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
@@ -78,8 +78,8 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
 		}
 
-		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.DisenrolInCourseCalls()), 1, testhelpers.DisenrollUserInCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.EnrolInCourseCalls()), 0, testhelpers.EnrollUserInCourseHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.DisenrolInCourseCalls()), 1, testhelpers.DisenrolUserInCourseHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.EnrolInCourseCalls()), 0, testhelpers.EnrolUserInCourseHandlerName)
 	})
 
 	t.Run("validation error - missing course_id", func(t *testing.T) {
@@ -102,8 +102,8 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 		err := h.UpdateCourseEnrolment(ctx)
 
 		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
-		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.EnrolInCourseCalls()), 0, testhelpers.EnrollUserInCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.DisenrolInCourseCalls()), 0, testhelpers.DisenrollUserInCourseHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.EnrolInCourseCalls()), 0, testhelpers.EnrolUserInCourseHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.DisenrolInCourseCalls()), 0, testhelpers.DisenrolUserInCourseHandlerName)
 	})
 
 	t.Run("validation error - invalid uuid format", func(t *testing.T) {
@@ -127,8 +127,8 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 		err := h.UpdateCourseEnrolment(ctx)
 
 		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.InvalidUUID)
-		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.EnrolInCourseCalls()), 0, testhelpers.EnrollUserInCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.DisenrolInCourseCalls()), 0, testhelpers.DisenrollUserInCourseHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.EnrolInCourseCalls()), 0, testhelpers.EnrolUserInCourseHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.DisenrolInCourseCalls()), 0, testhelpers.DisenrolUserInCourseHandlerName)
 	})
 
 	t.Run("internal server error", func(t *testing.T) {

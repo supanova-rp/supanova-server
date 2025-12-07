@@ -48,7 +48,7 @@ func TestCourse(t *testing.T) {
 			Description: courseDescription,
 		})
 
-		enrollUserInCourse(t, testResources.AppURL, created.ID)
+		enrolUserInCourse(t, testResources.AppURL, created.ID)
 
 		actual := getCourse(t, testResources.AppURL, created.ID)
 
