@@ -20,3 +20,7 @@ func RegisterMediaRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/video-url", h.GetVideoURL)
 	private.POST("/get-video-upload-url", h.GetVideoUploadURL)
 }
+
+func RegisterEnrolmentRoutes(private *echo.Group, h *handlers.Handlers) {
+	private.POST("/update-users-to-courses", h.UpdateCourseEnrolment)
+}

@@ -65,6 +65,19 @@ func getProgress(t *testing.T, baseURL string, courseID uuid.UUID) *domain.Progr
 	return parseJSONResponse[domain.Progress](t, resp)
 }
 
+func enrolUserInCourse(t *testing.T, baseURL string, courseID uuid.UUID) {
+	t.Helper()
+
+	resp := makePOSTRequest(t, baseURL, "update-users-to-courses", &handlers.UpdateCourseEnrolmentParams{
+		CourseID:   courseID.String(),
+		IsEnrolled: false,
+	})
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("enrol failed, expected status 200, got %d", resp.StatusCode)
+	}
+}
+
 func makePOSTRequest(t *testing.T, baseURL, endpoint string, resource any) *http.Response {
 	t.Helper()
 

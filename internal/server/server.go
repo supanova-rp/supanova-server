@@ -88,6 +88,7 @@ func registerRoutes(private, public *echo.Group, h *handlers.Handlers) {
 	RegisterCourseRoutes(private, h)
 	RegisterProgressRoutes(private, h)
 	RegisterMediaRoutes(private, h)
+	RegisterEnrolmentRoutes(private, h)
 }
 
 type customValidator struct {

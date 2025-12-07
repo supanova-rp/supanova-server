@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	stdErrors "errors"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -35,11 +34,12 @@ func TestGetCourse(t *testing.T) {
 		h := &handlers.Handlers{
 			Course: mockCourseRepo,
 		}
-		ctx, rec := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"courseId":%q}`, testhelpers.Course.ID),
-			"course",
-		)
+
+		reqBody := handlers.GetCourseParams{
+			ID: testhelpers.Course.ID.String(),
+		}
+
+		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "course")
 
 		err := h.GetCourse(ctx)
 		if err != nil {
@@ -71,22 +71,22 @@ func TestGetCourse(t *testing.T) {
 			},
 		}
 
-		mockEnrollmentRepo := &mocks.EnrollmentRepositoryMock{
+		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
 			IsEnrolledFunc: func(ctx context.Context, params sqlc.IsUserEnrolledInCourseParams) (bool, error) {
 				return true, nil
 			},
 		}
 
 		h := &handlers.Handlers{
-			Course:     mockCourseRepo,
-			Enrollment: mockEnrollmentRepo,
+			Course:    mockCourseRepo,
+			Enrolment: mockEnrolmentRepo,
 		}
-		ctx, rec := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"courseId":%q}`, testhelpers.Course.ID),
-			"course",
-			testhelpers.WithRole(config.UserRole),
-		)
+
+		reqBody := handlers.GetCourseParams{
+			ID: testhelpers.Course.ID.String(),
+		}
+
+		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "course", testhelpers.WithRole(config.UserRole))
 
 		err := h.GetCourse(ctx)
 		if err != nil {
@@ -107,7 +107,7 @@ func TestGetCourse(t *testing.T) {
 		}
 
 		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseCalls()), 1, testhelpers.GetCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.IsEnrolledCalls()), 1, testhelpers.IsEnrolledHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.IsEnrolledCalls()), 1, testhelpers.IsEnrolledHandlerName)
 	})
 
 	t.Run("validation error - missing id", func(t *testing.T) {
@@ -121,7 +121,9 @@ func TestGetCourse(t *testing.T) {
 			Course: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, `{}`, "course") // missing id
+		reqBody := handlers.GetCourseParams{}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
 
 		err := h.GetCourse(ctx)
 
@@ -140,7 +142,11 @@ func TestGetCourse(t *testing.T) {
 			Course: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, `{"courseId":"invalid-uuid"}`, "course")
+		reqBody := handlers.GetCourseParams{
+			ID: "invalid-uuid",
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
 
 		err := h.GetCourse(ctx)
 
@@ -161,11 +167,11 @@ func TestGetCourse(t *testing.T) {
 			Course: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"courseId":%q}`, courseID),
-			"course",
-		)
+		reqBody := handlers.GetCourseParams{
+			ID: courseID.String(),
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
 
 		err := h.GetCourse(ctx)
 
@@ -186,11 +192,11 @@ func TestGetCourse(t *testing.T) {
 			Course: mockRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"courseId":%q}`, courseID),
-			"course",
-		)
+		reqBody := handlers.GetCourseParams{
+			ID: courseID.String(),
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
 
 		err := h.GetCourse(ctx)
 
@@ -205,29 +211,28 @@ func TestGetCourse(t *testing.T) {
 			},
 		}
 
-		mockEnrollmentRepo := &mocks.EnrollmentRepositoryMock{
+		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
 			IsEnrolledFunc: func(ctx context.Context, params sqlc.IsUserEnrolledInCourseParams) (bool, error) {
 				return false, nil
 			},
 		}
 
 		h := &handlers.Handlers{
-			Course:     mockCourseRepo,
-			Enrollment: mockEnrollmentRepo,
+			Course:    mockCourseRepo,
+			Enrolment: mockEnrolmentRepo,
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"courseId":%q}`, testhelpers.Course.ID),
-			"course",
-			testhelpers.WithRole(config.UserRole),
-		)
+		reqBody := handlers.GetCourseParams{
+			ID: testhelpers.Course.ID.String(),
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course", testhelpers.WithRole(config.UserRole))
 
 		err := h.GetCourse(ctx)
 
 		testhelpers.AssertHTTPError(t, err, http.StatusForbidden, errors.Forbidden("course"))
 		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseCalls()), 1, testhelpers.GetCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrollmentRepo.IsEnrolledCalls()), 1, testhelpers.IsEnrolledHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.IsEnrolledCalls()), 1, testhelpers.IsEnrolledHandlerName)
 	})
 }
 
@@ -242,11 +247,13 @@ func TestAddCourse(t *testing.T) {
 		}
 
 		h := &handlers.Handlers{Course: mockRepo}
-		ctx, rec := testhelpers.SetupEchoContext(
-			t,
-			`{"title":"New Course","description":"New Description"}`,
-			"course",
-		)
+
+		reqBody := handlers.AddCourseParams{
+			Title:       "New Course",
+			Description: "New Description",
+		}
+
+		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "course")
 
 		err := h.AddCourse(ctx)
 		if err != nil {
@@ -277,11 +284,12 @@ func TestAddCourse(t *testing.T) {
 		}
 
 		h := &handlers.Handlers{Course: mockRepo}
-		ctx, _ := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"description":%q}`, testhelpers.Course.Description),
-			"course",
-		)
+
+		reqBody := handlers.AddCourseParams{
+			Description: testhelpers.Course.Description,
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
 
 		err := h.AddCourse(ctx)
 
@@ -297,11 +305,12 @@ func TestAddCourse(t *testing.T) {
 		}
 
 		h := &handlers.Handlers{Course: mockRepo}
-		ctx, _ := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"title":%q}`, testhelpers.Course.Title),
-			"course",
-		)
+
+		reqBody := handlers.AddCourseParams{
+			Title: testhelpers.Course.Title,
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
 
 		err := h.AddCourse(ctx)
 
@@ -317,11 +326,13 @@ func TestAddCourse(t *testing.T) {
 		}
 
 		h := &handlers.Handlers{Course: mockRepo}
-		ctx, _ := testhelpers.SetupEchoContext(
-			t,
-			fmt.Sprintf(`{"title":%q,"description":%q}`, testhelpers.Course.Title, testhelpers.Course.Description),
-			"course",
-		)
+
+		reqBody := handlers.AddCourseParams{
+			Title:       testhelpers.Course.Title,
+			Description: testhelpers.Course.Description,
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
 
 		err := h.AddCourse(ctx)
 
