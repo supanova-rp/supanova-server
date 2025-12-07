@@ -7,8 +7,7 @@ import (
 )
 
 var (
-	ErrCacheMiss               = errors.New("cache miss")
-	ErrCacheEntryAlreadyExists = errors.New("entry with this key already exists in cache")
+	ErrCacheMiss = errors.New("cache miss")
 )
 
 type Cache[T any] struct {
@@ -23,20 +22,16 @@ func New[T any](data T) *Cache[T] {
 	}
 }
 
-func (c *Cache[T]) Set(key uuid.UUID, value T) error {
-	if _, exists := c.itemsMap[key]; exists {
-		return ErrCacheEntryAlreadyExists
+func (c *Cache[T]) Set(key uuid.UUID, value T) {
+	if _, exists := c.itemsMap[key]; !exists {
+		c.keys = append(c.keys, key)
 	}
 
-	c.keys = append(c.keys, key)
 	c.itemsMap[key] = value
-
-	return nil
 }
 
 func (c *Cache[T]) Get(key uuid.UUID) (T, error) {
 	value, exists := c.itemsMap[key]
-
 	if !exists {
 		return value, ErrCacheMiss
 	}
