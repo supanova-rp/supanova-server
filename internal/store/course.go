@@ -13,6 +13,11 @@ import (
 )
 
 func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
+	cachedCourse, ok := s.courseCache.Get(id.String())
+	if ok {
+		return &cachedCourse, nil
+	}
+
 	course, err := s.Queries.GetCourse(ctx, id)
 	if err != nil {
 		return nil, err
@@ -45,7 +50,7 @@ func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, 
 		return sections[i].GetPosition() < sections[j].GetPosition()
 	})
 
-	return &domain.Course{
+	formattedCourse := &domain.Course{
 		ID:                uuid.UUID(course.ID.Bytes),
 		Title:             course.Title.String,
 		Description:       course.Description.String,
@@ -53,7 +58,11 @@ func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, 
 		CompletionMessage: course.CompletionMessage.String,
 		Sections:          sections,
 		Materials:         utils.Map(materials, courseMaterialFrom),
-	}, nil
+	}
+
+	s.courseCache.Set(id.String(), *formattedCourse)
+
+	return formattedCourse, nil
 }
 
 func (s *Store) AddCourse(ctx context.Context, course sqlc.AddCourseParams) (*domain.Course, error) {
@@ -87,4 +96,14 @@ func courseVideoSectionFrom(v *sqlc.GetCourseVideoSectionsRow) *domain.VideoSect
 		StorageKey: utils.UUIDFrom(v.StorageKey),
 		Type:       domain.SectionTypeVideo,
 	}
+}
+
+func (s *Store) EditCourse(ctx context.Context, id pgtype.UUID) error {
+	// TODO: update course in cache when course is edited
+	return nil
+}
+
+func (s *Store) DeleteCourse(ctx context.Context, id pgtype.UUID) error {
+	// TODO: remove course from cache when course is deleted
+	return nil
 }
