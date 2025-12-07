@@ -2,8 +2,6 @@ package cache
 
 import (
 	"errors"
-
-	"github.com/google/uuid"
 )
 
 var (
@@ -11,18 +9,18 @@ var (
 )
 
 type Cache[T any] struct {
-	keys     []uuid.UUID
-	itemsMap map[uuid.UUID]T
+	keys     []string
+	itemsMap map[string]T
 }
 
-func New[T any](data T) *Cache[T] {
+func New[T any]() *Cache[T] {
 	return &Cache[T]{
-		keys:     []uuid.UUID{},
-		itemsMap: map[uuid.UUID]T{},
+		keys:     []string{},
+		itemsMap: map[string]T{},
 	}
 }
 
-func (c *Cache[T]) Set(key uuid.UUID, value T) {
+func (c *Cache[T]) Set(key string, value T) {
 	if _, exists := c.itemsMap[key]; !exists {
 		c.keys = append(c.keys, key)
 	}
@@ -30,7 +28,7 @@ func (c *Cache[T]) Set(key uuid.UUID, value T) {
 	c.itemsMap[key] = value
 }
 
-func (c *Cache[T]) Get(key uuid.UUID) (T, error) {
+func (c *Cache[T]) Get(key string) (T, error) {
 	value, exists := c.itemsMap[key]
 	if !exists {
 		return value, ErrCacheMiss
@@ -39,7 +37,7 @@ func (c *Cache[T]) Get(key uuid.UUID) (T, error) {
 	return value, nil
 }
 
-func (c *Cache[T]) Remove(key uuid.UUID) {
+func (c *Cache[T]) Remove(key string) {
 	for i, cKey := range c.keys {
 		if cKey == key {
 			c.keys = append(c.keys[:i], c.keys[i+1:]...)
