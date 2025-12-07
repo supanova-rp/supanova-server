@@ -38,12 +38,12 @@ func New(ctx context.Context, dbUrl string) (*Store, error) {
 		return nil, fmt.Errorf("failed to run migrations: %v", err)
 	}
 
-	cache := cache.New[domain.Course]()
+	courseCache := cache.New[domain.Course]()
 
 	return &Store{
-		pool:    pool,
-		Queries: sqlc.New(pool),
-		courseCache:   cache,
+		pool:        pool,
+		Queries:     sqlc.New(pool),
+		courseCache: courseCache,
 	}, nil
 }
 
