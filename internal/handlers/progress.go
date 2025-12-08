@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
+	"github.com/supanova-rp/supanova-server/internal/services/email"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 	"github.com/supanova-rp/supanova-server/internal/utils"
 )
@@ -20,6 +21,11 @@ type GetProgressParams struct {
 type UpdateProgressParams struct {
 	CourseID  string `json:"courseId" validate:"required"`
 	SectionID string `json:"sectionId" validate:"required"`
+}
+
+type SetCourseCompletedParams struct {
+	CourseID   string `json:"courseId" validate:"required"`
+	CourseName string `json:"courseName" validate:"required"`
 }
 
 func (h *Handlers) GetProgress(e echo.Context) error {
@@ -96,33 +102,55 @@ func (h *Handlers) UpdateProgress(e echo.Context) error {
 	return e.NoContent(http.StatusOK)
 }
 
-// has completed course query:
-// -------------------------------------
-// 'SELECT completed_course FROM userprogress WHERE user_id = $1 AND course_id = $2', [userId, courseId],
-
-// user progress update query:
-// -------------------------------------
-// If there is no existing userprogress (shouldn't happen since user should have some progress already)
-// then insert new row with empty completed_section_ids
-//       await t.none(
-//         `INSERT INTO userprogress (user_id, course_id, completed_section_ids, completed_course)
-//        VALUES ($1, $2, ARRAY[]::uuid[], TRUE)
-//        ON CONFLICT (user_id, course_id)
-//        DO UPDATE SET completed_course = TRUE`,
-//         [userId, courseId],
-//       );
-//     })
-
 func (h *Handlers) SetCourseCompleted(e echo.Context) error {
-	// TODO:
-	// 1. getUserID from context and parse
-	// 2. parse courseId & courseName params
-	// 3. check if user has previously completed course
-	//   - if yes: 
-	//       1. send back 200 response with courseId, completed_course: true
-	//   - if no:
-	//       2. get user name & email from DB -> create new sqlc query
-	//       3. send completion e-mail using email service
-	//       4. update user progress (see query below)
-	//       5. send back 200 response with courseId, completed_course: true
+	ctx := e.Request().Context()
+
+	userID, ok := getUserID(ctx)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+	}
+
+	var params SetCourseCompletedParams
+	if err := bindAndValidate(e, &params); err != nil {
+		return err
+	}
+
+	courseID, err := utils.PGUUIDFrom(params.CourseID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+	}
+
+	completed, err := h.Progress.HasCompletedCourse(ctx, sqlc.HasCompletedCourseParams{
+		UserID:   userID,
+		CourseID: courseID,
+	})
+
+	if completed.CompletedCourse {
+		return e.JSON(http.StatusOK, completed)
+	}
+
+	err = h.Progress.SetCourseCompleted(ctx, sqlc.SetCourseCompletedParams{
+		UserID:   userID,
+		CourseID: courseID,
+	})
+	if err != nil {
+		return internalError(ctx, errors.Updating(progressResource), err,
+			slog.String("courseId", params.CourseID),
+			slog.String("userId", userID))
+	}
+
+	user, err := h.User.GetUser(ctx, userID)
+
+	// TODO: get timestamp
+
+	emailParams := &email.CourseCompletionParams{
+		UserName: user.Name,
+		UserEmail: user.Email,
+		CourseName: params.CourseName,
+		CompletionTimestamp: "",
+
+	}
+	h.EmailService.SendCourseCompletion(ctx, emailParams)
+
+	return e.JSON(http.StatusOK, completed)
 }

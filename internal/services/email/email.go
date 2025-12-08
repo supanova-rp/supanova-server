@@ -2,11 +2,10 @@ package email
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
-
-	"github.com/labstack/echo/v4"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
 )
@@ -41,7 +40,7 @@ func New(cfg *config.EmailService) *Service {
 	}
 }
 
-func (c *Service) SendCourseCompletion(ctx echo.Context, params *CourseCompletionParams) error {
+func (c *Service) SendCourseCompletion(ctx context.Context, params *CourseCompletionParams) error {
 	reqBody := &EmailCourseCompletionParams{
 		TemplateParams: params,
 		ServiceID:      c.serviceID,
@@ -59,7 +58,7 @@ func (c *Service) SendCourseCompletion(ctx echo.Context, params *CourseCompletio
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx.Request().Context(), http.MethodPost, parsedURL.String(), bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, parsedURL.String(), bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
