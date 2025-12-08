@@ -95,3 +95,34 @@ func (h *Handlers) UpdateProgress(e echo.Context) error {
 
 	return e.NoContent(http.StatusOK)
 }
+
+// has completed course query:
+// -------------------------------------
+// 'SELECT completed_course FROM userprogress WHERE user_id = $1 AND course_id = $2', [userId, courseId],
+
+// user progress update query:
+// -------------------------------------
+// If there is no existing userprogress (shouldn't happen since user should have some progress already)
+// then insert new row with empty completed_section_ids
+//       await t.none(
+//         `INSERT INTO userprogress (user_id, course_id, completed_section_ids, completed_course)
+//        VALUES ($1, $2, ARRAY[]::uuid[], TRUE)
+//        ON CONFLICT (user_id, course_id)
+//        DO UPDATE SET completed_course = TRUE`,
+//         [userId, courseId],
+//       );
+//     })
+
+func (h *Handlers) SetCourseCompleted(e echo.Context) error {
+	// TODO:
+	// 1. getUserID from context and parse
+	// 2. parse courseId & courseName params
+	// 3. check if user has previously completed course
+	//   - if yes: 
+	//       1. send back 200 response with courseId, completed_course: true
+	//   - if no:
+	//       2. get user name & email from DB -> create new sqlc query
+	//       3. send completion e-mail using email service
+	//       4. update user progress (see query below)
+	//       5. send back 200 response with courseId, completed_course: true
+}

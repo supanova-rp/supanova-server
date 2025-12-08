@@ -1,6 +1,6 @@
 # Supanova Server
 
-Go server for Supanova Radiation Protection Services learning platform
+Go server for Supanova Radiation Protection Services learning platform using Echo for HTTP routing, PostgreSQL for data persistence, and sqlc for type-safe database queries.
 
 ### App architecture:
 ![high-level system architecture](apparchitecture.png)
