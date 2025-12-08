@@ -27,6 +27,7 @@ type App struct {
 	AWS                     *AWS
 	AuthProviderCredentials string
 	ClientURLs              []string
+	EmailService            *EmailService
 }
 
 type Environment string
@@ -53,6 +54,12 @@ type AWS struct {
 	CDNKeyName   string
 }
 
+type EmailService struct {
+	ServiceID  string
+	TemplateID string
+	PublicKey  string
+}
+
 var logLevelMap = map[string]slog.Level{
 	"debug": slog.LevelDebug,
 	"info":  slog.LevelInfo,
@@ -66,19 +73,22 @@ func ParseEnv() (*App, error) {
 	_ = godotenv.Load()
 
 	envVars := map[string]string{
-		"SERVER_PORT":            "",
-		"DATABASE_URL":           "",
-		"LOG_LEVEL":              "",
-		"AWS_REGION":             "",
-		"AWS_ACCESS_KEY_ID":      "",
-		"AWS_SECRET_ACCESS_KEY":  "",
-		"AWS_BUCKET_NAME":        "",
-		"CLOUDFRONT_DOMAIN":      "",
-		"CLOUDFRONT_KEY_PAIR_ID": "",
-		"CLOUDFRONT_KEY_NAME":    "",
-		"ENVIRONMENT":            "",
-		"FIREBASE_CREDENTIALS":   "",
-		"CLIENT_URLS":            "",
+		"SERVER_PORT":                          "",
+		"DATABASE_URL":                         "",
+		"LOG_LEVEL":                            "",
+		"AWS_REGION":                           "",
+		"AWS_ACCESS_KEY_ID":                    "",
+		"AWS_SECRET_ACCESS_KEY":                "",
+		"AWS_BUCKET_NAME":                      "",
+		"CLOUDFRONT_DOMAIN":                    "",
+		"CLOUDFRONT_KEY_PAIR_ID":               "",
+		"CLOUDFRONT_KEY_NAME":                  "",
+		"ENVIRONMENT":                          "",
+		"FIREBASE_CREDENTIALS":                 "",
+		"CLIENT_URLS":                          "",
+		"EMAILJS_SERVICE_ID":                   "",
+		"EMAILJS_PUBLIC_KEY":                   "",
+		"EMAILJS_COURSE_COMPLETED_TEMPLATE_ID": "",
 	}
 
 	for key := range envVars {
@@ -124,5 +134,10 @@ func ParseEnv() (*App, error) {
 		Environment:             environment,
 		AuthProviderCredentials: envVars["FIREBASE_CREDENTIALS"],
 		ClientURLs:              clientURLs,
+		EmailService: &EmailService{
+			ServiceID:  envVars["EMAILJS_SERVICE_ID"],
+			TemplateID: envVars["EMAILJS_PUBLIC_KEY"],
+			PublicKey:  envVars["EMAILJS_COURSE_COMPLETED_TEMPLATE_ID"],
+		},
 	}, nil
 }

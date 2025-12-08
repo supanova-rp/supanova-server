@@ -3,7 +3,10 @@ package handlers
 import (
 	"context"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/supanova-rp/supanova-server/internal/domain"
+	"github.com/supanova-rp/supanova-server/internal/services/email"
 )
 
 type Handlers struct {
@@ -13,6 +16,7 @@ type Handlers struct {
 	Enrolment domain.EnrolmentRepository
 
 	ObjectStorage ObjectStorage
+	EmailService  EmailService
 }
 
 //go:generate moq -out ../handlers/mocks/objectstorage_mock.go -pkg mocks . ObjectStorage
@@ -22,12 +26,17 @@ type ObjectStorage interface {
 	GetCDNURL(ctx context.Context, key string) (string, error)
 }
 
+type EmailService interface {
+	SendCourseCompletion(ctx echo.Context, params *email.CourseCompletionParams) error
+}
+
 func NewHandlers(
 	system domain.SystemRepository,
 	course domain.CourseRepository,
 	progress domain.ProgressRepository,
 	enrolment domain.EnrolmentRepository,
 	objectStorage ObjectStorage,
+	emailService EmailService,
 ) *Handlers {
 	return &Handlers{
 		System:        system,
@@ -35,5 +44,6 @@ func NewHandlers(
 		Progress:      progress,
 		Enrolment:     enrolment,
 		ObjectStorage: objectStorage,
+		EmailService:  emailService,
 	}
 }
