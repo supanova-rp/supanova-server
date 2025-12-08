@@ -27,7 +27,7 @@ type App struct {
 	AWS                     *AWS
 	AuthProviderCredentials string
 	ClientURLs              []string
-	EmailService                   *EmailService
+	EmailService            *EmailService
 }
 
 type Environment string

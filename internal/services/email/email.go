@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"net/url"
 
 	"github.com/labstack/echo/v4"
+
 	"github.com/supanova-rp/supanova-server/internal/config"
 )
 
@@ -52,11 +54,22 @@ func (c *Service) SendCourseCompletion(ctx echo.Context, params *CourseCompletio
 		return err
 	}
 
-	resp, err := http.Post(emailJSURL, "application/json", bytes.NewBuffer(body))
+	parsedURL, err := url.Parse(emailJSURL)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+
+	req, err := http.NewRequestWithContext(ctx.Request().Context(), http.MethodPost, parsedURL.String(), bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close() //nolint:errcheck
 
 	return nil
 }

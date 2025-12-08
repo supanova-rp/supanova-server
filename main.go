@@ -66,12 +66,12 @@ func run() error {
 		return fmt.Errorf("failed to initialise auth provider: %v", err)
 	}
 
-	email := email.New(cfg.EmailService)
+	emailService := email.New(cfg.EmailService)
 
 	return app.Run(ctx, cfg, app.Dependencies{
 		ObjectStorage: objectStore,
 		AuthProvider:  authProvider,
-		EmailService:  email,
+		EmailService:  emailService,
 	})
 }
 

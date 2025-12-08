@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/labstack/echo/v4"
+
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/services/email"
 )
