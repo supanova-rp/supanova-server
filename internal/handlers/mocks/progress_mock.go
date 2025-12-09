@@ -23,7 +23,7 @@ var _ domain.ProgressRepository = &ProgressRepositoryMock{}
 //			GetProgressFunc: func(contextMoqParam context.Context, getProgressParams sqlc.GetProgressParams) (*domain.Progress, error) {
 //				panic("mock out the GetProgress method")
 //			},
-//			HasCompletedCourseFunc: func(contextMoqParam context.Context, hasCompletedCourseParams sqlc.HasCompletedCourseParams) (*domain.Completed, error) {
+//			HasCompletedCourseFunc: func(contextMoqParam context.Context, hasCompletedCourseParams sqlc.HasCompletedCourseParams) (bool, error) {
 //				panic("mock out the HasCompletedCourse method")
 //			},
 //			SetCourseCompletedFunc: func(contextMoqParam context.Context, setCourseCompletedParams sqlc.SetCourseCompletedParams) error {
@@ -43,7 +43,7 @@ type ProgressRepositoryMock struct {
 	GetProgressFunc func(contextMoqParam context.Context, getProgressParams sqlc.GetProgressParams) (*domain.Progress, error)
 
 	// HasCompletedCourseFunc mocks the HasCompletedCourse method.
-	HasCompletedCourseFunc func(contextMoqParam context.Context, hasCompletedCourseParams sqlc.HasCompletedCourseParams) (*domain.Completed, error)
+	HasCompletedCourseFunc func(contextMoqParam context.Context, hasCompletedCourseParams sqlc.HasCompletedCourseParams) (bool, error)
 
 	// SetCourseCompletedFunc mocks the SetCourseCompleted method.
 	SetCourseCompletedFunc func(contextMoqParam context.Context, setCourseCompletedParams sqlc.SetCourseCompletedParams) error
@@ -125,7 +125,7 @@ func (mock *ProgressRepositoryMock) GetProgressCalls() []struct {
 }
 
 // HasCompletedCourse calls HasCompletedCourseFunc.
-func (mock *ProgressRepositoryMock) HasCompletedCourse(contextMoqParam context.Context, hasCompletedCourseParams sqlc.HasCompletedCourseParams) (*domain.Completed, error) {
+func (mock *ProgressRepositoryMock) HasCompletedCourse(contextMoqParam context.Context, hasCompletedCourseParams sqlc.HasCompletedCourseParams) (bool, error) {
 	if mock.HasCompletedCourseFunc == nil {
 		panic("ProgressRepositoryMock.HasCompletedCourseFunc: method is nil but ProgressRepository.HasCompletedCourse was just called")
 	}

@@ -46,7 +46,7 @@ func New(cfg *config.EmailService) *Service {
 	}
 }
 
-func (c *Service) SendCourseCompletion(ctx context.Context, params *CourseCompletionParams) error {
+func (c *Service) SendCourseCompletionNotification(ctx context.Context, params *CourseCompletionParams) error {
 	reqBody := &EmailCourseCompletionParams{
 		TemplateParams: params,
 		ServiceID:      c.serviceID,

@@ -20,8 +20,8 @@ var _ handlers.EmailService = &EmailServiceMock{}
 //
 //		// make and configure a mocked handlers.EmailService
 //		mockedEmailService := &EmailServiceMock{
-//			SendCourseCompletionFunc: func(ctx context.Context, params *email.CourseCompletionParams) error {
-//				panic("mock out the SendCourseCompletion method")
+//			SendCourseCompletionNotificationFunc: func(ctx context.Context, params *email.CourseCompletionParams) error {
+//				panic("mock out the SendCourseCompletionNotification method")
 //			},
 //		}
 //
@@ -30,26 +30,26 @@ var _ handlers.EmailService = &EmailServiceMock{}
 //
 //	}
 type EmailServiceMock struct {
-	// SendCourseCompletionFunc mocks the SendCourseCompletion method.
-	SendCourseCompletionFunc func(ctx context.Context, params *email.CourseCompletionParams) error
+	// SendCourseCompletionNotificationFunc mocks the SendCourseCompletionNotification method.
+	SendCourseCompletionNotificationFunc func(ctx context.Context, params *email.CourseCompletionParams) error
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// SendCourseCompletion holds details about calls to the SendCourseCompletion method.
-		SendCourseCompletion []struct {
+		// SendCourseCompletionNotification holds details about calls to the SendCourseCompletionNotification method.
+		SendCourseCompletionNotification []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Params is the params argument value.
 			Params *email.CourseCompletionParams
 		}
 	}
-	lockSendCourseCompletion sync.RWMutex
+	lockSendCourseCompletionNotification sync.RWMutex
 }
 
-// SendCourseCompletion calls SendCourseCompletionFunc.
-func (mock *EmailServiceMock) SendCourseCompletion(ctx context.Context, params *email.CourseCompletionParams) error {
-	if mock.SendCourseCompletionFunc == nil {
-		panic("EmailServiceMock.SendCourseCompletionFunc: method is nil but EmailService.SendCourseCompletion was just called")
+// SendCourseCompletionNotification calls SendCourseCompletionNotificationFunc.
+func (mock *EmailServiceMock) SendCourseCompletionNotification(ctx context.Context, params *email.CourseCompletionParams) error {
+	if mock.SendCourseCompletionNotificationFunc == nil {
+		panic("EmailServiceMock.SendCourseCompletionNotificationFunc: method is nil but EmailService.SendCourseCompletionNotification was just called")
 	}
 	callInfo := struct {
 		Ctx    context.Context
@@ -58,17 +58,17 @@ func (mock *EmailServiceMock) SendCourseCompletion(ctx context.Context, params *
 		Ctx:    ctx,
 		Params: params,
 	}
-	mock.lockSendCourseCompletion.Lock()
-	mock.calls.SendCourseCompletion = append(mock.calls.SendCourseCompletion, callInfo)
-	mock.lockSendCourseCompletion.Unlock()
-	return mock.SendCourseCompletionFunc(ctx, params)
+	mock.lockSendCourseCompletionNotification.Lock()
+	mock.calls.SendCourseCompletionNotification = append(mock.calls.SendCourseCompletionNotification, callInfo)
+	mock.lockSendCourseCompletionNotification.Unlock()
+	return mock.SendCourseCompletionNotificationFunc(ctx, params)
 }
 
-// SendCourseCompletionCalls gets all the calls that were made to SendCourseCompletion.
+// SendCourseCompletionNotificationCalls gets all the calls that were made to SendCourseCompletionNotification.
 // Check the length with:
 //
-//	len(mockedEmailService.SendCourseCompletionCalls())
-func (mock *EmailServiceMock) SendCourseCompletionCalls() []struct {
+//	len(mockedEmailService.SendCourseCompletionNotificationCalls())
+func (mock *EmailServiceMock) SendCourseCompletionNotificationCalls() []struct {
 	Ctx    context.Context
 	Params *email.CourseCompletionParams
 } {
@@ -76,8 +76,8 @@ func (mock *EmailServiceMock) SendCourseCompletionCalls() []struct {
 		Ctx    context.Context
 		Params *email.CourseCompletionParams
 	}
-	mock.lockSendCourseCompletion.RLock()
-	calls = mock.calls.SendCourseCompletion
-	mock.lockSendCourseCompletion.RUnlock()
+	mock.lockSendCourseCompletionNotification.RLock()
+	calls = mock.calls.SendCourseCompletionNotification
+	mock.lockSendCourseCompletionNotification.RUnlock()
 	return calls
 }

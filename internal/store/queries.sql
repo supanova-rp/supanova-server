@@ -68,7 +68,7 @@ DO UPDATE SET completed_section_ids = array_append(userprogress.completed_sectio
 WHERE NOT (sqlc.arg('section_id') = ANY(userprogress.completed_section_ids));
 
 -- name: HasCompletedCourse :one
-SELECT completed_course, course_id FROM userprogress WHERE user_id = $1 AND course_id = $2;
+SELECT completed_course FROM userprogress WHERE user_id = $1 AND course_id = $2;
 
 -- If there is no existing userprogress (should not happen since user should have some progress already)
 -- then insert new row with empty completed_section_ids */

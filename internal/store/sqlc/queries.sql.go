@@ -255,7 +255,7 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 }
 
 const hasCompletedCourse = `-- name: HasCompletedCourse :one
-SELECT completed_course, course_id FROM userprogress WHERE user_id = $1 AND course_id = $2
+SELECT completed_course FROM userprogress WHERE user_id = $1 AND course_id = $2
 `
 
 type HasCompletedCourseParams struct {
@@ -263,16 +263,11 @@ type HasCompletedCourseParams struct {
 	CourseID pgtype.UUID
 }
 
-type HasCompletedCourseRow struct {
-	CompletedCourse pgtype.Bool
-	CourseID        pgtype.UUID
-}
-
-func (q *Queries) HasCompletedCourse(ctx context.Context, arg HasCompletedCourseParams) (HasCompletedCourseRow, error) {
+func (q *Queries) HasCompletedCourse(ctx context.Context, arg HasCompletedCourseParams) (pgtype.Bool, error) {
 	row := q.db.QueryRow(ctx, hasCompletedCourse, arg.UserID, arg.CourseID)
-	var i HasCompletedCourseRow
-	err := row.Scan(&i.CompletedCourse, &i.CourseID)
-	return i, err
+	var completed_course pgtype.Bool
+	err := row.Scan(&completed_course)
+	return completed_course, err
 }
 
 const isUserEnrolledInCourse = `-- name: IsUserEnrolledInCourse :one

@@ -30,16 +30,13 @@ func (s *Store) UpdateProgress(ctx context.Context, args sqlc.UpdateProgressPara
 	return s.Queries.UpdateProgress(ctx, args)
 }
 
-func (s *Store) HasCompletedCourse(ctx context.Context, args sqlc.HasCompletedCourseParams) (*domain.Completed, error) {
+func (s *Store) HasCompletedCourse(ctx context.Context, args sqlc.HasCompletedCourseParams) (bool, error) {
 	completed, err := s.Queries.HasCompletedCourse(ctx, args)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
-	return &domain.Completed{
-		CourseID:        uuid.UUID(completed.CourseID.Bytes),
-		CompletedCourse: completed.CompletedCourse.Bool,
-	}, nil
+	return completed.Bool, nil
 }
 
 func (s *Store) SetCourseCompleted(ctx context.Context, args sqlc.SetCourseCompletedParams) error {

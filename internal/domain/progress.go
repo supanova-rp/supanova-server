@@ -13,16 +13,11 @@ import (
 type ProgressRepository interface {
 	GetProgress(context.Context, sqlc.GetProgressParams) (*Progress, error)
 	UpdateProgress(context.Context, sqlc.UpdateProgressParams) error
-	HasCompletedCourse(context.Context, sqlc.HasCompletedCourseParams) (*Completed, error)
+	HasCompletedCourse(context.Context, sqlc.HasCompletedCourseParams) (bool, error)
 	SetCourseCompleted(context.Context, sqlc.SetCourseCompletedParams) error
 }
 
 type Progress struct {
 	CompletedSectionIDs []uuid.UUID `json:"completedSectionIds"`
 	CompletedIntro      bool        `json:"completedIntro"`
-}
-
-type Completed struct {
-	CompletedCourse bool      `json:"completed_course"`
-	CourseID        uuid.UUID `json:"courseId"`
 }

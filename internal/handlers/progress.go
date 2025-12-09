@@ -121,7 +121,7 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
-	completed, err := h.Progress.HasCompletedCourse(ctx, sqlc.HasCompletedCourseParams{
+	prevCompleted, err := h.Progress.HasCompletedCourse(ctx, sqlc.HasCompletedCourseParams{
 		UserID:   userID,
 		CourseID: courseID,
 	})
@@ -131,8 +131,7 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 			slog.String("userId", userID))
 	}
 
-	// course already previously completed
-	if completed.CompletedCourse {
+	if prevCompleted {
 		return e.NoContent(http.StatusNoContent)
 	}
 
@@ -160,7 +159,7 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 		CourseName:          params.CourseName,
 		CompletionTimestamp: time.Now().In(loc).Format("02/01/2006 15:04:05"),
 	}
-	err = h.EmailService.SendCourseCompletion(ctx, emailParams)
+	err = h.EmailService.SendCourseCompletionNotification(ctx, emailParams)
 	// TODO: implement retry logic
 	if err != nil {
 		slog.ErrorContext(ctx, err.Error(), slog.String("courseId", params.CourseID), slog.String("userId", userID))
