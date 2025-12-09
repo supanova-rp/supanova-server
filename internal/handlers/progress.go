@@ -125,6 +125,11 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 		UserID:   userID,
 		CourseID: courseID,
 	})
+	if err != nil {
+		return internalError(ctx, errors.Updating(progressResource), err,
+			slog.String("courseId", params.CourseID),
+			slog.String("userId", userID))
+	}
 
 	// course already previously completed
 	if completed.CompletedCourse {
@@ -142,6 +147,12 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 	}
 
 	user, err := h.User.GetUser(ctx, userID)
+	if err != nil {
+		return internalError(ctx, errors.Updating(progressResource), err,
+			slog.String("courseId", params.CourseID),
+			slog.String("userId", userID))
+	}
+
 	loc, _ := time.LoadLocation("Europe/London")
 	emailParams := &email.CourseCompletionParams{
 		UserName:            user.Name,
