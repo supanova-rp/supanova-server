@@ -340,3 +340,69 @@ func TestAddCourse(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockRepo.AddCourseCalls()), 1, testhelpers.AddCourseHandlerName)
 	})
 }
+
+func TestGetCoursesOverview(t *testing.T) {
+	t.Run("returns course overviews successfully", func(t *testing.T) {
+		expected := []domain.CourseOverview{
+			{
+				ID:          uuid.New(),
+				Title:       "Course 1",
+				Description: "Description 1",
+			},
+			{
+				ID:          uuid.New(),
+				Title:       "Course 2",
+				Description: "Description 2",
+			},
+		}
+
+		mockRepo := &mocks.CourseRepositoryMock{
+			GetCoursesOverviewFunc: func(ctx context.Context) ([]domain.CourseOverview, error) {
+				return expected, nil
+			},
+		}
+
+		h := &handlers.Handlers{Course: mockRepo}
+
+		reqBody := struct{}{}
+
+		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "course")
+
+		err := h.GetCoursesOverview(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		var actual []domain.CourseOverview
+		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+			t.Fatalf("failed to unmarshal response: %v", err)
+		}
+
+		if diff := cmp.Diff(expected, actual); diff != "" {
+			t.Errorf("course overviews mismatch (-want +got):\n%s", diff)
+		}
+
+		testhelpers.AssertRepoCalls(t, len(mockRepo.GetCoursesOverviewCalls()), 1, "GetCoursesOverview")
+	})
+
+	t.Run("internal server error", func(t *testing.T) {
+		mockRepo := &mocks.CourseRepositoryMock{
+			GetCoursesOverviewFunc: func(ctx context.Context) ([]domain.CourseOverview, error) {
+				return nil, stdErrors.New("database connection failed")
+			},
+		}
+
+		h := &handlers.Handlers{Course: mockRepo}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, struct{}{}, "course")
+
+		err := h.GetCoursesOverview(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("course overview"))
+		testhelpers.AssertRepoCalls(t, len(mockRepo.GetCoursesOverviewCalls()), 1, "GetCoursesOverview")
+	})
+}

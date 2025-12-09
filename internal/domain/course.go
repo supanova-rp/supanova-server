@@ -13,6 +13,7 @@ import (
 
 type CourseRepository interface {
 	GetCourse(context.Context, pgtype.UUID) (*Course, error)
+	GetCoursesOverview(context.Context) ([]CourseOverview, error)
 	AddCourse(context.Context, sqlc.AddCourseParams) (*Course, error)
 }
 
@@ -24,6 +25,12 @@ type Course struct {
 	CompletionMessage string           `json:"completionMessage"`
 	Sections          []CourseSection  `json:"sections"`
 	Materials         []CourseMaterial `json:"materials"`
+}
+
+type CourseOverview struct {
+	ID          uuid.UUID `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
 }
 
 type CourseMaterial struct {

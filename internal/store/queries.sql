@@ -22,6 +22,9 @@ INSERT INTO usercourses (user_id, course_id) VALUES ($1, $2);
 -- name: DisenrolInCourse :exec
 DELETE FROM usercourses WHERE user_id = $1 AND course_id = $2;
 
+-- name: GetCoursesOverview :many
+SELECT id, title, description FROM courses ORDER BY title;
+
 -- name: GetCourseMaterials :many
 SELECT
   id, name, position, storage_key

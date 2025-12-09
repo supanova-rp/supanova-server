@@ -8,6 +8,7 @@ import (
 
 func RegisterCourseRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/course", h.GetCourse)
+	private.POST("/course-titles", h.GetCoursesOverview)
 	private.POST("/add-course", h.AddCourse)
 }
 

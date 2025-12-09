@@ -11,7 +11,10 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/utils"
 )
 
-const courseResource = "course"
+const (
+	courseResource         = "course"
+	courseOverviewResource = "course overview"
+)
 
 type GetCourseParams struct {
 	ID string `json:"courseId" validate:"required"`
@@ -74,4 +77,15 @@ func (h *Handlers) AddCourse(e echo.Context) error {
 	}
 
 	return e.JSON(http.StatusCreated, course)
+}
+
+func (h *Handlers) GetCoursesOverview(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	overviews, err := h.Course.GetCoursesOverview(ctx)
+	if err != nil {
+		return internalError(ctx, errors.Getting(courseOverviewResource), err)
+	}
+
+	return e.JSON(http.StatusOK, overviews)
 }

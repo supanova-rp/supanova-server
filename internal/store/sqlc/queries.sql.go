@@ -222,6 +222,36 @@ func (q *Queries) GetCourseVideoSections(ctx context.Context, courseID pgtype.UU
 	return items, nil
 }
 
+const getCoursesOverview = `-- name: GetCoursesOverview :many
+SELECT id, title, description FROM courses ORDER BY title
+`
+
+type GetCoursesOverviewRow struct {
+	ID          pgtype.UUID
+	Title       pgtype.Text
+	Description pgtype.Text
+}
+
+func (q *Queries) GetCoursesOverview(ctx context.Context) ([]GetCoursesOverviewRow, error) {
+	rows, err := q.db.Query(ctx, getCoursesOverview)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetCoursesOverviewRow
+	for rows.Next() {
+		var i GetCoursesOverviewRow
+		if err := rows.Scan(&i.ID, &i.Title, &i.Description); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getProgress = `-- name: GetProgress :one
 SELECT completed_intro, completed_section_ids FROM userprogress WHERE user_id = $1 AND course_id = $2
 `
