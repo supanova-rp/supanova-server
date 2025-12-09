@@ -25,6 +25,8 @@ type ObjectStorage interface {
 	GetCDNURL(ctx context.Context, key string) (string, error)
 }
 
+//go:generate moq -out ../handlers/mocks/emailservice_mock.go -pkg mocks . EmailService
+
 type EmailService interface {
 	SendCourseCompletion(ctx context.Context, params *email.CourseCompletionParams) error
 }

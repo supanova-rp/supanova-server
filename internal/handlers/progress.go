@@ -3,6 +3,7 @@ package handlers
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 
@@ -99,7 +100,7 @@ func (h *Handlers) UpdateProgress(e echo.Context) error {
 			slog.String("sectionId", params.SectionID))
 	}
 
-	return e.NoContent(http.StatusOK)
+	return e.NoContent(http.StatusNoContent)
 }
 
 func (h *Handlers) SetCourseCompleted(e echo.Context) error {
@@ -125,8 +126,9 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 		CourseID: courseID,
 	})
 
+	// course already previously completed
 	if completed.CompletedCourse {
-		return e.JSON(http.StatusOK, completed)
+		return e.NoContent(http.StatusNoContent)
 	}
 
 	err = h.Progress.SetCourseCompleted(ctx, sqlc.SetCourseCompletedParams{
@@ -140,17 +142,18 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 	}
 
 	user, err := h.User.GetUser(ctx, userID)
-
-	// TODO: get timestamp
-
+	loc, _ := time.LoadLocation("Europe/London")
 	emailParams := &email.CourseCompletionParams{
-		UserName: user.Name,
-		UserEmail: user.Email,
-		CourseName: params.CourseName,
-		CompletionTimestamp: "",
-
+		UserName:            user.Name,
+		UserEmail:           user.Email,
+		CourseName:          params.CourseName,
+		CompletionTimestamp: time.Now().In(loc).Format("02/01/2006 15:04:05"),
 	}
-	h.EmailService.SendCourseCompletion(ctx, emailParams)
+	err = h.EmailService.SendCourseCompletion(ctx, emailParams)
+	// TODO: implement retry logic
+	if err != nil {
+		slog.ErrorContext(ctx, err.Error(), slog.String("courseId", params.CourseID), slog.String("userId", userID))
+	}
 
-	return e.JSON(http.StatusOK, completed)
+	return e.NoContent(http.StatusNoContent)
 }

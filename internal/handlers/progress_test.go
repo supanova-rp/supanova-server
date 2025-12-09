@@ -182,7 +182,7 @@ func TestUpdateProgress(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		if rec.Code != http.StatusOK {
+		if rec.Code != http.StatusNoContent {
 			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
 		}
 

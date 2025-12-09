@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 
@@ -23,6 +26,7 @@ type Service struct {
 	serviceID  string
 	templateID string
 	publicKey  string
+	privateKey string
 }
 
 type EmailCourseCompletionParams struct {
@@ -30,6 +34,7 @@ type EmailCourseCompletionParams struct {
 	ServiceID      string                  `json:"service_id"`
 	TemplateID     string                  `json:"template_id"`
 	PublicKey      string                  `json:"user_id"`
+	PrivateKey     string                  `json:"accessToken"`
 }
 
 func New(cfg *config.EmailService) *Service {
@@ -37,6 +42,7 @@ func New(cfg *config.EmailService) *Service {
 		serviceID:  cfg.ServiceID,
 		templateID: cfg.TemplateID,
 		publicKey:  cfg.PublicKey,
+		privateKey: cfg.PrivateKey,
 	}
 }
 
@@ -46,6 +52,7 @@ func (c *Service) SendCourseCompletion(ctx context.Context, params *CourseComple
 		ServiceID:      c.serviceID,
 		TemplateID:     c.templateID,
 		PublicKey:      c.publicKey,
+		PrivateKey:     c.privateKey,
 	}
 
 	body, err := json.Marshal(reqBody)
@@ -62,11 +69,17 @@ func (c *Service) SendCourseCompletion(ctx context.Context, params *CourseComple
 	if err != nil {
 		return err
 	}
+	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
 		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(res.Body)
+		slog.Error(fmt.Sprintf("email service failed with status %d:", res.StatusCode), slog.Any("error", string(bodyBytes)))
 	}
 	defer res.Body.Close() //nolint:errcheck
 
