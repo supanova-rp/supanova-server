@@ -59,11 +59,7 @@ func TestGetVideoURL(t *testing.T) {
 	})
 
 	t.Run("validation error - missing courseId", func(t *testing.T) {
-		objectStorageMock := &mocks.ObjectStorageMock{
-			GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
-				return "", nil
-			},
-		}
+		objectStorageMock := &mocks.ObjectStorageMock{}
 
 		h := &handlers.Handlers{
 			ObjectStorage: objectStorageMock,
@@ -82,11 +78,7 @@ func TestGetVideoURL(t *testing.T) {
 	})
 
 	t.Run("validation error - missing storageKey", func(t *testing.T) {
-		objectStorageMock := &mocks.ObjectStorageMock{
-			GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
-				return "", nil
-			},
-		}
+		objectStorageMock := &mocks.ObjectStorageMock{}
 
 		h := &handlers.Handlers{
 			ObjectStorage: objectStorageMock,
@@ -177,11 +169,7 @@ func TestGetVideoUploadURL(t *testing.T) {
 	})
 
 	t.Run("validation error - missing courseId", func(t *testing.T) {
-		objectStorageMock := &mocks.ObjectStorageMock{
-			GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
-				return "", nil
-			},
-		}
+		objectStorageMock := &mocks.ObjectStorageMock{}
 
 		h := &handlers.Handlers{
 			ObjectStorage: objectStorageMock,
@@ -205,11 +193,7 @@ func TestGetVideoUploadURL(t *testing.T) {
 	})
 
 	t.Run("validation error - missing storageKey", func(t *testing.T) {
-		objectStorageMock := &mocks.ObjectStorageMock{
-			GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
-				return "", nil
-			},
-		}
+		objectStorageMock := &mocks.ObjectStorageMock{}
 
 		h := &handlers.Handlers{
 			ObjectStorage: objectStorageMock,

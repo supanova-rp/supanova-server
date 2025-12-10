@@ -31,7 +31,7 @@ func (h *Handlers) GetVideoUploadURL(e echo.Context) error {
 			ctx,
 			errors.Getting("upload url"),
 			err,
-			slog.String("id", params.CourseID), slog.String("storageKey", params.StorageKey),
+			slog.String("course_id", params.CourseID), slog.String("storage_key", params.StorageKey),
 		)
 	}
 
@@ -55,7 +55,7 @@ func (h *Handlers) GetVideoURL(e echo.Context) error {
 			ctx,
 			errors.Getting("video url"),
 			err,
-			slog.String("id", params.CourseID), slog.String("storageKey", params.StorageKey),
+			slog.String("course_id", params.CourseID), slog.String("storage_key", params.StorageKey),
 		)
 	}
 

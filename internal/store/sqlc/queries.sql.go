@@ -273,6 +273,33 @@ func (q *Queries) GetProgress(ctx context.Context, arg GetProgressParams) (GetPr
 	return i, err
 }
 
+const getUser = `-- name: GetUser :one
+SELECT id, name, email FROM users WHERE id = $1
+`
+
+func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
+	row := q.db.QueryRow(ctx, getUser, id)
+	var i User
+	err := row.Scan(&i.ID, &i.Name, &i.Email)
+	return i, err
+}
+
+const hasCompletedCourse = `-- name: HasCompletedCourse :one
+SELECT completed_course FROM userprogress WHERE user_id = $1 AND course_id = $2
+`
+
+type HasCompletedCourseParams struct {
+	UserID   string
+	CourseID pgtype.UUID
+}
+
+func (q *Queries) HasCompletedCourse(ctx context.Context, arg HasCompletedCourseParams) (pgtype.Bool, error) {
+	row := q.db.QueryRow(ctx, hasCompletedCourse, arg.UserID, arg.CourseID)
+	var completed_course pgtype.Bool
+	err := row.Scan(&completed_course)
+	return completed_course, err
+}
+
 const isUserEnrolledInCourse = `-- name: IsUserEnrolledInCourse :one
 SELECT EXISTS(SELECT 1 FROM usercourses WHERE user_id = $1 AND course_id = $2)
 `
@@ -287,6 +314,25 @@ func (q *Queries) IsUserEnrolledInCourse(ctx context.Context, arg IsUserEnrolled
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
+}
+
+const setCourseCompleted = `-- name: SetCourseCompleted :exec
+INSERT INTO userprogress (user_id, course_id, completed_section_ids, completed_course)
+VALUES ($1, $2, ARRAY[]::uuid[], TRUE)
+ON CONFLICT (user_id, course_id)
+DO UPDATE SET completed_course = TRUE
+`
+
+type SetCourseCompletedParams struct {
+	UserID   string
+	CourseID pgtype.UUID
+}
+
+// If there is no existing userprogress (should not happen since user should have some progress already)
+// then insert new row with empty completed_section_ids */
+func (q *Queries) SetCourseCompleted(ctx context.Context, arg SetCourseCompletedParams) error {
+	_, err := q.db.Exec(ctx, setCourseCompleted, arg.UserID, arg.CourseID)
+	return err
 }
 
 const updateProgress = `-- name: UpdateProgress :exec

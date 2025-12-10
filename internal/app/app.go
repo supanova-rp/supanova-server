@@ -30,6 +30,7 @@ func Run(ctx context.Context, cfg *config.App, deps Dependencies) error {
 		st,
 		st,
 		st,
+		st,
 		deps.ObjectStorage,
 		deps.EmailService,
 	)

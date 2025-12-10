@@ -58,6 +58,7 @@ type EmailService struct {
 	ServiceID  string
 	TemplateID string
 	PublicKey  string
+	PrivateKey string
 }
 
 var logLevelMap = map[string]slog.Level{
@@ -88,6 +89,7 @@ func ParseEnv() (*App, error) {
 		"CLIENT_URLS":                          "",
 		"EMAILJS_SERVICE_ID":                   "",
 		"EMAILJS_PUBLIC_KEY":                   "",
+		"EMAILJS_PRIVATE_KEY":                  "",
 		"EMAILJS_COURSE_COMPLETED_TEMPLATE_ID": "",
 	}
 
@@ -136,8 +138,9 @@ func ParseEnv() (*App, error) {
 		ClientURLs:              clientURLs,
 		EmailService: &EmailService{
 			ServiceID:  envVars["EMAILJS_SERVICE_ID"],
-			TemplateID: envVars["EMAILJS_PUBLIC_KEY"],
-			PublicKey:  envVars["EMAILJS_COURSE_COMPLETED_TEMPLATE_ID"],
+			TemplateID: envVars["EMAILJS_COURSE_COMPLETED_TEMPLATE_ID"],
+			PublicKey:  envVars["EMAILJS_PUBLIC_KEY"],
+			PrivateKey: envVars["EMAILJS_PRIVATE_KEY"],
 		},
 	}, nil
 }

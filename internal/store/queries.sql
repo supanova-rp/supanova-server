@@ -7,21 +7,6 @@ SELECT
   completion_message
 FROM courses WHERE id = $1;
 
--- name: AddCourse :one
-INSERT INTO courses (title, description) VALUES ($1, $2) RETURNING id;
-
--- name: GetProgress :one
-SELECT completed_intro, completed_section_ids FROM userprogress WHERE user_id = $1 AND course_id = $2;
-
--- name: IsUserEnrolledInCourse :one
-SELECT EXISTS(SELECT 1 FROM usercourses WHERE user_id = $1 AND course_id = $2);
-
--- name: EnrolInCourse :exec
-INSERT INTO usercourses (user_id, course_id) VALUES ($1, $2);
-
--- name: DisenrolInCourse :exec
-DELETE FROM usercourses WHERE user_id = $1 AND course_id = $2;
-
 -- name: GetCoursesOverview :many
 SELECT id, title, description FROM courses ORDER BY title;
 
@@ -70,6 +55,12 @@ WHERE qs.course_id = $1
 GROUP BY qs.id, qs.position, qs.course_id
 ORDER BY qs.position;
 
+-- name: AddCourse :one
+INSERT INTO courses (title, description) VALUES ($1, $2) RETURNING id;
+
+-- name: GetProgress :one
+SELECT completed_intro, completed_section_ids FROM userprogress WHERE user_id = $1 AND course_id = $2;
+
 -- Insert section_id into completed_section_ids array if no entry exists
 -- or append section_id to the existing array if it's not already present
 -- name: UpdateProgress :exec
@@ -78,3 +69,26 @@ VALUES (sqlc.arg('user_id'), sqlc.arg('course_id'), ARRAY[sqlc.arg('section_id')
 ON CONFLICT (user_id, course_id)
 DO UPDATE SET completed_section_ids = array_append(userprogress.completed_section_ids, sqlc.arg('section_id')::uuid)
 WHERE NOT (sqlc.arg('section_id') = ANY(userprogress.completed_section_ids));
+
+-- name: HasCompletedCourse :one
+SELECT completed_course FROM userprogress WHERE user_id = $1 AND course_id = $2;
+
+-- If there is no existing userprogress (should not happen since user should have some progress already)
+-- then insert new row with empty completed_section_ids */
+-- name: SetCourseCompleted :exec
+INSERT INTO userprogress (user_id, course_id, completed_section_ids, completed_course)
+VALUES ($1, $2, ARRAY[]::uuid[], TRUE)
+ON CONFLICT (user_id, course_id)
+DO UPDATE SET completed_course = TRUE;
+
+-- name: IsUserEnrolledInCourse :one
+SELECT EXISTS(SELECT 1 FROM usercourses WHERE user_id = $1 AND course_id = $2);
+
+-- name: EnrolInCourse :exec
+INSERT INTO usercourses (user_id, course_id) VALUES ($1, $2);
+
+-- name: DisenrolInCourse :exec
+DELETE FROM usercourses WHERE user_id = $1 AND course_id = $2;
+
+-- name: GetUser :one
+SELECT id, name, email FROM users WHERE id = $1;

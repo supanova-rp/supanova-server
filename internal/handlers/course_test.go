@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -111,11 +110,7 @@ func TestGetCourse(t *testing.T) {
 	})
 
 	t.Run("validation error - missing id", func(t *testing.T) {
-		mockRepo := &mocks.CourseRepositoryMock{
-			GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
-				return nil, nil
-			},
-		}
+		mockRepo := &mocks.CourseRepositoryMock{}
 
 		h := &handlers.Handlers{
 			Course: mockRepo,
@@ -132,11 +127,7 @@ func TestGetCourse(t *testing.T) {
 	})
 
 	t.Run("validation error - invalid uuid format", func(t *testing.T) {
-		mockRepo := &mocks.CourseRepositoryMock{
-			GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
-				return nil, nil
-			},
-		}
+		mockRepo := &mocks.CourseRepositoryMock{}
 
 		h := &handlers.Handlers{
 			Course: mockRepo,
@@ -155,7 +146,7 @@ func TestGetCourse(t *testing.T) {
 	})
 
 	t.Run("course not found", func(t *testing.T) {
-		courseID := uuid.New()
+		courseID := testhelpers.Course.ID
 
 		mockRepo := &mocks.CourseRepositoryMock{
 			GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
@@ -180,7 +171,7 @@ func TestGetCourse(t *testing.T) {
 	})
 
 	t.Run("internal server error", func(t *testing.T) {
-		courseID := uuid.New()
+		courseID := testhelpers.Course.ID
 
 		mockRepo := &mocks.CourseRepositoryMock{
 			GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
@@ -277,11 +268,7 @@ func TestAddCourse(t *testing.T) {
 	})
 
 	t.Run("validation error - missing title", func(t *testing.T) {
-		mockRepo := &mocks.CourseRepositoryMock{
-			AddCourseFunc: func(ctx context.Context, params sqlc.AddCourseParams) (*domain.Course, error) {
-				return nil, nil
-			},
-		}
+		mockRepo := &mocks.CourseRepositoryMock{}
 
 		h := &handlers.Handlers{Course: mockRepo}
 
@@ -298,11 +285,7 @@ func TestAddCourse(t *testing.T) {
 	})
 
 	t.Run("validation error - missing description", func(t *testing.T) {
-		mockRepo := &mocks.CourseRepositoryMock{
-			AddCourseFunc: func(ctx context.Context, params sqlc.AddCourseParams) (*domain.Course, error) {
-				return nil, nil
-			},
-		}
+		mockRepo := &mocks.CourseRepositoryMock{}
 
 		h := &handlers.Handlers{Course: mockRepo}
 
