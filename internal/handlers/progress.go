@@ -13,6 +13,8 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/utils"
 )
 
+var location, _ = time.LoadLocation("Europe/London")
+
 const progressResource = "user progress"
 
 type GetProgressParams struct {
@@ -58,7 +60,7 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 			return echo.NewHTTPError(http.StatusNotFound, errors.NotFound(progressResource))
 		}
 
-		return internalError(ctx, errors.Getting(progressResource), err, slog.String("id", params.CourseID))
+		return internalError(ctx, errors.Getting(progressResource), err, slog.String("course_id", params.CourseID))
 	}
 
 	return e.JSON(http.StatusOK, progress)
@@ -96,8 +98,8 @@ func (h *Handlers) UpdateProgress(e echo.Context) error {
 	err = h.Progress.UpdateProgress(ctx, sqlcParams)
 	if err != nil {
 		return internalError(ctx, errors.Updating(progressResource), err,
-			slog.String("courseId", params.CourseID),
-			slog.String("sectionId", params.SectionID))
+			slog.String("course_id", params.CourseID),
+			slog.String("section_id", params.SectionID))
 	}
 
 	return e.NoContent(http.StatusNoContent)
@@ -127,8 +129,8 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 	})
 	if err != nil {
 		return internalError(ctx, errors.Updating(progressResource), err,
-			slog.String("courseId", params.CourseID),
-			slog.String("userId", userID))
+			slog.String("course_id", params.CourseID),
+			slog.String("user_id", userID))
 	}
 
 	if prevCompleted {
@@ -141,28 +143,27 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 	})
 	if err != nil {
 		return internalError(ctx, errors.Updating(progressResource), err,
-			slog.String("courseId", params.CourseID),
-			slog.String("userId", userID))
+			slog.String("course_id", params.CourseID),
+			slog.String("user_id", userID))
 	}
 
 	user, err := h.User.GetUser(ctx, userID)
 	if err != nil {
 		return internalError(ctx, errors.Updating(progressResource), err,
-			slog.String("courseId", params.CourseID),
-			slog.String("userId", userID))
+			slog.String("course_id", params.CourseID),
+			slog.String("user_id", userID))
 	}
 
-	loc, _ := time.LoadLocation("Europe/London")
 	emailParams := &email.CourseCompletionParams{
 		UserName:            user.Name,
 		UserEmail:           user.Email,
 		CourseName:          params.CourseName,
-		CompletionTimestamp: time.Now().In(loc).Format("02/01/2006 15:04:05"),
+		CompletionTimestamp: time.Now().In(location).Format("02/01/2006 15:04:05"),
 	}
 	err = h.EmailService.SendCourseCompletionNotification(ctx, emailParams)
 	// TODO: implement retry logic
 	if err != nil {
-		slog.ErrorContext(ctx, err.Error(), slog.String("courseId", params.CourseID), slog.String("userId", userID))
+		slog.ErrorContext(ctx, err.Error(), slog.String("course_id", params.CourseID), slog.String("user_id", userID))
 	}
 
 	return e.NoContent(http.StatusNoContent)

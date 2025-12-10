@@ -79,7 +79,7 @@ func AuthMiddleware(next echo.HandlerFunc, authProvider AuthProvider) echo.Handl
 
 		isAdminPath := !slices.Contains(nonAdminPaths, c.Request().URL.Path)
 		if isAdminPath && !user.IsAdmin {
-			slog.WarnContext(ctx, "unauthorised access", slog.String("user id", user.ID))
+			slog.WarnContext(ctx, "unauthorised access", slog.String("user_id", user.ID))
 			return echo.NewHTTPError(http.StatusUnauthorized, errors.Unauthorised)
 		}
 

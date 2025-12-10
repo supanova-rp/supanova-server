@@ -36,12 +36,12 @@ func (h *Handlers) GetCourse(e echo.Context) error {
 			return echo.NewHTTPError(http.StatusNotFound, errors.NotFound(courseResource))
 		}
 
-		return internalError(ctx, errors.Getting(courseResource), err, slog.String("id", params.ID))
+		return internalError(ctx, errors.Getting(courseResource), err, slog.String("course_id", params.ID))
 	}
 
 	enrolled, err := h.isEnrolled(ctx, courseID)
 	if err != nil {
-		return internalError(ctx, errors.Getting(courseResource), err, slog.String("id", params.ID))
+		return internalError(ctx, errors.Getting(courseResource), err, slog.String("course_id", params.ID))
 	}
 	if !enrolled {
 		return echo.NewHTTPError(http.StatusForbidden, errors.Forbidden(courseResource))
