@@ -23,6 +23,7 @@ import (
 const (
 	AddCourseHandlerName            = "AddCourse"
 	GetCourseHandlerName            = "GetCourse"
+	GetCoursesOverviewHandlerName   = "GetCoursesOverview"
 	IsEnrolledHandlerName           = "IsEnrolled"
 	GetVideoURLHandlerName          = "GetVideoURL"
 	GetVideoUploadURLHandlerName    = "GetVideoUploadURL"

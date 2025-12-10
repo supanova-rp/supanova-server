@@ -345,9 +345,9 @@ func TestGetCoursesOverview(t *testing.T) {
 	t.Run("returns course overviews successfully", func(t *testing.T) {
 		expected := []domain.CourseOverview{
 			{
-				ID:          uuid.New(),
-				Title:       "Course 1",
-				Description: "Description 1",
+				ID:          testhelpers.Course.ID,
+				Title:       testhelpers.Course.Title,
+				Description: testhelpers.Course.Description,
 			},
 			{
 				ID:          uuid.New(),
@@ -366,7 +366,7 @@ func TestGetCoursesOverview(t *testing.T) {
 
 		reqBody := struct{}{}
 
-		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "course")
+		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "course-titles")
 
 		err := h.GetCoursesOverview(ctx)
 		if err != nil {
@@ -386,7 +386,7 @@ func TestGetCoursesOverview(t *testing.T) {
 			t.Errorf("course overviews mismatch (-want +got):\n%s", diff)
 		}
 
-		testhelpers.AssertRepoCalls(t, len(mockRepo.GetCoursesOverviewCalls()), 1, "GetCoursesOverview")
+		testhelpers.AssertRepoCalls(t, len(mockRepo.GetCoursesOverviewCalls()), 1, testhelpers.GetCoursesOverviewHandlerName)
 	})
 
 	t.Run("internal server error", func(t *testing.T) {
@@ -398,11 +398,11 @@ func TestGetCoursesOverview(t *testing.T) {
 
 		h := &handlers.Handlers{Course: mockRepo}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, struct{}{}, "course")
+		ctx, _ := testhelpers.SetupEchoContext(t, struct{}{}, "course-titles")
 
 		err := h.GetCoursesOverview(ctx)
 
 		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("course overview"))
-		testhelpers.AssertRepoCalls(t, len(mockRepo.GetCoursesOverviewCalls()), 1, "GetCoursesOverview")
+		testhelpers.AssertRepoCalls(t, len(mockRepo.GetCoursesOverviewCalls()), 1, testhelpers.GetCoursesOverviewHandlerName)
 	})
 }
