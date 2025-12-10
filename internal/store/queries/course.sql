@@ -7,6 +7,9 @@ SELECT
   completion_message
 FROM courses WHERE id = $1;
 
+-- name: GetCoursesOverview :many
+SELECT id, title, description FROM courses ORDER BY title;
+
 -- name: GetCourseMaterials :many
 SELECT
   id, name, position, storage_key

@@ -79,6 +79,33 @@ func (s *Store) AddCourse(ctx context.Context, course sqlc.AddCourseParams) (*do
 	return created, nil
 }
 
+func (s *Store) GetCoursesOverview(ctx context.Context) ([]domain.CourseOverview, error) {
+	rows, err := s.Queries.GetCoursesOverview(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return utils.Map(rows, courseOverviewFrom), nil
+}
+
+func (s *Store) EditCourse(ctx context.Context, id pgtype.UUID) error {
+	// TODO: update course in cache when course is edited
+	return nil
+}
+
+func (s *Store) DeleteCourse(ctx context.Context, id pgtype.UUID) error {
+	// TODO: remove course from cache when course is deleted
+	return nil
+}
+
+func courseOverviewFrom(row sqlc.GetCoursesOverviewRow) domain.CourseOverview {
+	return domain.CourseOverview{
+		ID:          utils.UUIDFrom(row.ID),
+		Title:       row.Title.String,
+		Description: row.Description.String,
+	}
+}
+
 func courseMaterialFrom(m sqlc.GetCourseMaterialsRow) domain.CourseMaterial {
 	return domain.CourseMaterial{
 		ID:         utils.UUIDFrom(m.ID),
@@ -96,14 +123,4 @@ func courseVideoSectionFrom(v *sqlc.GetCourseVideoSectionsRow) *domain.VideoSect
 		StorageKey: utils.UUIDFrom(v.StorageKey),
 		Type:       domain.SectionTypeVideo,
 	}
-}
-
-func (s *Store) EditCourse(ctx context.Context, id pgtype.UUID) error {
-	// TODO: update course in cache when course is edited
-	return nil
-}
-
-func (s *Store) DeleteCourse(ctx context.Context, id pgtype.UUID) error {
-	// TODO: remove course from cache when course is deleted
-	return nil
 }
