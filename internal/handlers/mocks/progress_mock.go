@@ -23,6 +23,12 @@ var _ domain.ProgressRepository = &ProgressRepositoryMock{}
 //			GetProgressFunc: func(contextMoqParam context.Context, getProgressParams sqlc.GetProgressParams) (*domain.Progress, error) {
 //				panic("mock out the GetProgress method")
 //			},
+//			HasCompletedCourseFunc: func(contextMoqParam context.Context, hasCompletedCourseParams sqlc.HasCompletedCourseParams) (bool, error) {
+//				panic("mock out the HasCompletedCourse method")
+//			},
+//			SetCourseCompletedFunc: func(contextMoqParam context.Context, setCourseCompletedParams sqlc.SetCourseCompletedParams) error {
+//				panic("mock out the SetCourseCompleted method")
+//			},
 //			UpdateProgressFunc: func(contextMoqParam context.Context, updateProgressParams sqlc.UpdateProgressParams) error {
 //				panic("mock out the UpdateProgress method")
 //			},
@@ -36,6 +42,12 @@ type ProgressRepositoryMock struct {
 	// GetProgressFunc mocks the GetProgress method.
 	GetProgressFunc func(contextMoqParam context.Context, getProgressParams sqlc.GetProgressParams) (*domain.Progress, error)
 
+	// HasCompletedCourseFunc mocks the HasCompletedCourse method.
+	HasCompletedCourseFunc func(contextMoqParam context.Context, hasCompletedCourseParams sqlc.HasCompletedCourseParams) (bool, error)
+
+	// SetCourseCompletedFunc mocks the SetCourseCompleted method.
+	SetCourseCompletedFunc func(contextMoqParam context.Context, setCourseCompletedParams sqlc.SetCourseCompletedParams) error
+
 	// UpdateProgressFunc mocks the UpdateProgress method.
 	UpdateProgressFunc func(contextMoqParam context.Context, updateProgressParams sqlc.UpdateProgressParams) error
 
@@ -48,6 +60,20 @@ type ProgressRepositoryMock struct {
 			// GetProgressParams is the getProgressParams argument value.
 			GetProgressParams sqlc.GetProgressParams
 		}
+		// HasCompletedCourse holds details about calls to the HasCompletedCourse method.
+		HasCompletedCourse []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// HasCompletedCourseParams is the hasCompletedCourseParams argument value.
+			HasCompletedCourseParams sqlc.HasCompletedCourseParams
+		}
+		// SetCourseCompleted holds details about calls to the SetCourseCompleted method.
+		SetCourseCompleted []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// SetCourseCompletedParams is the setCourseCompletedParams argument value.
+			SetCourseCompletedParams sqlc.SetCourseCompletedParams
+		}
 		// UpdateProgress holds details about calls to the UpdateProgress method.
 		UpdateProgress []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
@@ -56,8 +82,10 @@ type ProgressRepositoryMock struct {
 			UpdateProgressParams sqlc.UpdateProgressParams
 		}
 	}
-	lockGetProgress    sync.RWMutex
-	lockUpdateProgress sync.RWMutex
+	lockGetProgress        sync.RWMutex
+	lockHasCompletedCourse sync.RWMutex
+	lockSetCourseCompleted sync.RWMutex
+	lockUpdateProgress     sync.RWMutex
 }
 
 // GetProgress calls GetProgressFunc.
@@ -93,6 +121,78 @@ func (mock *ProgressRepositoryMock) GetProgressCalls() []struct {
 	mock.lockGetProgress.RLock()
 	calls = mock.calls.GetProgress
 	mock.lockGetProgress.RUnlock()
+	return calls
+}
+
+// HasCompletedCourse calls HasCompletedCourseFunc.
+func (mock *ProgressRepositoryMock) HasCompletedCourse(contextMoqParam context.Context, hasCompletedCourseParams sqlc.HasCompletedCourseParams) (bool, error) {
+	if mock.HasCompletedCourseFunc == nil {
+		panic("ProgressRepositoryMock.HasCompletedCourseFunc: method is nil but ProgressRepository.HasCompletedCourse was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam          context.Context
+		HasCompletedCourseParams sqlc.HasCompletedCourseParams
+	}{
+		ContextMoqParam:          contextMoqParam,
+		HasCompletedCourseParams: hasCompletedCourseParams,
+	}
+	mock.lockHasCompletedCourse.Lock()
+	mock.calls.HasCompletedCourse = append(mock.calls.HasCompletedCourse, callInfo)
+	mock.lockHasCompletedCourse.Unlock()
+	return mock.HasCompletedCourseFunc(contextMoqParam, hasCompletedCourseParams)
+}
+
+// HasCompletedCourseCalls gets all the calls that were made to HasCompletedCourse.
+// Check the length with:
+//
+//	len(mockedProgressRepository.HasCompletedCourseCalls())
+func (mock *ProgressRepositoryMock) HasCompletedCourseCalls() []struct {
+	ContextMoqParam          context.Context
+	HasCompletedCourseParams sqlc.HasCompletedCourseParams
+} {
+	var calls []struct {
+		ContextMoqParam          context.Context
+		HasCompletedCourseParams sqlc.HasCompletedCourseParams
+	}
+	mock.lockHasCompletedCourse.RLock()
+	calls = mock.calls.HasCompletedCourse
+	mock.lockHasCompletedCourse.RUnlock()
+	return calls
+}
+
+// SetCourseCompleted calls SetCourseCompletedFunc.
+func (mock *ProgressRepositoryMock) SetCourseCompleted(contextMoqParam context.Context, setCourseCompletedParams sqlc.SetCourseCompletedParams) error {
+	if mock.SetCourseCompletedFunc == nil {
+		panic("ProgressRepositoryMock.SetCourseCompletedFunc: method is nil but ProgressRepository.SetCourseCompleted was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam          context.Context
+		SetCourseCompletedParams sqlc.SetCourseCompletedParams
+	}{
+		ContextMoqParam:          contextMoqParam,
+		SetCourseCompletedParams: setCourseCompletedParams,
+	}
+	mock.lockSetCourseCompleted.Lock()
+	mock.calls.SetCourseCompleted = append(mock.calls.SetCourseCompleted, callInfo)
+	mock.lockSetCourseCompleted.Unlock()
+	return mock.SetCourseCompletedFunc(contextMoqParam, setCourseCompletedParams)
+}
+
+// SetCourseCompletedCalls gets all the calls that were made to SetCourseCompleted.
+// Check the length with:
+//
+//	len(mockedProgressRepository.SetCourseCompletedCalls())
+func (mock *ProgressRepositoryMock) SetCourseCompletedCalls() []struct {
+	ContextMoqParam          context.Context
+	SetCourseCompletedParams sqlc.SetCourseCompletedParams
+} {
+	var calls []struct {
+		ContextMoqParam          context.Context
+		SetCourseCompletedParams sqlc.SetCourseCompletedParams
+	}
+	mock.lockSetCourseCompleted.RLock()
+	calls = mock.calls.SetCourseCompleted
+	mock.lockSetCourseCompleted.RUnlock()
 	return calls
 }
 

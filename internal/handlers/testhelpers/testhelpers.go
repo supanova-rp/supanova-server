@@ -21,17 +21,27 @@ import (
 )
 
 const (
-	AddCourseHandlerName            = "AddCourse"
-	GetCourseHandlerName            = "GetCourse"
-	IsEnrolledHandlerName           = "IsEnrolled"
-	GetVideoURLHandlerName          = "GetVideoURL"
-	GetVideoUploadURLHandlerName    = "GetVideoUploadURL"
-	UpdateCourseEnrolmentHandler    = "UpdateCourseEnrolment"
-	EnrolUserInCourseHandlerName    = "EnrolInCourse"
-	DisenrolUserInCourseHandlerName = "DisenrolInCourse"
-	GetProgressHandlerName          = "GetProgress"
-	UpdateProgressHandlerName       = "UpdateProgress"
+	AddCourseHandlerName                        = "AddCourse"
+	GetCourseHandlerName                        = "GetCourse"
+	IsEnrolledHandlerName                       = "IsEnrolled"
+	GetVideoURLHandlerName                      = "GetVideoURL"
+	GetVideoUploadURLHandlerName                = "GetVideoUploadURL"
+	UpdateCourseEnrolmentHandler                = "UpdateCourseEnrolment"
+	EnrolUserInCourseHandlerName                = "EnrolInCourse"
+	DisenrolUserInCourseHandlerName             = "DisenrolInCourse"
+	GetProgressHandlerName                      = "GetProgress"
+	UpdateProgressHandlerName                   = "UpdateProgress"
+	SetCourseCompletedHandlerName               = "SetCourseCompleted"
+	HasCompletedCourseHandlerName               = "HasCompletedCourse"
+	GetUserHandlerName                          = "GetUser"
+	SendCourseCompletionNotificationHandlerName = "SendCourseCompletionNotification"
 )
+
+var User = &domain.User{
+	ID:    uuid.New().String(),
+	Name:  "User A",
+	Email: "usera@gmail.com",
+}
 
 var Course = &domain.Course{
 	ID:                uuid.New(),

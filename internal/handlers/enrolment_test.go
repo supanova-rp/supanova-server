@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/google/uuid"
-
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
@@ -17,7 +15,7 @@ import (
 
 func TestUpdateCourseEnrolment(t *testing.T) {
 	t.Run("enrols user successfully when IsEnrolled is false", func(t *testing.T) {
-		courseID := uuid.New()
+		courseID := testhelpers.Course.ID
 
 		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
 			EnrolInCourseFunc: func(ctx context.Context, params sqlc.EnrolInCourseParams) error {
@@ -50,7 +48,7 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 	})
 
 	t.Run("disenrols user successfully when IsEnrolled is true", func(t *testing.T) {
-		courseID := uuid.New()
+		courseID := testhelpers.Course.ID
 
 		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
 			DisenrolInCourseFunc: func(ctx context.Context, params sqlc.DisenrolInCourseParams) error {
@@ -83,11 +81,7 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 	})
 
 	t.Run("validation error - missing course_id", func(t *testing.T) {
-		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
-			EnrolInCourseFunc: func(ctx context.Context, params sqlc.EnrolInCourseParams) error {
-				return nil
-			},
-		}
+		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{}
 
 		h := &handlers.Handlers{
 			Enrolment: mockEnrolmentRepo,
@@ -107,11 +101,7 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 	})
 
 	t.Run("validation error - invalid uuid format", func(t *testing.T) {
-		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
-			EnrolInCourseFunc: func(ctx context.Context, params sqlc.EnrolInCourseParams) error {
-				return nil
-			},
-		}
+		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{}
 
 		h := &handlers.Handlers{
 			Enrolment: mockEnrolmentRepo,
@@ -132,7 +122,7 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 	})
 
 	t.Run("internal server error", func(t *testing.T) {
-		courseID := uuid.New()
+		courseID := testhelpers.Course.ID
 
 		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
 			EnrolInCourseFunc: func(ctx context.Context, params sqlc.EnrolInCourseParams) error {
