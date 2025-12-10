@@ -15,15 +15,7 @@ func (s *Store) GetProgress(ctx context.Context, args sqlc.GetProgressParams) (*
 		return nil, err
 	}
 
-	var sectionUUIDs []uuid.UUID
-	for _, sectionID := range progress.CompletedSectionIds {
-		sectionUUIDs = append(sectionUUIDs, uuid.UUID(sectionID.Bytes))
-	}
-
-	return &domain.Progress{
-		CompletedSectionIDs: sectionUUIDs,
-		CompletedIntro:      progress.CompletedIntro.Bool,
-	}, nil
+	return progressFrom(progress), nil
 }
 
 func (s *Store) UpdateProgress(ctx context.Context, args sqlc.UpdateProgressParams) error {
@@ -38,4 +30,16 @@ func (s *Store) HasCompletedCourse(ctx context.Context, args sqlc.HasCompletedCo
 
 func (s *Store) SetCourseCompleted(ctx context.Context, args sqlc.SetCourseCompletedParams) error {
 	return s.Queries.SetCourseCompleted(ctx, args)
+}
+
+func progressFrom(row sqlc.GetProgressRow) *domain.Progress {
+	var sectionUUIDs []uuid.UUID
+	for _, sectionID := range row.CompletedSectionIds {
+		sectionUUIDs = append(sectionUUIDs, uuid.UUID(sectionID.Bytes))
+	}
+
+	return &domain.Progress{
+		CompletedSectionIDs: sectionUUIDs,
+		CompletedIntro:      row.CompletedIntro.Bool,
+	}
 }
