@@ -79,14 +79,14 @@ The codebase follows a clean architecture pattern with clear separation of conce
 
 - **Repository Pattern**: Domain defines interfaces, store implements them. This allows the domain layer to be independent of database implementation.
 
-- **sqlc Code Generation**: Database queries are written in `internal/store/queries.sql`, and sqlc generates type-safe Go code in `internal/store/sqlc/`. Never edit generated files directly.
+- **sqlc Code Generation**: Database queries are written in `internal/store/queries/*.sql`, and sqlc generates type-safe Go code in `internal/store/sqlc/`. Never edit generated files directly.
 
 - **Migrations**: Managed by golang-migrate. Migration files live in `internal/store/migrations/`.
 
 ### Database Access
 
 - **DO NOT** write raw SQL in handlers or business logic
-- **DO** add queries to `internal/store/queries.sql` and run `make sqlc`
+- **DO** add queries to `internal/store/queries/*.sql` and run `make sqlc`
 - **DO** implement domain repository methods in `internal/store/*.go` using the generated sqlc queries
 - **DO NOT** use database models (sqlc.Course) in handlers; use domain models (domain.Course) instead
 
@@ -100,10 +100,8 @@ Integration tests use testcontainers to spin up a real Postgres instance. Tests 
 
 ## Environment Variables
 
-Required environment variables (see `.env.example`):
-- `SERVER_PORT`: Port for HTTP server
-- `DATABASE_URL`: PostgreSQL connection string
-- `LOG_LEVEL`: One of `debug`, `info`, `warn`, `error`
+Required environment variables: see `.env.example`
+
 
 ## Important Notes
 
