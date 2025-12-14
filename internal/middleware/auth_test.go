@@ -14,17 +14,19 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/middleware/mocks"
 	"github.com/supanova-rp/supanova-server/internal/middleware/testhelpers"
 	"github.com/supanova-rp/supanova-server/internal/services/auth"
-	"github.com/supanova-rp/supanova-server/internal/tests"
 )
 
-const accessToken = "test-access-token"
+const (
+	accessToken = "test-access-token"
+	testUserID  = "test-user-id"
+)
 
 func TestMiddleware(t *testing.T) {
 	t.Run("authorised: user is admin", func(t *testing.T) {
 		mockAuthProvider := &mocks.AuthProviderMock{
 			GetUserFromIDTokenFunc: func(ctx context.Context, token string) (*auth.User, error) {
 				return &auth.User{
-					ID:      tests.TestUserID,
+					ID:      testUserID,
 					IsAdmin: true,
 				}, nil
 			},
@@ -48,7 +50,7 @@ func TestMiddleware(t *testing.T) {
 		}
 
 		userID, ok := c.Request().Context().Value(middleware.UserIDContextKey).(string)
-		if !ok || userID != tests.TestUserID {
+		if !ok || userID != testUserID {
 			t.Fatalf("expected userID in context, got %s", userID)
 		}
 	})
@@ -57,7 +59,7 @@ func TestMiddleware(t *testing.T) {
 		mockAuthProvider := &mocks.AuthProviderMock{
 			GetUserFromIDTokenFunc: func(ctx context.Context, token string) (*auth.User, error) {
 				return &auth.User{
-					ID:      tests.TestUserID,
+					ID:      testUserID,
 					IsAdmin: false,
 				}, nil
 			},
@@ -81,7 +83,7 @@ func TestMiddleware(t *testing.T) {
 		}
 
 		userID, ok := c.Request().Context().Value(middleware.UserIDContextKey).(string)
-		if !ok || userID != tests.TestUserID {
+		if !ok || userID != testUserID {
 			t.Fatalf("expected userID in context, got %s", userID)
 		}
 	})
@@ -90,7 +92,7 @@ func TestMiddleware(t *testing.T) {
 		mockAuthProvider := &mocks.AuthProviderMock{
 			GetUserFromIDTokenFunc: func(ctx context.Context, token string) (*auth.User, error) {
 				return &auth.User{
-					ID:      tests.TestUserID,
+					ID:      testUserID,
 					IsAdmin: false,
 				}, nil
 			},

@@ -24,16 +24,24 @@ make run
 ```
 
 ### Testing
+
+To run unit tests:
+```bash
+make test             # Runs unit tests only
+go test ./... -run ^TestName$  # Run a single test
+```
+
+To run e2e tests:
+
 If using Docker with Colima, set these environment variables first:
 ```bash
 export DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock
 export TESTCONTAINERS_RYUK_DISABLED=true
 ```
 
-Then run tests:
+Then run:
 ```bash
-make test             # Run all tests
-go test ./internal/tests -run TestIntegration/returns_course_by_id  # Run a single test
+make test/e2e             # Runs e2e tests only
 ```
 
 ### Linting
@@ -110,3 +118,4 @@ Required environment variables: see `.env.example`
 - Context is passed through all layers for cancellation and timeout support
 - All database queries use pgx/v5 (not database/sql)
 - As a final step after making a series of changes, run `make lint` to ensure lint errors are fixed. If there are any errors then fix them.
+- Only run e2e tests (`make test/e2e`) if asked specifically to do so. Unit tests can be run automatically when appropriate (`make test`)
