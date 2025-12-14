@@ -24,16 +24,29 @@ make run
 ```
 
 ### Testing
+
+To run unit tests:
+```bash
+make test/unit                 # Runs unit tests only
+go test ./... -run ^TestName$  # Run a single test
+```
+
+To run e2e tests:
+
 If using Docker with Colima, set these environment variables first:
 ```bash
 export DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock
 export TESTCONTAINERS_RYUK_DISABLED=true
 ```
 
-Then run tests:
+Then run:
 ```bash
-make test             # Run all tests
-go test ./internal/tests -run TestIntegration/returns_course_by_id  # Run a single test
+make test/e2e # Runs e2e tests only
+```
+
+To run all tests:
+```bash
+make test # Runs unit and e2e tests only
 ```
 
 ### Linting

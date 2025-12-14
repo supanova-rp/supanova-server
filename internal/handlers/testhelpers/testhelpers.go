@@ -17,7 +17,6 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/middleware"
-	"github.com/supanova-rp/supanova-server/internal/tests"
 )
 
 const (
@@ -36,6 +35,8 @@ const (
 	HasCompletedCourseHandlerName               = "HasCompletedCourse"
 	GetUserHandlerName                          = "GetUser"
 	SendCourseCompletionNotificationHandlerName = "SendCourseCompletionNotification"
+
+	TestUserID = "test-user-id"
 )
 
 var User = &domain.User{
@@ -95,7 +96,7 @@ func SetupEchoContext(t *testing.T, reqBody interface{}, endpoint string, opts .
 	t.Helper()
 
 	adminRole := config.AdminRole
-	defaultUserID := tests.TestUserID
+	defaultUserID := TestUserID
 
 	o := &setupOptions{
 		userID: &defaultUserID,

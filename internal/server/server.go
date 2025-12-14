@@ -16,7 +16,16 @@ import (
 )
 
 const (
-	serverTimeout    = 10 * time.Second
+	// How long the server will wait to read the entire request after the connection is accepted
+	readTimeout = 10 * time.Second
+
+	// How long the server has to write the response after reading the request
+	writeTimeout = 10 * time.Second
+
+	// How long to keep a keep-alive connection open waiting for the next request
+	idleTimeout = 120 * time.Second
+
+	shutdownTimeout  = 10 * time.Second
 	serverRateLimit  = 60
 	serverBurstLimit = 120
 )
@@ -61,6 +70,10 @@ func New(h *handlers.Handlers, authProvider middleware.AuthProvider, cfg *config
 
 	registerRoutes(private, public, h)
 
+	e.Server.ReadTimeout = readTimeout
+	e.Server.WriteTimeout = writeTimeout
+	e.Server.IdleTimeout = idleTimeout
+
 	return &Server{
 		echo: e,
 		port: cfg.Port,
@@ -78,7 +91,7 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Stop() error {
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), serverTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
 	return s.echo.Shutdown(shutdownCtx)

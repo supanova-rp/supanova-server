@@ -19,8 +19,14 @@ lint/run:
 lint/fix:
 	bin/golangci-lint run --config .golangci.yml --fix
 
-test:
-	go test ./...
+test: # Runs unit and e2e tests
+	go test -shuffle=on -tags=e2e ./...
+
+test/unit: # unit tests only
+	go test -shuffle=on ./...
+
+test/e2e: # e2e tests only
+	go test -shuffle=on -tags=e2e ./internal/tests
 
 sqlc:
 	go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0 generate -f internal/store/sqlc.yml
