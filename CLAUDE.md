@@ -27,7 +27,7 @@ make run
 
 To run unit tests:
 ```bash
-make test             # Runs unit tests only
+make test/unit                 # Runs unit tests only
 go test ./... -run ^TestName$  # Run a single test
 ```
 
@@ -41,7 +41,12 @@ export TESTCONTAINERS_RYUK_DISABLED=true
 
 Then run:
 ```bash
-make test/e2e             # Runs e2e tests only
+make test/e2e # Runs e2e tests only
+```
+
+To run all tests:
+```bash
+make test # Runs unit and e2e tests only
 ```
 
 ### Linting
@@ -118,4 +123,3 @@ Required environment variables: see `.env.example`
 - Context is passed through all layers for cancellation and timeout support
 - All database queries use pgx/v5 (not database/sql)
 - As a final step after making a series of changes, run `make lint` to ensure lint errors are fixed. If there are any errors then fix them.
-- Only run e2e tests (`make test/e2e`) if asked specifically to do so. Unit tests can be run automatically when appropriate (`make test`)
