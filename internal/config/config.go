@@ -55,10 +55,11 @@ type AWS struct {
 }
 
 type EmailService struct {
-	ServiceID  string
-	TemplateID string
-	PublicKey  string
-	PrivateKey string
+	SendingKey   string
+	Domain       string
+	Sender       string
+	Recipient    string
+	TemplateName string
 }
 
 var logLevelMap = map[string]slog.Level{
@@ -74,23 +75,24 @@ func ParseEnv() (*App, error) {
 	_ = godotenv.Load()
 
 	envVars := map[string]string{
-		"SERVER_PORT":                          "",
-		"DATABASE_URL":                         "",
-		"LOG_LEVEL":                            "",
-		"AWS_REGION":                           "",
-		"AWS_ACCESS_KEY_ID":                    "",
-		"AWS_SECRET_ACCESS_KEY":                "",
-		"AWS_BUCKET_NAME":                      "",
-		"CLOUDFRONT_DOMAIN":                    "",
-		"CLOUDFRONT_KEY_PAIR_ID":               "",
-		"CLOUDFRONT_KEY_NAME":                  "",
-		"ENVIRONMENT":                          "",
-		"FIREBASE_CREDENTIALS":                 "",
-		"CLIENT_URLS":                          "",
-		"EMAILJS_SERVICE_ID":                   "",
-		"EMAILJS_PUBLIC_KEY":                   "",
-		"EMAILJS_PRIVATE_KEY":                  "",
-		"EMAILJS_COURSE_COMPLETED_TEMPLATE_ID": "",
+		"SERVER_PORT":            "",
+		"DATABASE_URL":           "",
+		"LOG_LEVEL":              "",
+		"AWS_REGION":             "",
+		"AWS_ACCESS_KEY_ID":      "",
+		"AWS_SECRET_ACCESS_KEY":  "",
+		"AWS_BUCKET_NAME":        "",
+		"CLOUDFRONT_DOMAIN":      "",
+		"CLOUDFRONT_KEY_PAIR_ID": "",
+		"CLOUDFRONT_KEY_NAME":    "",
+		"ENVIRONMENT":            "",
+		"FIREBASE_CREDENTIALS":   "",
+		"CLIENT_URLS":            "",
+		"MAILGUN_SENDING_KEY":    "",
+		"MAILGUN_DOMAIN":         "",
+		"MAILGUN_TEMPLATE_NAME":  "",
+		"MAILGUN_SENDER":         "",
+		"MAILGUN_RECIPIENT":      "",
 	}
 
 	for key := range envVars {
@@ -137,10 +139,11 @@ func ParseEnv() (*App, error) {
 		AuthProviderCredentials: envVars["FIREBASE_CREDENTIALS"],
 		ClientURLs:              clientURLs,
 		EmailService: &EmailService{
-			ServiceID:  envVars["EMAILJS_SERVICE_ID"],
-			TemplateID: envVars["EMAILJS_COURSE_COMPLETED_TEMPLATE_ID"],
-			PublicKey:  envVars["EMAILJS_PUBLIC_KEY"],
-			PrivateKey: envVars["EMAILJS_PRIVATE_KEY"],
+			SendingKey:   envVars["MAILGUN_SENDING_KEY"],
+			Domain:       envVars["MAILGUN_DOMAIN"],
+			TemplateName: envVars["MAILGUN_TEMPLATE_NAME"],
+			Sender:       envVars["MAILGUN_SENDER"],
+			Recipient:    envVars["MAILGUN_RECIPIENT"],
 		},
 	}, nil
 }
