@@ -2,7 +2,6 @@ package email
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/mailgun/mailgun-go/v5"
 
