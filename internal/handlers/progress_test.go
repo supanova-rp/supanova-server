@@ -362,6 +362,11 @@ func TestCourseCompleted(t *testing.T) {
 			SendFunc: func(ctx context.Context, params email.EmailParams, templateName string) error {
 				return nil
 			},
+			GetTemplateNamesFunc: func() *email.TemplateNames {
+				return &email.TemplateNames{
+					CourseCompletion: "",
+				}
+			},
 		}
 
 		h := &handlers.Handlers{
