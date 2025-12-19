@@ -160,11 +160,13 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 		CourseName:          params.CourseName,
 		CompletionTimestamp: time.Now().In(location).Format("02/01/2006 15:04:05"),
 	}
-	err = h.EmailService.SendCourseCompletionNotification(ctx, emailParams)
-	// TODO: implement retry logic
-	if err != nil {
-		slog.ErrorContext(ctx, err.Error(), slog.String("course_id", params.CourseID), slog.String("user_id", userID))
-	}
+
+	go func() {
+		err = h.EmailService.SendCourseCompletionNotification(ctx, emailParams)
+		if err != nil {
+			slog.ErrorContext(ctx, err.Error(), slog.String("course_id", params.CourseID), slog.String("user_id", userID))
+		}
+	}()
 
 	return e.NoContent(http.StatusNoContent)
 }

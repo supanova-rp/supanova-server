@@ -56,12 +56,25 @@ func (s *EmailService) SendCourseCompletionNotification(ctx context.Context, par
 	}
 	for key, value := range templateParams {
 		if err := message.AddTemplateVariable(key, value); err != nil {
+			// TODO: add to email DB
 			return err
 		}
 	}
 
-	// TODO: log if email was successful
 	_, err := s.client.Send(ctx, message)
+	if err != nil {
+		// TODO: add to email DB
+	}
 
 	return err
+
+	// 2. On e-mail failure: add to email_failures table, log if email was successful as well
+	// 4. Create new cron service that runs every hour with graceful shutdown:
+	// - SELECT email_params FROM email_failures WHERE remaining_retries > 0
+	//     - if success: delete row in email_failures table & log success
+	//     - if error:
+	//         - log errors for each failure
+	//         - if remaining_retries == 1: special log to say that email will be deleted from the email_failures table
+	//         - decrement remaining_retries & delete where retries <= 0 with CTE
+
 }
