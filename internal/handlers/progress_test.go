@@ -337,7 +337,13 @@ func TestCourseCompleted(t *testing.T) {
 			t,
 			len(mockEmailRepo.SendCalls()),
 			0,
-			testhelpers.SendCourseCompletionNotificationHandlerName,
+			testhelpers.SendEmailHandlerName,
+		)
+		testhelpers.AssertRepoCalls(
+			t,
+			len(mockEmailRepo.GetTemplateNamesCalls()),
+			0,
+			testhelpers.GetTemplateNamesHandlerName,
 		)
 	})
 
@@ -398,7 +404,13 @@ func TestCourseCompleted(t *testing.T) {
 			t,
 			len(mockEmailRepo.SendCalls()),
 			1,
-			testhelpers.SendCourseCompletionNotificationHandlerName,
+			testhelpers.SendEmailHandlerName,
+		)
+		testhelpers.AssertRepoCalls(
+			t,
+			len(mockEmailRepo.GetTemplateNamesCalls()),
+			1,
+			testhelpers.GetTemplateNamesHandlerName,
 		)
 	})
 
@@ -429,7 +441,13 @@ func TestCourseCompleted(t *testing.T) {
 			t,
 			len(mockEmailRepo.SendCalls()),
 			0,
-			testhelpers.SendCourseCompletionNotificationHandlerName,
+			testhelpers.SendEmailHandlerName,
+		)
+		testhelpers.AssertRepoCalls(
+			t,
+			len(mockEmailRepo.GetTemplateNamesCalls()),
+			0,
+			testhelpers.GetTemplateNamesHandlerName,
 		)
 	})
 
@@ -460,7 +478,13 @@ func TestCourseCompleted(t *testing.T) {
 			t,
 			len(mockEmailRepo.SendCalls()),
 			0,
-			testhelpers.SendCourseCompletionNotificationHandlerName,
+			testhelpers.SendEmailHandlerName,
+		)
+		testhelpers.AssertRepoCalls(
+			t,
+			len(mockEmailRepo.GetTemplateNamesCalls()),
+			0,
+			testhelpers.GetTemplateNamesHandlerName,
 		)
 	})
 
@@ -489,7 +513,13 @@ func TestCourseCompleted(t *testing.T) {
 			t,
 			len(mockEmailRepo.SendCalls()),
 			0,
-			testhelpers.SendCourseCompletionNotificationHandlerName,
+			testhelpers.SendEmailHandlerName,
+		)
+		testhelpers.AssertRepoCalls(
+			t,
+			len(mockEmailRepo.GetTemplateNamesCalls()),
+			0,
+			testhelpers.GetTemplateNamesHandlerName,
 		)
 	})
 
@@ -535,7 +565,13 @@ func TestCourseCompleted(t *testing.T) {
 			t,
 			len(mockEmailRepo.SendCalls()),
 			0,
-			testhelpers.SendCourseCompletionNotificationHandlerName,
+			testhelpers.SendEmailHandlerName,
+		)
+		testhelpers.AssertRepoCalls(
+			t,
+			len(mockEmailRepo.GetTemplateNamesCalls()),
+			0,
+			testhelpers.GetTemplateNamesHandlerName,
 		)
 	})
 }
