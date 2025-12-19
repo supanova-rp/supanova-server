@@ -16,8 +16,7 @@ func RetrySend(store *store.Store) func(ctx context.Context) {
 			slog.Error("failed to fetch failed emails", slog.Any("err", err))
 		}
 
-		// TODO: add email_name to migration and schema
-		// run sqlc again
+		// TODO: review interface code!!!!!!!!
 
 		// var emailParams []email.EmailParams
 		// loop through failedEmails and transform them into emailParams

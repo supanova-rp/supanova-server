@@ -20,8 +20,11 @@ var _ handlers.EmailService = &EmailServiceMock{}
 //
 //		// make and configure a mocked handlers.EmailService
 //		mockedEmailService := &EmailServiceMock{
-//			SendCourseCompletionNotificationFunc: func(ctx context.Context, params *email.CourseCompletionParams) error {
-//				panic("mock out the SendCourseCompletionNotification method")
+//			GetTemplateNamesFunc: func() *email.TemplateNames {
+//				panic("mock out the GetTemplateNames method")
+//			},
+//			SendFunc: func(ctx context.Context, params email.EmailParams, templateName string) error {
+//				panic("mock out the Send method")
 //			},
 //		}
 //
@@ -30,54 +33,94 @@ var _ handlers.EmailService = &EmailServiceMock{}
 //
 //	}
 type EmailServiceMock struct {
-	// SendCourseCompletionNotificationFunc mocks the SendCourseCompletionNotification method.
-	SendCourseCompletionNotificationFunc func(ctx context.Context, params *email.CourseCompletionParams) error
+	// GetTemplateNamesFunc mocks the GetTemplateNames method.
+	GetTemplateNamesFunc func() *email.TemplateNames
+
+	// SendFunc mocks the Send method.
+	SendFunc func(ctx context.Context, params email.EmailParams, templateName string) error
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// SendCourseCompletionNotification holds details about calls to the SendCourseCompletionNotification method.
-		SendCourseCompletionNotification []struct {
+		// GetTemplateNames holds details about calls to the GetTemplateNames method.
+		GetTemplateNames []struct {
+		}
+		// Send holds details about calls to the Send method.
+		Send []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Params is the params argument value.
-			Params *email.CourseCompletionParams
+			Params email.EmailParams
+			// TemplateName is the templateName argument value.
+			TemplateName string
 		}
 	}
-	lockSendCourseCompletionNotification sync.RWMutex
+	lockGetTemplateNames sync.RWMutex
+	lockSend             sync.RWMutex
 }
 
-// SendCourseCompletionNotification calls SendCourseCompletionNotificationFunc.
-func (mock *EmailServiceMock) SendCourseCompletionNotification(ctx context.Context, params *email.CourseCompletionParams) error {
-	if mock.SendCourseCompletionNotificationFunc == nil {
-		panic("EmailServiceMock.SendCourseCompletionNotificationFunc: method is nil but EmailService.SendCourseCompletionNotification was just called")
+// GetTemplateNames calls GetTemplateNamesFunc.
+func (mock *EmailServiceMock) GetTemplateNames() *email.TemplateNames {
+	if mock.GetTemplateNamesFunc == nil {
+		panic("EmailServiceMock.GetTemplateNamesFunc: method is nil but EmailService.GetTemplateNames was just called")
 	}
 	callInfo := struct {
-		Ctx    context.Context
-		Params *email.CourseCompletionParams
-	}{
-		Ctx:    ctx,
-		Params: params,
-	}
-	mock.lockSendCourseCompletionNotification.Lock()
-	mock.calls.SendCourseCompletionNotification = append(mock.calls.SendCourseCompletionNotification, callInfo)
-	mock.lockSendCourseCompletionNotification.Unlock()
-	return mock.SendCourseCompletionNotificationFunc(ctx, params)
+	}{}
+	mock.lockGetTemplateNames.Lock()
+	mock.calls.GetTemplateNames = append(mock.calls.GetTemplateNames, callInfo)
+	mock.lockGetTemplateNames.Unlock()
+	return mock.GetTemplateNamesFunc()
 }
 
-// SendCourseCompletionNotificationCalls gets all the calls that were made to SendCourseCompletionNotification.
+// GetTemplateNamesCalls gets all the calls that were made to GetTemplateNames.
 // Check the length with:
 //
-//	len(mockedEmailService.SendCourseCompletionNotificationCalls())
-func (mock *EmailServiceMock) SendCourseCompletionNotificationCalls() []struct {
-	Ctx    context.Context
-	Params *email.CourseCompletionParams
+//	len(mockedEmailService.GetTemplateNamesCalls())
+func (mock *EmailServiceMock) GetTemplateNamesCalls() []struct {
 } {
 	var calls []struct {
-		Ctx    context.Context
-		Params *email.CourseCompletionParams
 	}
-	mock.lockSendCourseCompletionNotification.RLock()
-	calls = mock.calls.SendCourseCompletionNotification
-	mock.lockSendCourseCompletionNotification.RUnlock()
+	mock.lockGetTemplateNames.RLock()
+	calls = mock.calls.GetTemplateNames
+	mock.lockGetTemplateNames.RUnlock()
+	return calls
+}
+
+// Send calls SendFunc.
+func (mock *EmailServiceMock) Send(ctx context.Context, params email.EmailParams, templateName string) error {
+	if mock.SendFunc == nil {
+		panic("EmailServiceMock.SendFunc: method is nil but EmailService.Send was just called")
+	}
+	callInfo := struct {
+		Ctx          context.Context
+		Params       email.EmailParams
+		TemplateName string
+	}{
+		Ctx:          ctx,
+		Params:       params,
+		TemplateName: templateName,
+	}
+	mock.lockSend.Lock()
+	mock.calls.Send = append(mock.calls.Send, callInfo)
+	mock.lockSend.Unlock()
+	return mock.SendFunc(ctx, params, templateName)
+}
+
+// SendCalls gets all the calls that were made to Send.
+// Check the length with:
+//
+//	len(mockedEmailService.SendCalls())
+func (mock *EmailServiceMock) SendCalls() []struct {
+	Ctx          context.Context
+	Params       email.EmailParams
+	TemplateName string
+} {
+	var calls []struct {
+		Ctx          context.Context
+		Params       email.EmailParams
+		TemplateName string
+	}
+	mock.lockSend.RLock()
+	calls = mock.calls.Send
+	mock.lockSend.RUnlock()
 	return calls
 }

@@ -335,7 +335,7 @@ func TestCourseCompleted(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockUserRepo.GetUserCalls()), 0, testhelpers.GetUserHandlerName)
 		testhelpers.AssertRepoCalls(
 			t,
-			len(mockEmailRepo.SendCourseCompletionNotificationCalls()),
+			len(mockEmailRepo.SendCalls()),
 			0,
 			testhelpers.SendCourseCompletionNotificationHandlerName,
 		)
@@ -359,7 +359,7 @@ func TestCourseCompleted(t *testing.T) {
 			},
 		}
 		mockEmailRepo := &mocks.EmailServiceMock{
-			SendCourseCompletionNotificationFunc: func(ctx context.Context, params *email.CourseCompletionParams) error {
+			SendFunc: func(ctx context.Context, params email.EmailParams, templateName string) error {
 				return nil
 			},
 		}
@@ -391,7 +391,7 @@ func TestCourseCompleted(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockUserRepo.GetUserCalls()), 1, testhelpers.GetUserHandlerName)
 		testhelpers.AssertRepoCalls(
 			t,
-			len(mockEmailRepo.SendCourseCompletionNotificationCalls()),
+			len(mockEmailRepo.SendCalls()),
 			1,
 			testhelpers.SendCourseCompletionNotificationHandlerName,
 		)
@@ -422,7 +422,7 @@ func TestCourseCompleted(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockUserRepo.GetUserCalls()), 0, testhelpers.GetUserHandlerName)
 		testhelpers.AssertRepoCalls(
 			t,
-			len(mockEmailRepo.SendCourseCompletionNotificationCalls()),
+			len(mockEmailRepo.SendCalls()),
 			0,
 			testhelpers.SendCourseCompletionNotificationHandlerName,
 		)
@@ -453,7 +453,7 @@ func TestCourseCompleted(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockUserRepo.GetUserCalls()), 0, testhelpers.GetUserHandlerName)
 		testhelpers.AssertRepoCalls(
 			t,
-			len(mockEmailRepo.SendCourseCompletionNotificationCalls()),
+			len(mockEmailRepo.SendCalls()),
 			0,
 			testhelpers.SendCourseCompletionNotificationHandlerName,
 		)
@@ -482,7 +482,7 @@ func TestCourseCompleted(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockUserRepo.GetUserCalls()), 0, testhelpers.GetUserHandlerName)
 		testhelpers.AssertRepoCalls(
 			t,
-			len(mockEmailRepo.SendCourseCompletionNotificationCalls()),
+			len(mockEmailRepo.SendCalls()),
 			0,
 			testhelpers.SendCourseCompletionNotificationHandlerName,
 		)
@@ -528,7 +528,7 @@ func TestCourseCompleted(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockUserRepo.GetUserCalls()), 1, testhelpers.GetUserHandlerName)
 		testhelpers.AssertRepoCalls(
 			t,
-			len(mockEmailRepo.SendCourseCompletionNotificationCalls()),
+			len(mockEmailRepo.SendCalls()),
 			0,
 			testhelpers.SendCourseCompletionNotificationHandlerName,
 		)
