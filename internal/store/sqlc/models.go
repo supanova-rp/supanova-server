@@ -25,12 +25,14 @@ type CourseMaterial struct {
 }
 
 type EmailFailure struct {
-	ID        pgtype.UUID
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Error     string
-	Params    []byte
-	Retries   int32
+	ID             pgtype.UUID
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Error          string
+	TemplateName   string
+	TemplateParams []byte
+	EmailName      string
+	Retries        int32
 }
 
 type Quizanswer struct {

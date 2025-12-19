@@ -3,6 +3,8 @@ CREATE TABLE email_failures (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   error TEXT NOT NULL,
-  params JSONB NOT NULL DEFAULT '{}'::jsonb,
+  template_name VARCHAR(100) NOT NULL,
+  template_params JSONB NOT NULL DEFAULT '{}'::jsonb,
+  email_name VARCHAR(100) NOT NULL,
   retries INT NOT NULL DEFAULT 5 
 );

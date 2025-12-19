@@ -2,35 +2,32 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/middleware"
 	"github.com/supanova-rp/supanova-server/internal/server"
+	"github.com/supanova-rp/supanova-server/internal/services/cron"
+	"github.com/supanova-rp/supanova-server/internal/services/cron/jobs"
 	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
 type Dependencies struct {
-	ObjectStorage handlers.ObjectStorage
-	EmailService  handlers.EmailService
-	AuthProvider  middleware.AuthProvider
+	Store            *store.Store
+	ObjectStorage    handlers.ObjectStorage
+	EmailService     handlers.EmailService
+	AuthProvider     middleware.AuthProvider
+	EmailFailureCron *cron.Cron
 }
 
-func Run(ctx context.Context, cfg *config.App, deps Dependencies) error {
-	st, err := store.New(ctx, cfg.DatabaseURL)
-	if err != nil {
-		return fmt.Errorf("failed to connect to database: %v", err)
-	}
-	defer st.Close()
-
+func Run(ctx context.Context, cfg *config.App, deps Dependencies) (err error) {
 	h := handlers.NewHandlers(
-		st,
-		st,
-		st,
-		st,
-		st,
+		deps.Store,
+		deps.Store,
+		deps.Store,
+		deps.Store,
+		deps.Store,
 		deps.ObjectStorage,
 		deps.EmailService,
 	)
@@ -42,12 +39,25 @@ func Run(ctx context.Context, cfg *config.App, deps Dependencies) error {
 		serverErr <- svr.Start()
 	}()
 
+	cancelEmailFailureCron, err := deps.EmailFailureCron.Setup(jobs.RetrySend(deps.Store))
+	defer cancelEmailFailureCron()
+	if err != nil {
+		return err
+	}
+
+	// blocks until signal received (e.g. by ctrl+C or process killed) OR server error
 	select {
 	case <-ctx.Done():
 		slog.Info("context cancelled")
 	case svrErr := <-serverErr:
 		err = svrErr
 	}
+
+	cancelEmailFailureCron() // cancel cron contexts to prevent new jobs from starting
+
+	stopEmailFailureCtx := deps.EmailFailureCron.Stop() // returns a context that waits until existing cron jobs finish
+	<-stopEmailFailureCtx.Done()
+	slog.Info("email failure cron jobs completed")
 
 	shutdownErr := svr.Stop()
 	if shutdownErr != nil {

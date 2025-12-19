@@ -28,7 +28,8 @@ type ObjectStorage interface {
 //go:generate moq -out ../handlers/mocks/emailservice_mock.go -pkg mocks . EmailService
 
 type EmailService interface {
-	SendCourseCompletionNotification(ctx context.Context, params *email.CourseCompletionParams) error
+	Send(ctx context.Context, params email.EmailParams, templateName string) error
+	GetTemplateNames() *email.TemplateNames
 }
 
 func NewHandlers(

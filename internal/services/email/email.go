@@ -2,79 +2,126 @@ package email
 
 import (
 	"context"
+	"encoding/json"
+	"log/slog"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mailgun/mailgun-go/v5"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
 type EmailService struct {
-	client       *mailgun.Client
-	sender       string
-	recipient    string
-	domain       string
-	templateName string
+	client        *mailgun.Client
+	sender        string
+	recipient     string
+	domain        string
+	templateNames *TemplateNames
+	store         EmailRepository
+}
+
+type EmailRepository interface {
+	AddEmailFailure(context.Context, sqlc.AddEmailFailureParams) error
+	GetEmailFailures(context.Context) ([]FailedEmail, error)
+	UpdateEmailFailure(context.Context, sqlc.UpdateEmailFailureParams) error
+	DeleteEmailFailures(context.Context, []pgtype.UUID) error
+}
+
+type EmailParams interface {
+	ToTemplateVariables() map[string]string
+}
+
+type FailedEmail struct {
+	ID             uuid.UUID
+	TemplateParams []byte
+	TemplateName   string
+	EmailName      string
+}
+
+type TemplateNames struct {
+	CourseCompletion string
 }
 
 type CourseCompletionParams struct {
-	UserName            string
-	UserEmail           string
-	CourseName          string
-	CompletionTimestamp string
+	CourseName          string `json:"course_name"`
+	UserName            string `json:"user_name"`
+	UserEmail           string `json:"user_email"`
+	CompletionTimestamp string `json:"completion_timestamp"`
 }
 
-func New(cfg *config.EmailService) *EmailService {
+func (p *CourseCompletionParams) ToTemplateVariables() map[string]string {
+	return map[string]string{
+		"course_name":          p.CourseName,
+		"user_name":            p.UserName,
+		"user_email":           p.UserEmail,
+		"completion_timestamp": p.CompletionTimestamp,
+	}
+}
+
+func New(cfg *config.EmailService, store EmailRepository) *EmailService {
 	mg := mailgun.NewMailgun(cfg.SendingKey)
 
 	// TODO: set EU domain once we have a Supanova email domain
 	// err := mg.SetAPIBase(mailgun.APIBaseEU)
 
 	return &EmailService{
-		client:       mg,
-		domain:       cfg.Domain,
-		sender:       cfg.Sender,
-		recipient:    cfg.Recipient,
-		templateName: cfg.TemplateName,
+		client:    mg,
+		domain:    cfg.Domain,
+		sender:    cfg.Sender,
+		recipient: cfg.Recipient,
+		templateNames: &TemplateNames{
+			CourseCompletion: cfg.CourseCompletionTemplateName,
+		},
+		store: store,
 	}
 }
 
-func (s *EmailService) SendCourseCompletionNotification(ctx context.Context, params *CourseCompletionParams) error {
+func (e *EmailService) GetTemplateNames() *TemplateNames {
+	return e.templateNames
+}
+
+func (e *EmailService) Send(ctx context.Context, params EmailParams, templateName string) (err error) {
 	message := mailgun.NewMessage(
-		s.domain,
-		s.sender,
+		e.domain,
+		e.sender,
 		"", // subject set by template
 		"", // text set by template,
-		s.recipient,
+		e.recipient,
 	)
 
-	message.SetTemplate(s.templateName)
-	templateParams := map[string]string{
-		"course_name":          params.CourseName,
-		"user_name":            params.UserName,
-		"user_email":           params.UserEmail,
-		"completion_timestamp": params.CompletionTimestamp,
-	}
-	for key, value := range templateParams {
+	message.SetTemplate(templateName)
+
+	defer func() {
+		if err != nil {
+			e.AddEmailFailure(ctx, err, params, templateName)
+		}
+	}()
+
+	for key, value := range params.ToTemplateVariables() {
 		if err := message.AddTemplateVariable(key, value); err != nil {
-			// TODO: add to email DB
 			return err
 		}
 	}
 
-	_, err := s.client.Send(ctx, message)
-	if err != nil {
-		// TODO: add to email DB
+	_, err = e.client.Send(ctx, message)
+	return err
+}
+
+func (e *EmailService) AddEmailFailure(ctx context.Context, err error, templateParams EmailParams, templateName string) {
+	paramBytes, marshalErr := json.Marshal(templateParams)
+	if marshalErr != nil {
+		slog.Error("failed to marshal template params", slog.Any("err", marshalErr))
+		return
 	}
 
-	return err
+	sqlcParams := sqlc.AddEmailFailureParams{
+		Error:          err.Error(),
+		TemplateName:   templateName,
+		TemplateParams: paramBytes,
+	}
 
-	// 2. On e-mail failure: add to email_failures table, log if email was successful as well
-	// 4. Create new cron service that runs every hour with graceful shutdown:
-	// - SELECT email_params FROM email_failures WHERE remaining_retries > 0
-	//     - if success: delete row in email_failures table & log success
-	//     - if error:
-	//         - log errors for each failure
-	//         - if remaining_retries == 1: special log to say that email will be deleted from the email_failures table
-	//         - decrement remaining_retries & delete where retries <= 0 with CTE
-
+	err = e.store.AddEmailFailure(ctx, sqlcParams)
+	slog.Error("failed to add failed email to email_failures table", slog.Any("err", err))
 }

@@ -19,6 +19,13 @@ Refer to `CLAUDE.md` for a full overview of the repository structure, database a
 make dep
 ```
 
+If using VS Code, add this to your user settings to make sure it identifies build tags correctly:
+```
+"go.toolsEnvVars": {
+    "GOFLAGS": "-tags=e2e"
+}
+```
+
 #### Run with docker:
 ```
 docker-compose up -d

@@ -7,18 +7,81 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const setFailedEmail = `-- name: SetFailedEmail :exec
-INSERT INTO email_failures (error, params) VALUES ($1, $2)
+const addEmailFailure = `-- name: AddEmailFailure :exec
+INSERT INTO email_failures (error, template_params, template_name) VALUES ($1, $2, $3)
 `
 
-type SetFailedEmailParams struct {
-	Error  string
-	Params []byte
+type AddEmailFailureParams struct {
+	Error          string
+	TemplateParams []byte
+	TemplateName   string
 }
 
-func (q *Queries) SetFailedEmail(ctx context.Context, arg SetFailedEmailParams) error {
-	_, err := q.db.Exec(ctx, setFailedEmail, arg.Error, arg.Params)
+func (q *Queries) AddEmailFailure(ctx context.Context, arg AddEmailFailureParams) error {
+	_, err := q.db.Exec(ctx, addEmailFailure, arg.Error, arg.TemplateParams, arg.TemplateName)
+	return err
+}
+
+const deleteEmailFailures = `-- name: DeleteEmailFailures :exec
+DELETE FROM email_failures WHERE id = ANY($1::uuid[]) OR retries <= 0
+`
+
+func (q *Queries) DeleteEmailFailures(ctx context.Context, dollar_1 []pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteEmailFailures, dollar_1)
+	return err
+}
+
+const getEmailFailures = `-- name: GetEmailFailures :many
+SELECT id, template_params, template_name, email_name FROM email_failures WHERE retries > 0
+`
+
+type GetEmailFailuresRow struct {
+	ID             pgtype.UUID
+	TemplateParams []byte
+	TemplateName   string
+	EmailName      string
+}
+
+func (q *Queries) GetEmailFailures(ctx context.Context) ([]GetEmailFailuresRow, error) {
+	rows, err := q.db.Query(ctx, getEmailFailures)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetEmailFailuresRow
+	for rows.Next() {
+		var i GetEmailFailuresRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TemplateParams,
+			&i.TemplateName,
+			&i.EmailName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateEmailFailure = `-- name: UpdateEmailFailure :exec
+UPDATE email_failures SET updated_at = $1, retries = $2, error = $3
+`
+
+type UpdateEmailFailureParams struct {
+	UpdatedAt pgtype.Timestamptz
+	Retries   int32
+	Error     string
+}
+
+func (q *Queries) UpdateEmailFailure(ctx context.Context, arg UpdateEmailFailureParams) error {
+	_, err := q.db.Exec(ctx, updateEmailFailure, arg.UpdatedAt, arg.Retries, arg.Error)
 	return err
 }
