@@ -162,7 +162,12 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 	}
 
 	go func() {
-		err = h.EmailService.Send(ctx, emailParams, h.EmailService.GetTemplateNames().CourseCompletion)
+		err = h.EmailService.Send(
+			ctx,
+			emailParams,
+			h.EmailService.GetTemplateNames().CourseCompletion,
+			h.EmailService.GetEmailNames().CourseCompletion,
+		)
 		if err != nil {
 			slog.ErrorContext(ctx, err.Error(), slog.String("course_id", params.CourseID), slog.String("user_id", userID))
 		}

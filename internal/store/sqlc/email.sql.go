@@ -12,17 +12,23 @@ import (
 )
 
 const addEmailFailure = `-- name: AddEmailFailure :exec
-INSERT INTO email_failures (error, template_params, template_name) VALUES ($1, $2, $3)
+INSERT INTO email_failures (error, template_params, template_name, email_name) VALUES ($1, $2, $3, $4)
 `
 
 type AddEmailFailureParams struct {
 	Error          string
 	TemplateParams []byte
 	TemplateName   string
+	EmailName      string
 }
 
 func (q *Queries) AddEmailFailure(ctx context.Context, arg AddEmailFailureParams) error {
-	_, err := q.db.Exec(ctx, addEmailFailure, arg.Error, arg.TemplateParams, arg.TemplateName)
+	_, err := q.db.Exec(ctx, addEmailFailure,
+		arg.Error,
+		arg.TemplateParams,
+		arg.TemplateName,
+		arg.EmailName,
+	)
 	return err
 }
 

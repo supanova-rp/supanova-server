@@ -1,5 +1,5 @@
 -- name: AddEmailFailure :exec
-INSERT INTO email_failures (error, template_params, template_name) VALUES ($1, $2, $3);
+INSERT INTO email_failures (error, template_params, template_name, email_name) VALUES ($1, $2, $3, $4);
 
 -- name: GetEmailFailures :many
 SELECT id, template_params, template_name, email_name FROM email_failures WHERE retries > 0;

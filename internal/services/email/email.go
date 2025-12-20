@@ -19,6 +19,7 @@ type EmailService struct {
 	recipient     string
 	domain        string
 	templateNames *TemplateNames
+	emailNames    *EmailNames
 	store         EmailRepository
 }
 
@@ -41,6 +42,10 @@ type FailedEmail struct {
 }
 
 type TemplateNames struct {
+	CourseCompletion string
+}
+
+type EmailNames struct {
 	CourseCompletion string
 }
 
@@ -74,6 +79,9 @@ func New(cfg *config.EmailService, store EmailRepository) *EmailService {
 		templateNames: &TemplateNames{
 			CourseCompletion: cfg.CourseCompletionTemplateName,
 		},
+		emailNames: &EmailNames{
+			CourseCompletion: "course-completion",
+		},
 		store: store,
 	}
 }
@@ -82,7 +90,11 @@ func (e *EmailService) GetTemplateNames() *TemplateNames {
 	return e.templateNames
 }
 
-func (e *EmailService) Send(ctx context.Context, params EmailParams, templateName string) (err error) {
+func (e *EmailService) GetEmailNames() *EmailNames {
+	return e.emailNames
+}
+
+func (e *EmailService) Send(ctx context.Context, params EmailParams, templateName, emailName string) (err error) {
 	message := mailgun.NewMessage(
 		e.domain,
 		e.sender,
@@ -95,7 +107,7 @@ func (e *EmailService) Send(ctx context.Context, params EmailParams, templateNam
 
 	defer func() {
 		if err != nil {
-			e.AddEmailFailure(ctx, err, params, templateName)
+			e.AddEmailFailure(ctx, err, params, templateName, emailName)
 		}
 	}()
 
@@ -109,7 +121,7 @@ func (e *EmailService) Send(ctx context.Context, params EmailParams, templateNam
 	return err
 }
 
-func (e *EmailService) AddEmailFailure(ctx context.Context, err error, templateParams EmailParams, templateName string) {
+func (e *EmailService) AddEmailFailure(ctx context.Context, err error, templateParams EmailParams, templateName, emailName string) {
 	paramBytes, marshalErr := json.Marshal(templateParams)
 	if marshalErr != nil {
 		slog.Error("failed to marshal template params", slog.Any("err", marshalErr))
@@ -120,6 +132,7 @@ func (e *EmailService) AddEmailFailure(ctx context.Context, err error, templateP
 		Error:          err.Error(),
 		TemplateName:   templateName,
 		TemplateParams: paramBytes,
+		EmailName:      emailName,
 	}
 
 	err = e.store.AddEmailFailure(ctx, sqlcParams)

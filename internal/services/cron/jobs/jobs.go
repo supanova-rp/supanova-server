@@ -16,8 +16,6 @@ func RetrySend(store *store.Store) func(ctx context.Context) {
 			slog.Error("failed to fetch failed emails", slog.Any("err", err))
 		}
 
-		// TODO: review interface code!!!!!!!!
-
 		// var emailParams []email.EmailParams
 		// loop through failedEmails and transform them into emailParams
 		// - based on the failedEmail.emailName we can create 'concrete type', e.g:
