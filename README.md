@@ -54,6 +54,12 @@ Then run:
 make test
 ```
 
+- Running unit tests only:
+`make test/unit`
+
+- Running e2e tests only:
+`make test/e2e`
+
 #### Generate db queries:
 ```
 make sqlc

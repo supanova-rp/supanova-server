@@ -61,12 +61,9 @@ func setupTestResources(ctx context.Context) (*TestResources, error) {
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
 
-	mockObjectStorage := &mocks.ObjectStorageMock{
-		GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
-			return "https://mock-upload-url.com/" + key, nil
-		},
-		GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
-			return "https://mock-cdn-url.com/" + key, nil
+	mockEmailService := &mocks.EmailServiceMock{
+		SetupRetryFunc: func() (context.CancelFunc, error) {
+			return nil, nil
 		},
 	}
 
@@ -82,13 +79,12 @@ func setupTestResources(ctx context.Context) (*TestResources, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
-	defer st.Close()
 
 	// Start the app in a goroutine
 	go func() {
 		err := app.Run(ctx, cfg, app.Dependencies{
-			Store:         st,
-			ObjectStorage: mockObjectStorage,
+			Store:        st,
+			EmailService: mockEmailService,
 		})
 		if err != nil {
 			slog.Error("app error", slog.Any("error", err))
