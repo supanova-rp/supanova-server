@@ -488,8 +488,8 @@ func TestCourseCompleted(t *testing.T) {
 		}
 
 		h := &handlers.Handlers{
-			Progress:     mockProgressRepo,
-			User:         mockUserRepo,
+			Progress: mockProgressRepo,
+			User:     mockUserRepo,
 		}
 
 		ctx, _ := testhelpers.SetupEchoContext(t, params, "set-course-completed")
