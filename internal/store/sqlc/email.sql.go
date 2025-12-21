@@ -11,19 +11,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const addEmailFailure = `-- name: AddEmailFailure :exec
+const addFailedEmail = `-- name: AddFailedEmail :exec
 INSERT INTO email_failures (error, template_params, template_name, email_name) VALUES ($1, $2, $3, $4)
 `
 
-type AddEmailFailureParams struct {
+type AddFailedEmailParams struct {
 	Error          string
 	TemplateParams []byte
 	TemplateName   string
 	EmailName      string
 }
 
-func (q *Queries) AddEmailFailure(ctx context.Context, arg AddEmailFailureParams) error {
-	_, err := q.db.Exec(ctx, addEmailFailure,
+func (q *Queries) AddFailedEmail(ctx context.Context, arg AddFailedEmailParams) error {
+	_, err := q.db.Exec(ctx, addFailedEmail,
 		arg.Error,
 		arg.TemplateParams,
 		arg.TemplateName,
@@ -32,40 +32,42 @@ func (q *Queries) AddEmailFailure(ctx context.Context, arg AddEmailFailureParams
 	return err
 }
 
-const deleteEmailFailures = `-- name: DeleteEmailFailures :exec
-DELETE FROM email_failures WHERE id = ANY($1::uuid[]) OR retries <= 0
+const deleteFailedEmail = `-- name: DeleteFailedEmail :exec
+DELETE FROM email_failures WHERE id = $1::uuid
 `
 
-func (q *Queries) DeleteEmailFailures(ctx context.Context, dollar_1 []pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteEmailFailures, dollar_1)
+func (q *Queries) DeleteFailedEmail(ctx context.Context, dollar_1 pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteFailedEmail, dollar_1)
 	return err
 }
 
-const getEmailFailures = `-- name: GetEmailFailures :many
-SELECT id, template_params, template_name, email_name FROM email_failures WHERE retries > 0
+const getFailedEmails = `-- name: GetFailedEmails :many
+SELECT id, template_params, template_name, email_name, retries FROM email_failures WHERE retries > 0
 `
 
-type GetEmailFailuresRow struct {
+type GetFailedEmailsRow struct {
 	ID             pgtype.UUID
 	TemplateParams []byte
 	TemplateName   string
 	EmailName      string
+	Retries        int32
 }
 
-func (q *Queries) GetEmailFailures(ctx context.Context) ([]GetEmailFailuresRow, error) {
-	rows, err := q.db.Query(ctx, getEmailFailures)
+func (q *Queries) GetFailedEmails(ctx context.Context) ([]GetFailedEmailsRow, error) {
+	rows, err := q.db.Query(ctx, getFailedEmails)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetEmailFailuresRow
+	var items []GetFailedEmailsRow
 	for rows.Next() {
-		var i GetEmailFailuresRow
+		var i GetFailedEmailsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.TemplateParams,
 			&i.TemplateName,
 			&i.EmailName,
+			&i.Retries,
 		); err != nil {
 			return nil, err
 		}
@@ -77,17 +79,16 @@ func (q *Queries) GetEmailFailures(ctx context.Context) ([]GetEmailFailuresRow, 
 	return items, nil
 }
 
-const updateEmailFailure = `-- name: UpdateEmailFailure :exec
-UPDATE email_failures SET updated_at = $1, retries = $2, error = $3
+const updateFailedEmail = `-- name: UpdateFailedEmail :exec
+UPDATE email_failures SET retries = $1, error = $2
 `
 
-type UpdateEmailFailureParams struct {
-	UpdatedAt pgtype.Timestamptz
-	Retries   int32
-	Error     string
+type UpdateFailedEmailParams struct {
+	Retries int32
+	Error   string
 }
 
-func (q *Queries) UpdateEmailFailure(ctx context.Context, arg UpdateEmailFailureParams) error {
-	_, err := q.db.Exec(ctx, updateEmailFailure, arg.UpdatedAt, arg.Retries, arg.Error)
+func (q *Queries) UpdateFailedEmail(ctx context.Context, arg UpdateFailedEmailParams) error {
+	_, err := q.db.Exec(ctx, updateFailedEmail, arg.Retries, arg.Error)
 	return err
 }

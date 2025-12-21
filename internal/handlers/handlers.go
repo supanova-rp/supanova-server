@@ -29,6 +29,7 @@ type ObjectStorage interface {
 
 type EmailService interface {
 	Send(ctx context.Context, params email.EmailParams, templateName, emailName string) error
+	SetupRetry() (context.CancelFunc, error)
 	GetTemplateNames() *email.TemplateNames
 	GetEmailNames() *email.EmailNames
 }

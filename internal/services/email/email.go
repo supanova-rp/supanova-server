@@ -10,28 +10,28 @@ import (
 	"github.com/mailgun/mailgun-go/v5"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
+	"github.com/supanova-rp/supanova-server/internal/services/cron"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
+	"github.com/supanova-rp/supanova-server/internal/utils"
 )
 
 type EmailService struct {
-	client        *mailgun.Client
-	sender        string
-	recipient     string
-	domain        string
-	templateNames *TemplateNames
-	emailNames    *EmailNames
-	store         EmailRepository
+	client           *mailgun.Client
+	sender           string
+	recipient        string
+	domain           string
+	templateNames    *TemplateNames
+	emailNames       *EmailNames
+	store            EmailRepository
+	emailFailureCron *cron.Cron
 }
 
 type EmailRepository interface {
-	AddEmailFailure(context.Context, sqlc.AddEmailFailureParams) error
-	GetEmailFailures(context.Context) ([]FailedEmail, error)
-	UpdateEmailFailure(context.Context, sqlc.UpdateEmailFailureParams) error
-	DeleteEmailFailures(context.Context, []pgtype.UUID) error
-}
-
-type EmailParams interface {
-	ToTemplateVariables() map[string]string
+	AddFailedEmail(context.Context, sqlc.AddFailedEmailParams) error
+	GetFailedEmails(context.Context) ([]FailedEmail, error)
+	UpdateFailedEmail(context.Context, sqlc.UpdateFailedEmailParams) error
+	DeleteFailedEmail(context.Context, pgtype.UUID) error
 }
 
 type FailedEmail struct {
@@ -39,6 +39,11 @@ type FailedEmail struct {
 	TemplateParams []byte
 	TemplateName   string
 	EmailName      string
+	Retries        int
+}
+
+type EmailParams interface {
+	ToTemplateVariables() map[string]string
 }
 
 type TemplateNames struct {
@@ -71,6 +76,8 @@ func New(cfg *config.EmailService, store EmailRepository) *EmailService {
 	// TODO: set EU domain once we have a Supanova email domain
 	// err := mg.SetAPIBase(mailgun.APIBaseEU)
 
+	emailFailureCron := cron.New(cfg.CronSchedule, "email-failure")
+
 	return &EmailService{
 		client:    mg,
 		domain:    cfg.Domain,
@@ -82,7 +89,8 @@ func New(cfg *config.EmailService, store EmailRepository) *EmailService {
 		emailNames: &EmailNames{
 			CourseCompletion: "course-completion",
 		},
-		store: store,
+		store:            store,
+		emailFailureCron: emailFailureCron,
 	}
 }
 
@@ -92,6 +100,10 @@ func (e *EmailService) GetTemplateNames() *TemplateNames {
 
 func (e *EmailService) GetEmailNames() *EmailNames {
 	return e.emailNames
+}
+
+func (e *EmailService) SetupRetry() (context.CancelFunc, error) {
+	return e.emailFailureCron.Setup(e.RetryJob())
 }
 
 func (e *EmailService) Send(ctx context.Context, params EmailParams, templateName, emailName string) (err error) {
@@ -107,7 +119,7 @@ func (e *EmailService) Send(ctx context.Context, params EmailParams, templateNam
 
 	defer func() {
 		if err != nil {
-			e.AddEmailFailure(ctx, err, params, templateName, emailName)
+			e.AddFailedEmail(ctx, err, params, templateName, emailName)
 		}
 	}()
 
@@ -121,20 +133,138 @@ func (e *EmailService) Send(ctx context.Context, params EmailParams, templateNam
 	return err
 }
 
-func (e *EmailService) AddEmailFailure(ctx context.Context, err error, templateParams EmailParams, templateName, emailName string) {
+func (e *EmailService) RetrySend(ctx context.Context, params RetryParams) {
+	message := mailgun.NewMessage(
+		e.domain,
+		e.sender,
+		"", // subject set by template
+		"", // text set by template,
+		e.recipient,
+	)
+
+	message.SetTemplate(params.templateName)
+
+	for key, value := range params.templateParams.ToTemplateVariables() {
+		if err := message.AddTemplateVariable(key, value); err != nil {
+			slog.Error("failed to retry sending failed email", slog.Any("err", err))
+			return
+		}
+	}
+
+	pgUUID, err := utils.PGUUIDFrom(params.ID)
+	if err != nil {
+		slog.Error("failed to resend email", slog.Any("err", errors.InvalidUUID))
+		return
+	}
+
+	_, err = e.client.Send(ctx, message)
+	if err != nil {
+		e.updateFailedEmail(ctx, pgUUID, params.retries, err)
+		return
+	}
+
+	slog.Debug("successfully resent email", slog.String("id", params.ID))
+	e.deleteFailedEmail(ctx, pgUUID)
+}
+
+type RetryParams struct {
+	ID             string
+	templateParams EmailParams
+	templateName   string
+	emailName      string
+	retries        int
+}
+
+func (e *EmailService) RetryJob() func(ctx context.Context) {
+	return func(ctx context.Context) {
+		failedEmails, err := e.store.GetFailedEmails(ctx)
+		if err != nil {
+			switch {
+			case errors.IsNotFoundErr(err):
+				slog.Debug("no failed emails to retry")
+			default:
+				slog.Error(errors.Getting("failed emails"), slog.Any("err", err))
+			}
+			return
+		}
+
+		var sendParams []RetryParams
+
+		for _, fe := range failedEmails {
+			switch fe.EmailName {
+			case e.GetEmailNames().CourseCompletion:
+				sendParams = appendParams[*CourseCompletionParams](
+					&fe,
+					sendParams,
+				)
+			default:
+				slog.Error("email name not found", slog.String("email_name", fe.EmailName))
+			}
+		}
+
+		for _, sendP := range sendParams {
+			e.RetrySend(ctx, sendP)
+		}
+	}
+}
+
+func (e *EmailService) AddFailedEmail(ctx context.Context, err error, templateParams EmailParams, templateName, emailName string) {
 	paramBytes, marshalErr := json.Marshal(templateParams)
 	if marshalErr != nil {
 		slog.Error("failed to marshal template params", slog.Any("err", marshalErr))
 		return
 	}
 
-	sqlcParams := sqlc.AddEmailFailureParams{
+	sqlcParams := sqlc.AddFailedEmailParams{
 		Error:          err.Error(),
 		TemplateName:   templateName,
 		TemplateParams: paramBytes,
 		EmailName:      emailName,
 	}
 
-	err = e.store.AddEmailFailure(ctx, sqlcParams)
+	err = e.store.AddFailedEmail(ctx, sqlcParams)
 	slog.Error("failed to add failed email to email_failures table", slog.Any("err", err))
+}
+
+func appendParams[T EmailParams](params *FailedEmail, sendParams []RetryParams) []RetryParams {
+	var templateParams T
+	if err := json.Unmarshal(params.TemplateParams, templateParams); err != nil {
+		slog.Error("failed to unmarshal template params", slog.Any("err", err))
+		return sendParams
+	}
+
+	sendParams = append(sendParams, RetryParams{
+		ID:             params.ID.String(),
+		templateName:   params.TemplateName,
+		templateParams: templateParams,
+		emailName:      params.EmailName,
+	})
+
+	return sendParams
+}
+
+func (e *EmailService) deleteFailedEmail(ctx context.Context, emailID pgtype.UUID) {
+	err := e.store.DeleteFailedEmail(ctx, emailID)
+	if err != nil {
+		slog.Error("failed to delete resent email from email_failures table", slog.Any("err", err))
+		return
+	}
+	slog.Debug("deleted failed email from email_failures table", slog.String("id", emailID.String()))
+}
+
+func (e *EmailService) updateFailedEmail(ctx context.Context, emailID pgtype.UUID, retries int, err error) {
+	slog.Error("failed to resend email", slog.String("ID", emailID.String()), slog.Any("err", err))
+
+	if retries <= 1 {
+		e.deleteFailedEmail(ctx, emailID)
+	}
+
+	sqlcParams := sqlc.UpdateFailedEmailParams{
+		Retries: int32(retries) - 1, // #nosec G115 retry value is guaranteed to be small as  0 <= value >= 5
+		Error:   err.Error(),
+	}
+	err = e.store.UpdateFailedEmail(ctx, sqlcParams)
+	if err != nil {
+		slog.Error("failed to update email", slog.String("ID", emailID.String()), slog.Any("err", err))
+	}
 }

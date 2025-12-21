@@ -365,7 +365,7 @@ func TestCourseCompleted(t *testing.T) {
 			},
 		}
 		mockEmailRepo := &mocks.EmailServiceMock{
-			SendFunc: func(ctx context.Context, params email.EmailParams, templateName string) error {
+			SendFunc: func(ctx context.Context, params email.EmailParams, templateName, emailName string) error {
 				return nil
 			},
 			GetTemplateNamesFunc: func() *email.TemplateNames {

@@ -9,7 +9,6 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/middleware"
 	"github.com/supanova-rp/supanova-server/internal/server"
 	"github.com/supanova-rp/supanova-server/internal/services/cron"
-	"github.com/supanova-rp/supanova-server/internal/services/cron/jobs"
 	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
@@ -39,7 +38,7 @@ func Run(ctx context.Context, cfg *config.App, deps Dependencies) (err error) {
 		serverErr <- svr.Start()
 	}()
 
-	cancelEmailFailureCron, err := deps.EmailFailureCron.Setup(jobs.RetrySend(deps.Store))
+	cancelEmailFailureCron, err := deps.EmailService.SetupRetry()
 	defer cancelEmailFailureCron()
 	if err != nil {
 		return err

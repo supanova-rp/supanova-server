@@ -20,11 +20,17 @@ var _ handlers.EmailService = &EmailServiceMock{}
 //
 //		// make and configure a mocked handlers.EmailService
 //		mockedEmailService := &EmailServiceMock{
+//			GetEmailNamesFunc: func() *email.EmailNames {
+//				panic("mock out the GetEmailNames method")
+//			},
 //			GetTemplateNamesFunc: func() *email.TemplateNames {
 //				panic("mock out the GetTemplateNames method")
 //			},
-//			SendFunc: func(ctx context.Context, params email.EmailParams, templateName string) error {
+//			SendFunc: func(ctx context.Context, params email.EmailParams, templateName string, emailName string) error {
 //				panic("mock out the Send method")
+//			},
+//			SetupRetryFunc: func() (context.CancelFunc, error) {
+//				panic("mock out the SetupRetry method")
 //			},
 //		}
 //
@@ -33,14 +39,23 @@ var _ handlers.EmailService = &EmailServiceMock{}
 //
 //	}
 type EmailServiceMock struct {
+	// GetEmailNamesFunc mocks the GetEmailNames method.
+	GetEmailNamesFunc func() *email.EmailNames
+
 	// GetTemplateNamesFunc mocks the GetTemplateNames method.
 	GetTemplateNamesFunc func() *email.TemplateNames
 
 	// SendFunc mocks the Send method.
-	SendFunc func(ctx context.Context, params email.EmailParams, templateName string) error
+	SendFunc func(ctx context.Context, params email.EmailParams, templateName string, emailName string) error
+
+	// SetupRetryFunc mocks the SetupRetry method.
+	SetupRetryFunc func() (context.CancelFunc, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetEmailNames holds details about calls to the GetEmailNames method.
+		GetEmailNames []struct {
+		}
 		// GetTemplateNames holds details about calls to the GetTemplateNames method.
 		GetTemplateNames []struct {
 		}
@@ -52,10 +67,44 @@ type EmailServiceMock struct {
 			Params email.EmailParams
 			// TemplateName is the templateName argument value.
 			TemplateName string
+			// EmailName is the emailName argument value.
+			EmailName string
+		}
+		// SetupRetry holds details about calls to the SetupRetry method.
+		SetupRetry []struct {
 		}
 	}
+	lockGetEmailNames    sync.RWMutex
 	lockGetTemplateNames sync.RWMutex
 	lockSend             sync.RWMutex
+	lockSetupRetry       sync.RWMutex
+}
+
+// GetEmailNames calls GetEmailNamesFunc.
+func (mock *EmailServiceMock) GetEmailNames() *email.EmailNames {
+	if mock.GetEmailNamesFunc == nil {
+		panic("EmailServiceMock.GetEmailNamesFunc: method is nil but EmailService.GetEmailNames was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetEmailNames.Lock()
+	mock.calls.GetEmailNames = append(mock.calls.GetEmailNames, callInfo)
+	mock.lockGetEmailNames.Unlock()
+	return mock.GetEmailNamesFunc()
+}
+
+// GetEmailNamesCalls gets all the calls that were made to GetEmailNames.
+// Check the length with:
+//
+//	len(mockedEmailService.GetEmailNamesCalls())
+func (mock *EmailServiceMock) GetEmailNamesCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetEmailNames.RLock()
+	calls = mock.calls.GetEmailNames
+	mock.lockGetEmailNames.RUnlock()
+	return calls
 }
 
 // GetTemplateNames calls GetTemplateNamesFunc.
@@ -86,7 +135,7 @@ func (mock *EmailServiceMock) GetTemplateNamesCalls() []struct {
 }
 
 // Send calls SendFunc.
-func (mock *EmailServiceMock) Send(ctx context.Context, params email.EmailParams, templateName string) error {
+func (mock *EmailServiceMock) Send(ctx context.Context, params email.EmailParams, templateName string, emailName string) error {
 	if mock.SendFunc == nil {
 		panic("EmailServiceMock.SendFunc: method is nil but EmailService.Send was just called")
 	}
@@ -94,15 +143,17 @@ func (mock *EmailServiceMock) Send(ctx context.Context, params email.EmailParams
 		Ctx          context.Context
 		Params       email.EmailParams
 		TemplateName string
+		EmailName    string
 	}{
 		Ctx:          ctx,
 		Params:       params,
 		TemplateName: templateName,
+		EmailName:    emailName,
 	}
 	mock.lockSend.Lock()
 	mock.calls.Send = append(mock.calls.Send, callInfo)
 	mock.lockSend.Unlock()
-	return mock.SendFunc(ctx, params, templateName)
+	return mock.SendFunc(ctx, params, templateName, emailName)
 }
 
 // SendCalls gets all the calls that were made to Send.
@@ -113,14 +164,43 @@ func (mock *EmailServiceMock) SendCalls() []struct {
 	Ctx          context.Context
 	Params       email.EmailParams
 	TemplateName string
+	EmailName    string
 } {
 	var calls []struct {
 		Ctx          context.Context
 		Params       email.EmailParams
 		TemplateName string
+		EmailName    string
 	}
 	mock.lockSend.RLock()
 	calls = mock.calls.Send
 	mock.lockSend.RUnlock()
+	return calls
+}
+
+// SetupRetry calls SetupRetryFunc.
+func (mock *EmailServiceMock) SetupRetry() (context.CancelFunc, error) {
+	if mock.SetupRetryFunc == nil {
+		panic("EmailServiceMock.SetupRetryFunc: method is nil but EmailService.SetupRetry was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockSetupRetry.Lock()
+	mock.calls.SetupRetry = append(mock.calls.SetupRetry, callInfo)
+	mock.lockSetupRetry.Unlock()
+	return mock.SetupRetryFunc()
+}
+
+// SetupRetryCalls gets all the calls that were made to SetupRetry.
+// Check the length with:
+//
+//	len(mockedEmailService.SetupRetryCalls())
+func (mock *EmailServiceMock) SetupRetryCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockSetupRetry.RLock()
+	calls = mock.calls.SetupRetry
+	mock.lockSetupRetry.RUnlock()
 	return calls
 }
