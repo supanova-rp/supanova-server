@@ -228,7 +228,7 @@ func (e *EmailService) RetrySend(ctx context.Context, params RetryParams) {
 
 	for key, value := range params.templateParams.ToTemplateVariables() {
 		if err := message.AddTemplateVariable(key, value); err != nil {
-			slog.Error("failed to retry sending failed email", slog.Any("err", err))
+			slog.Error("failed to resend email", slog.Any("err", err))
 			return
 		}
 	}
@@ -241,11 +241,12 @@ func (e *EmailService) RetrySend(ctx context.Context, params RetryParams) {
 
 	_, err = e.client.Send(ctx, message)
 	if err != nil {
+		slog.Error("failed to resend email", slog.String("ID", pgUUID.String()), slog.Any("err", err))
 		e.updateFailedEmail(ctx, pgUUID, params.retries, err)
 		return
 	}
 
-	slog.Debug("successfully resent email", slog.String("id", params.ID))
+	slog.Debug("resent email", slog.String("id", params.ID))
 	e.deleteFailedEmail(ctx, pgUUID)
 }
 
@@ -259,8 +260,6 @@ func (e *EmailService) deleteFailedEmail(ctx context.Context, emailID pgtype.UUI
 }
 
 func (e *EmailService) updateFailedEmail(ctx context.Context, emailID pgtype.UUID, retries int, err error) {
-	slog.Error("failed to resend email", slog.String("ID", emailID.String()), slog.Any("err", err))
-
 	if retries <= 1 {
 		slog.Debug("no retries left")
 		e.deleteFailedEmail(ctx, emailID)
@@ -273,5 +272,7 @@ func (e *EmailService) updateFailedEmail(ctx context.Context, emailID pgtype.UUI
 	err = e.store.UpdateFailedEmail(ctx, sqlcParams)
 	if err != nil {
 		slog.Error("failed to update email", slog.String("ID", emailID.String()), slog.Any("err", err))
+		return
 	}
+	slog.Debug("updated failed email")
 }
