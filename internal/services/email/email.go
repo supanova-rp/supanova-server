@@ -106,6 +106,28 @@ func (e *EmailService) SetupRetry() (context.CancelFunc, error) {
 	return e.emailFailureCron.Setup(e.RetryJob())
 }
 
+func (e *EmailService) AddFailedEmail(ctx context.Context, err error, templateParams EmailParams, templateName, emailName string) {
+	paramBytes, marshalErr := json.Marshal(templateParams)
+	if marshalErr != nil {
+		slog.Error("failed to marshal template params", slog.Any("err", marshalErr))
+		return
+	}
+
+	sqlcParams := sqlc.AddFailedEmailParams{
+		Error:          err.Error(),
+		TemplateName:   templateName,
+		TemplateParams: paramBytes,
+		EmailName:      emailName,
+	}
+
+	err = e.store.AddFailedEmail(ctx, sqlcParams)
+	if err != nil {
+		slog.Error("failed to add email to email_failures table", slog.Any("err", err))
+	} else {
+		slog.Debug("added email to email_failures table")
+	}
+}
+
 func (e *EmailService) Send(ctx context.Context, params EmailParams, templateName, emailName string) (err error) {
 	message := mailgun.NewMessage(
 		e.domain,
@@ -131,6 +153,66 @@ func (e *EmailService) Send(ctx context.Context, params EmailParams, templateNam
 
 	_, err = e.client.Send(ctx, message)
 	return err
+}
+
+type RetryParams struct {
+	ID             string
+	templateParams EmailParams
+	templateName   string
+	emailName      string
+	retries        int
+}
+
+func (e *EmailService) RetryJob() func(ctx context.Context) {
+	return func(ctx context.Context) {
+		failedEmails, err := e.store.GetFailedEmails(ctx)
+
+		if err != nil {
+			slog.Error(errors.Getting("failed emails"), slog.Any("err", err))
+			return
+		}
+
+		if len(failedEmails) == 0 {
+			slog.Debug("no failed emails to retry")
+			return
+		}
+
+		var sendParams []RetryParams
+
+		for _, fe := range failedEmails {
+			switch fe.EmailName {
+			case e.GetEmailNames().CourseCompletion:
+				sendParams = appendParams[*CourseCompletionParams](
+					&fe,
+					sendParams,
+				)
+			default:
+				slog.Error("email name not found", slog.String("email_name", fe.EmailName))
+			}
+		}
+
+		for _, sendP := range sendParams {
+			e.RetrySend(ctx, sendP)
+		}
+	}
+}
+
+func appendParams[T EmailParams](params *FailedEmail, sendParams []RetryParams) []RetryParams {
+	var templateParams T
+	if err := json.Unmarshal(params.TemplateParams, &templateParams); err != nil {
+		slog.Error("failed to unmarshal template params", slog.Any("err", err))
+		return sendParams
+	}
+
+	sendParams = append(sendParams, RetryParams{
+		ID:             params.ID.String(),
+		templateName:   params.TemplateName,
+		templateParams: templateParams,
+		emailName:      params.EmailName,
+		retries:        params.Retries,
+	})
+
+	return sendParams
 }
 
 func (e *EmailService) RetrySend(ctx context.Context, params RetryParams) {
@@ -167,100 +249,25 @@ func (e *EmailService) RetrySend(ctx context.Context, params RetryParams) {
 	e.deleteFailedEmail(ctx, pgUUID)
 }
 
-type RetryParams struct {
-	ID             string
-	templateParams EmailParams
-	templateName   string
-	emailName      string
-	retries        int
-}
-
-func (e *EmailService) RetryJob() func(ctx context.Context) {
-	return func(ctx context.Context) {
-		failedEmails, err := e.store.GetFailedEmails(ctx)
-		if err != nil {
-			switch {
-			case errors.IsNotFoundErr(err):
-				slog.Debug("no failed emails to retry")
-			default:
-				slog.Error(errors.Getting("failed emails"), slog.Any("err", err))
-			}
-			return
-		}
-
-		var sendParams []RetryParams
-
-		for _, fe := range failedEmails {
-			switch fe.EmailName {
-			case e.GetEmailNames().CourseCompletion:
-				sendParams = appendParams[*CourseCompletionParams](
-					&fe,
-					sendParams,
-				)
-			default:
-				slog.Error("email name not found", slog.String("email_name", fe.EmailName))
-			}
-		}
-
-		for _, sendP := range sendParams {
-			e.RetrySend(ctx, sendP)
-		}
-	}
-}
-
-func (e *EmailService) AddFailedEmail(ctx context.Context, err error, templateParams EmailParams, templateName, emailName string) {
-	paramBytes, marshalErr := json.Marshal(templateParams)
-	if marshalErr != nil {
-		slog.Error("failed to marshal template params", slog.Any("err", marshalErr))
-		return
-	}
-
-	sqlcParams := sqlc.AddFailedEmailParams{
-		Error:          err.Error(),
-		TemplateName:   templateName,
-		TemplateParams: paramBytes,
-		EmailName:      emailName,
-	}
-
-	err = e.store.AddFailedEmail(ctx, sqlcParams)
-	slog.Error("failed to add failed email to email_failures table", slog.Any("err", err))
-}
-
-func appendParams[T EmailParams](params *FailedEmail, sendParams []RetryParams) []RetryParams {
-	var templateParams T
-	if err := json.Unmarshal(params.TemplateParams, templateParams); err != nil {
-		slog.Error("failed to unmarshal template params", slog.Any("err", err))
-		return sendParams
-	}
-
-	sendParams = append(sendParams, RetryParams{
-		ID:             params.ID.String(),
-		templateName:   params.TemplateName,
-		templateParams: templateParams,
-		emailName:      params.EmailName,
-	})
-
-	return sendParams
-}
-
 func (e *EmailService) deleteFailedEmail(ctx context.Context, emailID pgtype.UUID) {
 	err := e.store.DeleteFailedEmail(ctx, emailID)
 	if err != nil {
-		slog.Error("failed to delete resent email from email_failures table", slog.Any("err", err))
+		slog.Error("failed to delete email from email_failures table", slog.Any("err", err))
 		return
 	}
-	slog.Debug("deleted failed email from email_failures table", slog.String("id", emailID.String()))
+	slog.Debug("deleted email from email_failures table", slog.String("id", emailID.String()))
 }
 
 func (e *EmailService) updateFailedEmail(ctx context.Context, emailID pgtype.UUID, retries int, err error) {
 	slog.Error("failed to resend email", slog.String("ID", emailID.String()), slog.Any("err", err))
 
 	if retries <= 1 {
+		slog.Debug("no retries left")
 		e.deleteFailedEmail(ctx, emailID)
 	}
 
 	sqlcParams := sqlc.UpdateFailedEmailParams{
-		Retries: int32(retries) - 1, // #nosec G115 retry value is guaranteed to be small as  0 <= value >= 5
+		Retries: int32(retries) - 1, // #nosec G115 retry value is guaranteed to be small because 0 <= value >= 5
 		Error:   err.Error(),
 	}
 	err = e.store.UpdateFailedEmail(ctx, sqlcParams)

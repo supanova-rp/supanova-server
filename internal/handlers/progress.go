@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"time"
@@ -163,7 +164,7 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 
 	go func() {
 		err = h.EmailService.Send(
-			ctx,
+			context.WithoutCancel(ctx),
 			emailParams,
 			h.EmailService.GetTemplateNames().CourseCompletion,
 			h.EmailService.GetEmailNames().CourseCompletion,
