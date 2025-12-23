@@ -18,6 +18,7 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/services/email"
 	"github.com/supanova-rp/supanova-server/internal/services/objectstorage"
 	"github.com/supanova-rp/supanova-server/internal/services/secrets"
+	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
 func main() {
@@ -56,6 +57,12 @@ func run() error {
 		return fmt.Errorf("failed to fetch CDN key: %v", err)
 	}
 
+	st, err := store.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %v", err)
+	}
+	defer st.Close()
+
 	objectStore, err := objectstorage.New(ctx, cfg.AWS, awsCfg, cdnKey)
 	if err != nil {
 		return fmt.Errorf("failed to create object store: %v", err)
@@ -66,9 +73,13 @@ func run() error {
 		return fmt.Errorf("failed to initialise auth provider: %v", err)
 	}
 
-	emailService := email.New(cfg.EmailService)
+	emailService, err := email.New(cfg.EmailService, st)
+	if err != nil {
+		return fmt.Errorf("failed to initialise email service: %v", err)
+	}
 
 	return app.Run(ctx, cfg, app.Dependencies{
+		Store:         st,
 		ObjectStorage: objectStore,
 		AuthProvider:  authProvider,
 		EmailService:  emailService,

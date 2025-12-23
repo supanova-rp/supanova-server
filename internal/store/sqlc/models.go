@@ -24,6 +24,17 @@ type CourseMaterial struct {
 	Position   pgtype.Int4
 }
 
+type EmailFailure struct {
+	ID             pgtype.UUID
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+	Error          string
+	TemplateName   string
+	TemplateParams []byte
+	EmailName      string
+	Retries        int32
+}
+
 type Quizanswer struct {
 	ID             pgtype.UUID
 	Answer         pgtype.Text

@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
@@ -13,24 +12,19 @@ import (
 )
 
 type Dependencies struct {
+	Store         *store.Store
 	ObjectStorage handlers.ObjectStorage
 	EmailService  handlers.EmailService
 	AuthProvider  middleware.AuthProvider
 }
 
-func Run(ctx context.Context, cfg *config.App, deps Dependencies) error {
-	st, err := store.New(ctx, cfg.DatabaseURL)
-	if err != nil {
-		return fmt.Errorf("failed to connect to database: %v", err)
-	}
-	defer st.Close()
-
+func Run(ctx context.Context, cfg *config.App, deps Dependencies) (err error) {
 	h := handlers.NewHandlers(
-		st,
-		st,
-		st,
-		st,
-		st,
+		deps.Store,
+		deps.Store,
+		deps.Store,
+		deps.Store,
+		deps.Store,
 		deps.ObjectStorage,
 		deps.EmailService,
 	)
@@ -42,12 +36,15 @@ func Run(ctx context.Context, cfg *config.App, deps Dependencies) error {
 		serverErr <- svr.Start()
 	}()
 
+	// blocks until signal received (e.g. by ctrl+C or process killed) OR server error
 	select {
 	case <-ctx.Done():
 		slog.Info("context cancelled")
 	case svrErr := <-serverErr:
 		err = svrErr
 	}
+
+	deps.EmailService.StopRetry(ctx)
 
 	shutdownErr := svr.Stop()
 	if shutdownErr != nil {

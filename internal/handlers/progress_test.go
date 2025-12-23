@@ -308,7 +308,6 @@ func TestCourseCompleted(t *testing.T) {
 			},
 		}
 		mockUserRepo := &userMocks.UserRepositoryMock{}
-		mockEmailRepo := &mocks.EmailServiceMock{}
 
 		h := &handlers.Handlers{
 			Progress: mockProgressRepo,
@@ -333,12 +332,6 @@ func TestCourseCompleted(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockProgressRepo.HasCompletedCourseCalls()), 1, testhelpers.HasCompletedCourseHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockProgressRepo.SetCourseCompletedCalls()), 0, testhelpers.SetCourseCompletedHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockUserRepo.GetUserCalls()), 0, testhelpers.GetUserHandlerName)
-		testhelpers.AssertRepoCalls(
-			t,
-			len(mockEmailRepo.SendCourseCompletionNotificationCalls()),
-			0,
-			testhelpers.SendCourseCompletionNotificationHandlerName,
-		)
 	})
 
 	t.Run("sets course to completed with no previous completion", func(t *testing.T) {
@@ -359,8 +352,18 @@ func TestCourseCompleted(t *testing.T) {
 			},
 		}
 		mockEmailRepo := &mocks.EmailServiceMock{
-			SendCourseCompletionNotificationFunc: func(ctx context.Context, params *email.CourseCompletionParams) error {
+			SendFunc: func(ctx context.Context, params email.EmailParams, templateName, emailName string) error {
 				return nil
+			},
+			GetTemplateNamesFunc: func() *email.TemplateNames {
+				return &email.TemplateNames{
+					CourseCompletion: "",
+				}
+			},
+			GetEmailNamesFunc: func() *email.EmailNames {
+				return &email.EmailNames{
+					CourseCompletion: "",
+				}
 			},
 		}
 
@@ -389,12 +392,6 @@ func TestCourseCompleted(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockProgressRepo.HasCompletedCourseCalls()), 1, testhelpers.HasCompletedCourseHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockProgressRepo.SetCourseCompletedCalls()), 1, testhelpers.SetCourseCompletedHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockUserRepo.GetUserCalls()), 1, testhelpers.GetUserHandlerName)
-		testhelpers.AssertRepoCalls(
-			t,
-			len(mockEmailRepo.SendCourseCompletionNotificationCalls()),
-			1,
-			testhelpers.SendCourseCompletionNotificationHandlerName,
-		)
 	})
 
 	t.Run("validation error - missing courseId", func(t *testing.T) {
@@ -402,7 +399,6 @@ func TestCourseCompleted(t *testing.T) {
 
 		mockProgressRepo := &mocks.ProgressRepositoryMock{}
 		mockUserRepo := &userMocks.UserRepositoryMock{}
-		mockEmailRepo := &mocks.EmailServiceMock{}
 
 		params := &handlers.SetCourseCompletedParams{
 			CourseName: courseName,
@@ -420,12 +416,6 @@ func TestCourseCompleted(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockProgressRepo.HasCompletedCourseCalls()), 0, testhelpers.HasCompletedCourseHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockProgressRepo.SetCourseCompletedCalls()), 0, testhelpers.SetCourseCompletedHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockUserRepo.GetUserCalls()), 0, testhelpers.GetUserHandlerName)
-		testhelpers.AssertRepoCalls(
-			t,
-			len(mockEmailRepo.SendCourseCompletionNotificationCalls()),
-			0,
-			testhelpers.SendCourseCompletionNotificationHandlerName,
-		)
 	})
 
 	t.Run("validation error - missing courseName", func(t *testing.T) {
@@ -433,7 +423,6 @@ func TestCourseCompleted(t *testing.T) {
 
 		mockProgressRepo := &mocks.ProgressRepositoryMock{}
 		mockUserRepo := &userMocks.UserRepositoryMock{}
-		mockEmailRepo := &mocks.EmailServiceMock{}
 
 		params := &handlers.SetCourseCompletedParams{
 			CourseID: courseID.String(),
@@ -451,18 +440,11 @@ func TestCourseCompleted(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockProgressRepo.HasCompletedCourseCalls()), 0, testhelpers.HasCompletedCourseHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockProgressRepo.SetCourseCompletedCalls()), 0, testhelpers.SetCourseCompletedHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockUserRepo.GetUserCalls()), 0, testhelpers.GetUserHandlerName)
-		testhelpers.AssertRepoCalls(
-			t,
-			len(mockEmailRepo.SendCourseCompletionNotificationCalls()),
-			0,
-			testhelpers.SendCourseCompletionNotificationHandlerName,
-		)
 	})
 
 	t.Run("validation error - invalid courseId uuid format", func(t *testing.T) {
 		mockProgressRepo := &mocks.ProgressRepositoryMock{}
 		mockUserRepo := &userMocks.UserRepositoryMock{}
-		mockEmailRepo := &mocks.EmailServiceMock{}
 
 		params := &handlers.SetCourseCompletedParams{
 			CourseID: "invalid-uuid",
@@ -480,12 +462,6 @@ func TestCourseCompleted(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockProgressRepo.HasCompletedCourseCalls()), 0, testhelpers.HasCompletedCourseHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockProgressRepo.SetCourseCompletedCalls()), 0, testhelpers.SetCourseCompletedHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockUserRepo.GetUserCalls()), 0, testhelpers.GetUserHandlerName)
-		testhelpers.AssertRepoCalls(
-			t,
-			len(mockEmailRepo.SendCourseCompletionNotificationCalls()),
-			0,
-			testhelpers.SendCourseCompletionNotificationHandlerName,
-		)
 	})
 
 	t.Run("internal server error", func(t *testing.T) {
@@ -505,7 +481,6 @@ func TestCourseCompleted(t *testing.T) {
 				return nil, pgx.ErrNoRows
 			},
 		}
-		mockEmailRepo := &mocks.EmailServiceMock{}
 
 		params := &handlers.SetCourseCompletedParams{
 			CourseID:   courseID.String(),
@@ -513,9 +488,8 @@ func TestCourseCompleted(t *testing.T) {
 		}
 
 		h := &handlers.Handlers{
-			Progress:     mockProgressRepo,
-			User:         mockUserRepo,
-			EmailService: mockEmailRepo,
+			Progress: mockProgressRepo,
+			User:     mockUserRepo,
 		}
 
 		ctx, _ := testhelpers.SetupEchoContext(t, params, "set-course-completed")
@@ -526,11 +500,5 @@ func TestCourseCompleted(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockProgressRepo.HasCompletedCourseCalls()), 1, testhelpers.HasCompletedCourseHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockProgressRepo.SetCourseCompletedCalls()), 1, testhelpers.SetCourseCompletedHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockUserRepo.GetUserCalls()), 1, testhelpers.GetUserHandlerName)
-		testhelpers.AssertRepoCalls(
-			t,
-			len(mockEmailRepo.SendCourseCompletionNotificationCalls()),
-			0,
-			testhelpers.SendCourseCompletionNotificationHandlerName,
-		)
 	})
 }

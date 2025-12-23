@@ -16,6 +16,7 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/app"
 	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
+	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
 const (
@@ -25,6 +26,7 @@ const (
 )
 
 type TestResources struct {
+	Store        *store.Store
 	ComposeStack *compose.DockerCompose
 	DB           *sql.DB
 	AppURL       string
@@ -59,12 +61,9 @@ func setupTestResources(ctx context.Context) (*TestResources, error) {
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
 
-	mockObjectStorage := &mocks.ObjectStorageMock{
-		GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
-			return "https://mock-upload-url.com/" + key, nil
-		},
-		GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
-			return "https://mock-cdn-url.com/" + key, nil
+	mockEmailService := &mocks.EmailServiceMock{
+		SetupRetryFunc: func() (context.CancelFunc, error) {
+			return nil, nil
 		},
 	}
 
@@ -76,10 +75,16 @@ func setupTestResources(ctx context.Context) (*TestResources, error) {
 	}
 	appURL := fmt.Sprintf("http://localhost:%s", testPort)
 
+	st, err := store.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %v", err)
+	}
+
 	// Start the app in a goroutine
 	go func() {
 		err := app.Run(ctx, cfg, app.Dependencies{
-			ObjectStorage: mockObjectStorage,
+			Store:        st,
+			EmailService: mockEmailService,
 		})
 		if err != nil {
 			slog.Error("app error", slog.Any("error", err))
@@ -97,6 +102,7 @@ func setupTestResources(ctx context.Context) (*TestResources, error) {
 	}
 
 	return &TestResources{
+		Store:        st,
 		ComposeStack: composeStack,
 		DB:           db,
 		AppURL:       appURL,
@@ -106,6 +112,10 @@ func setupTestResources(ctx context.Context) (*TestResources, error) {
 func (tr *TestResources) Cleanup(ctx context.Context) {
 	if tr == nil {
 		return
+	}
+
+	if tr.Store != nil {
+		tr.Store.Close()
 	}
 
 	if tr.DB != nil {
