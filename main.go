@@ -73,14 +73,16 @@ func run() error {
 		return fmt.Errorf("failed to initialise auth provider: %v", err)
 	}
 
-	emailService := email.New(cfg.EmailService, st)
+	emailService, err := email.New(cfg.EmailService, st)
+	if err != nil {
+		return fmt.Errorf("failed to initialise email service: %v", err)
+	}
 
 	return app.Run(ctx, cfg, app.Dependencies{
-		Store:            st,
-		ObjectStorage:    objectStore,
-		AuthProvider:     authProvider,
-		EmailService:     emailService,
-		EmailFailureCron: emailService.GetEmailFailureCron(),
+		Store:         st,
+		ObjectStorage: objectStore,
+		AuthProvider:  authProvider,
+		EmailService:  emailService,
 	})
 }
 

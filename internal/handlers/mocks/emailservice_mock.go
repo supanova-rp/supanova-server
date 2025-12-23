@@ -6,7 +6,6 @@ package mocks
 import (
 	"context"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
-	"github.com/supanova-rp/supanova-server/internal/services/cron"
 	"github.com/supanova-rp/supanova-server/internal/services/email"
 	"sync"
 )
@@ -21,9 +20,6 @@ var _ handlers.EmailService = &EmailServiceMock{}
 //
 //		// make and configure a mocked handlers.EmailService
 //		mockedEmailService := &EmailServiceMock{
-//			GetEmailFailureCronFunc: func() *cron.Cron {
-//				panic("mock out the GetEmailFailureCron method")
-//			},
 //			GetEmailNamesFunc: func() *email.EmailNames {
 //				panic("mock out the GetEmailNames method")
 //			},
@@ -36,6 +32,9 @@ var _ handlers.EmailService = &EmailServiceMock{}
 //			SetupRetryFunc: func() (context.CancelFunc, error) {
 //				panic("mock out the SetupRetry method")
 //			},
+//			StopRetryFunc: func(ctx context.Context)  {
+//				panic("mock out the StopRetry method")
+//			},
 //		}
 //
 //		// use mockedEmailService in code that requires handlers.EmailService
@@ -43,9 +42,6 @@ var _ handlers.EmailService = &EmailServiceMock{}
 //
 //	}
 type EmailServiceMock struct {
-	// GetEmailFailureCronFunc mocks the GetEmailFailureCron method.
-	GetEmailFailureCronFunc func() *cron.Cron
-
 	// GetEmailNamesFunc mocks the GetEmailNames method.
 	GetEmailNamesFunc func() *email.EmailNames
 
@@ -58,11 +54,11 @@ type EmailServiceMock struct {
 	// SetupRetryFunc mocks the SetupRetry method.
 	SetupRetryFunc func() (context.CancelFunc, error)
 
+	// StopRetryFunc mocks the StopRetry method.
+	StopRetryFunc func(ctx context.Context)
+
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetEmailFailureCron holds details about calls to the GetEmailFailureCron method.
-		GetEmailFailureCron []struct {
-		}
 		// GetEmailNames holds details about calls to the GetEmailNames method.
 		GetEmailNames []struct {
 		}
@@ -83,39 +79,17 @@ type EmailServiceMock struct {
 		// SetupRetry holds details about calls to the SetupRetry method.
 		SetupRetry []struct {
 		}
+		// StopRetry holds details about calls to the StopRetry method.
+		StopRetry []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 	}
-	lockGetEmailFailureCron sync.RWMutex
-	lockGetEmailNames       sync.RWMutex
-	lockGetTemplateNames    sync.RWMutex
-	lockSend                sync.RWMutex
-	lockSetupRetry          sync.RWMutex
-}
-
-// GetEmailFailureCron calls GetEmailFailureCronFunc.
-func (mock *EmailServiceMock) GetEmailFailureCron() *cron.Cron {
-	if mock.GetEmailFailureCronFunc == nil {
-		panic("EmailServiceMock.GetEmailFailureCronFunc: method is nil but EmailService.GetEmailFailureCron was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockGetEmailFailureCron.Lock()
-	mock.calls.GetEmailFailureCron = append(mock.calls.GetEmailFailureCron, callInfo)
-	mock.lockGetEmailFailureCron.Unlock()
-	return mock.GetEmailFailureCronFunc()
-}
-
-// GetEmailFailureCronCalls gets all the calls that were made to GetEmailFailureCron.
-// Check the length with:
-//
-//	len(mockedEmailService.GetEmailFailureCronCalls())
-func (mock *EmailServiceMock) GetEmailFailureCronCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetEmailFailureCron.RLock()
-	calls = mock.calls.GetEmailFailureCron
-	mock.lockGetEmailFailureCron.RUnlock()
-	return calls
+	lockGetEmailNames    sync.RWMutex
+	lockGetTemplateNames sync.RWMutex
+	lockSend             sync.RWMutex
+	lockSetupRetry       sync.RWMutex
+	lockStopRetry        sync.RWMutex
 }
 
 // GetEmailNames calls GetEmailNamesFunc.
@@ -240,5 +214,37 @@ func (mock *EmailServiceMock) SetupRetryCalls() []struct {
 	mock.lockSetupRetry.RLock()
 	calls = mock.calls.SetupRetry
 	mock.lockSetupRetry.RUnlock()
+	return calls
+}
+
+// StopRetry calls StopRetryFunc.
+func (mock *EmailServiceMock) StopRetry(ctx context.Context) {
+	if mock.StopRetryFunc == nil {
+		panic("EmailServiceMock.StopRetryFunc: method is nil but EmailService.StopRetry was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockStopRetry.Lock()
+	mock.calls.StopRetry = append(mock.calls.StopRetry, callInfo)
+	mock.lockStopRetry.Unlock()
+	mock.StopRetryFunc(ctx)
+}
+
+// StopRetryCalls gets all the calls that were made to StopRetry.
+// Check the length with:
+//
+//	len(mockedEmailService.StopRetryCalls())
+func (mock *EmailServiceMock) StopRetryCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockStopRetry.RLock()
+	calls = mock.calls.StopRetry
+	mock.lockStopRetry.RUnlock()
 	return calls
 }

@@ -17,14 +17,15 @@ import (
 )
 
 type EmailService struct {
-	client           *mailgun.Client
-	sender           string
-	recipient        string
-	domain           string
-	templateNames    *TemplateNames
-	emailNames       *EmailNames
-	store            EmailRepository
-	emailFailureCron *cron.Cron
+	client        *mailgun.Client
+	sender        string
+	recipient     string
+	domain        string
+	templateNames *TemplateNames
+	emailNames    *EmailNames
+	store         EmailRepository
+	retryCron     *cron.Cron
+	stopRetry     context.CancelFunc
 }
 
 type EmailRepository interface {
@@ -70,15 +71,14 @@ func (p *CourseCompletionParams) ToTemplateVariables() map[string]string {
 	}
 }
 
-func New(cfg *config.EmailService, store EmailRepository) *EmailService {
+func New(cfg *config.EmailService, store EmailRepository) (*EmailService, error) {
 	mg := mailgun.NewMailgun(cfg.SendingKey)
-
 	// TODO: set EU domain once we have a Supanova email domain
 	// err := mg.SetAPIBase(mailgun.APIBaseEU)
 
-	emailFailureCron := cron.New(cfg.CronSchedule, "email-failure")
+	retryCron := cron.New(cfg.CronSchedule, "email-retry")
 
-	return &EmailService{
+	service := &EmailService{
 		client:    mg,
 		domain:    cfg.Domain,
 		sender:    cfg.Sender,
@@ -89,13 +89,17 @@ func New(cfg *config.EmailService, store EmailRepository) *EmailService {
 		emailNames: &EmailNames{
 			CourseCompletion: "course-completion",
 		},
-		store:            store,
-		emailFailureCron: emailFailureCron,
+		store:     store,
+		retryCron: retryCron,
 	}
-}
 
-func (e *EmailService) GetEmailFailureCron() *cron.Cron {
-	return e.emailFailureCron
+	stopRetry, err := service.SetupRetry()
+	if err != nil {
+		return nil, err
+	}
+	service.stopRetry = stopRetry
+
+	return service, nil
 }
 
 func (e *EmailService) GetTemplateNames() *TemplateNames {
@@ -107,7 +111,7 @@ func (e *EmailService) GetEmailNames() *EmailNames {
 }
 
 func (e *EmailService) SetupRetry() (context.CancelFunc, error) {
-	return e.emailFailureCron.Setup(e.RetryJob())
+	return e.retryCron.Setup(e.RetryJob())
 }
 
 func (e *EmailService) AddFailedEmail(ctx context.Context, err error, templateParams EmailParams, templateName, emailName string) {
@@ -290,4 +294,12 @@ func (e *EmailService) updateFailedEmail(ctx context.Context, retryParams *Retry
 	}
 
 	slog.Debug("updated failed email")
+}
+
+func (e *EmailService) StopRetry(ctx context.Context) {
+	e.stopRetry() // cancel cron contexts to prevent new jobs from starting
+
+	stopRetryCtx := e.retryCron.Stop() // returns a context that waits until existing cron jobs finish
+	<-stopRetryCtx.Done()
+	slog.Info("email retry cron jobs completed")
 }

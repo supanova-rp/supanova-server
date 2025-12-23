@@ -8,16 +8,14 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/middleware"
 	"github.com/supanova-rp/supanova-server/internal/server"
-	"github.com/supanova-rp/supanova-server/internal/services/cron"
 	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
 type Dependencies struct {
-	Store            *store.Store
-	ObjectStorage    handlers.ObjectStorage
-	EmailService     handlers.EmailService
-	AuthProvider     middleware.AuthProvider
-	EmailFailureCron *cron.Cron
+	Store         *store.Store
+	ObjectStorage handlers.ObjectStorage
+	EmailService  handlers.EmailService
+	AuthProvider  middleware.AuthProvider
 }
 
 func Run(ctx context.Context, cfg *config.App, deps Dependencies) (err error) {
@@ -38,13 +36,6 @@ func Run(ctx context.Context, cfg *config.App, deps Dependencies) (err error) {
 		serverErr <- svr.Start()
 	}()
 
-	// TODO: move this into email service?
-	cancelEmailFailureCron, err := deps.EmailService.SetupRetry()
-	defer cancelEmailFailureCron()
-	if err != nil {
-		return err
-	}
-
 	// blocks until signal received (e.g. by ctrl+C or process killed) OR server error
 	select {
 	case <-ctx.Done():
@@ -53,11 +44,7 @@ func Run(ctx context.Context, cfg *config.App, deps Dependencies) (err error) {
 		err = svrErr
 	}
 
-	cancelEmailFailureCron() // cancel cron contexts to prevent new jobs from starting
-
-	stopEmailFailureCtx := deps.EmailFailureCron.Stop() // returns a context that waits until existing cron jobs finish
-	<-stopEmailFailureCtx.Done()
-	slog.Info("email failure cron jobs completed") // TODO: Take this out?
+	deps.EmailService.StopRetry(ctx)
 
 	shutdownErr := svr.Stop()
 	if shutdownErr != nil {

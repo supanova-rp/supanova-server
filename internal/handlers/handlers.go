@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/supanova-rp/supanova-server/internal/domain"
-	"github.com/supanova-rp/supanova-server/internal/services/cron"
 	"github.com/supanova-rp/supanova-server/internal/services/email"
 )
 
@@ -33,7 +32,7 @@ type EmailService interface {
 	SetupRetry() (context.CancelFunc, error)
 	GetTemplateNames() *email.TemplateNames
 	GetEmailNames() *email.EmailNames
-	GetEmailFailureCron() *cron.Cron
+	StopRetry(ctx context.Context)
 }
 
 func NewHandlers(
