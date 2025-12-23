@@ -42,7 +42,7 @@ func (q *Queries) DeleteFailedEmail(ctx context.Context, dollar_1 pgtype.UUID) e
 }
 
 const getFailedEmails = `-- name: GetFailedEmails :many
-SELECT id, template_params, template_name, email_name, retries FROM email_failures WHERE retries > 0
+SELECT id, template_params, template_name, email_name, retries FROM email_failures
 `
 
 type GetFailedEmailsRow struct {
