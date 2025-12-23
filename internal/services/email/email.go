@@ -94,6 +94,10 @@ func New(cfg *config.EmailService, store EmailRepository) *EmailService {
 	}
 }
 
+func (e *EmailService) GetEmailFailureCron() *cron.Cron {
+	return e.emailFailureCron
+}
+
 func (e *EmailService) GetTemplateNames() *TemplateNames {
 	return e.templateNames
 }

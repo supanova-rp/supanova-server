@@ -6,6 +6,7 @@ package mocks
 import (
 	"context"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
+	"github.com/supanova-rp/supanova-server/internal/services/cron"
 	"github.com/supanova-rp/supanova-server/internal/services/email"
 	"sync"
 )
@@ -20,6 +21,9 @@ var _ handlers.EmailService = &EmailServiceMock{}
 //
 //		// make and configure a mocked handlers.EmailService
 //		mockedEmailService := &EmailServiceMock{
+//			GetEmailFailureCronFunc: func() *cron.Cron {
+//				panic("mock out the GetEmailFailureCron method")
+//			},
 //			GetEmailNamesFunc: func() *email.EmailNames {
 //				panic("mock out the GetEmailNames method")
 //			},
@@ -39,6 +43,9 @@ var _ handlers.EmailService = &EmailServiceMock{}
 //
 //	}
 type EmailServiceMock struct {
+	// GetEmailFailureCronFunc mocks the GetEmailFailureCron method.
+	GetEmailFailureCronFunc func() *cron.Cron
+
 	// GetEmailNamesFunc mocks the GetEmailNames method.
 	GetEmailNamesFunc func() *email.EmailNames
 
@@ -53,6 +60,9 @@ type EmailServiceMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetEmailFailureCron holds details about calls to the GetEmailFailureCron method.
+		GetEmailFailureCron []struct {
+		}
 		// GetEmailNames holds details about calls to the GetEmailNames method.
 		GetEmailNames []struct {
 		}
@@ -74,10 +84,38 @@ type EmailServiceMock struct {
 		SetupRetry []struct {
 		}
 	}
-	lockGetEmailNames    sync.RWMutex
-	lockGetTemplateNames sync.RWMutex
-	lockSend             sync.RWMutex
-	lockSetupRetry       sync.RWMutex
+	lockGetEmailFailureCron sync.RWMutex
+	lockGetEmailNames       sync.RWMutex
+	lockGetTemplateNames    sync.RWMutex
+	lockSend                sync.RWMutex
+	lockSetupRetry          sync.RWMutex
+}
+
+// GetEmailFailureCron calls GetEmailFailureCronFunc.
+func (mock *EmailServiceMock) GetEmailFailureCron() *cron.Cron {
+	if mock.GetEmailFailureCronFunc == nil {
+		panic("EmailServiceMock.GetEmailFailureCronFunc: method is nil but EmailService.GetEmailFailureCron was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetEmailFailureCron.Lock()
+	mock.calls.GetEmailFailureCron = append(mock.calls.GetEmailFailureCron, callInfo)
+	mock.lockGetEmailFailureCron.Unlock()
+	return mock.GetEmailFailureCronFunc()
+}
+
+// GetEmailFailureCronCalls gets all the calls that were made to GetEmailFailureCron.
+// Check the length with:
+//
+//	len(mockedEmailService.GetEmailFailureCronCalls())
+func (mock *EmailServiceMock) GetEmailFailureCronCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetEmailFailureCron.RLock()
+	calls = mock.calls.GetEmailFailureCron
+	mock.lockGetEmailFailureCron.RUnlock()
+	return calls
 }
 
 // GetEmailNames calls GetEmailNamesFunc.

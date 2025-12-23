@@ -15,7 +15,6 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/app"
 	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/services/auth"
-	"github.com/supanova-rp/supanova-server/internal/services/cron"
 	"github.com/supanova-rp/supanova-server/internal/services/email"
 	"github.com/supanova-rp/supanova-server/internal/services/objectstorage"
 	"github.com/supanova-rp/supanova-server/internal/services/secrets"
@@ -76,14 +75,12 @@ func run() error {
 
 	emailService := email.New(cfg.EmailService, st)
 
-	emailFailureCron := cron.New(cfg.EmailService.CronSchedule, "email-failure")
-
 	return app.Run(ctx, cfg, app.Dependencies{
 		Store:            st,
 		ObjectStorage:    objectStore,
 		AuthProvider:     authProvider,
 		EmailService:     emailService,
-		EmailFailureCron: emailFailureCron,
+		EmailFailureCron: emailService.GetEmailFailureCron(),
 	})
 }
 
