@@ -130,9 +130,9 @@ func (e *EmailService) AddFailedEmail(ctx context.Context, err error, templatePa
 
 	err = e.store.AddFailedEmail(ctx, sqlcParams)
 	if err != nil {
-		slog.Error("failed to add email to email_failures table", slog.Any("err", err))
+		slog.Error("failed to add email to DB", slog.Any("err", err))
 	} else {
-		slog.Debug("added email to email_failures table")
+		slog.Debug("added email to DB")
 	}
 }
 
@@ -264,11 +264,11 @@ func (e *EmailService) RetrySend(ctx context.Context, params *RetryParams) error
 func (e *EmailService) deleteFailedEmail(ctx context.Context, id pgtype.UUID) {
 	err := e.store.DeleteFailedEmail(ctx, id)
 	if err != nil {
-		slog.Error("failed to delete email from email_failures table", slog.Any("err", err))
+		slog.Error("failed to delete email", slog.Any("err", err))
 		return
 	}
 
-	slog.Debug("deleted email from email_failures table", slog.String("id", id.String()))
+	slog.Debug("delete email success", slog.String("id", id.String()))
 }
 
 func (e *EmailService) handleRetryFailure(ctx context.Context, retryParams *RetryParams, err error) {

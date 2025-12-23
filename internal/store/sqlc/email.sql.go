@@ -80,7 +80,7 @@ func (q *Queries) GetFailedEmails(ctx context.Context) ([]GetFailedEmailsRow, er
 }
 
 const updateFailedEmail = `-- name: UpdateFailedEmail :exec
-UPDATE email_failures SET retries = $1, error = $2
+UPDATE email_failures SET retries = $1, error = $2, updated_at = NOW()
 `
 
 type UpdateFailedEmailParams struct {
