@@ -196,10 +196,10 @@ func (e *EmailService) RetryJob() func(ctx context.Context) {
 		}
 
 		for _, sendP := range sendParams {
-			err := e.RetrySend(ctx, sendP)
+			err := e.RetrySend(ctx, &sendP)
 			if err != nil {
 				slog.Error("email retry failed", slog.Any("err", err))
-				e.handleRetryFailure(ctx, sendP, err)
+				e.handleRetryFailure(ctx, &sendP, err)
 			} else {
 				slog.Debug("email retry success", slog.String("id", sendP.ID.String()))
 				e.deleteFailedEmail(ctx, sendP.ID)
@@ -232,7 +232,7 @@ func appendParams[T EmailParams](params *FailedEmail, sendParams []RetryParams) 
 	return sendParams
 }
 
-func (e *EmailService) RetrySend(ctx context.Context, params RetryParams) error {
+func (e *EmailService) RetrySend(ctx context.Context, params *RetryParams) error {
 	message := mailgun.NewMessage(
 		e.domain,
 		e.sender,
@@ -257,17 +257,17 @@ func (e *EmailService) RetrySend(ctx context.Context, params RetryParams) error 
 	return nil
 }
 
-func (e *EmailService) deleteFailedEmail(ctx context.Context, emailID pgtype.UUID) {
-	err := e.store.DeleteFailedEmail(ctx, emailID)
+func (e *EmailService) deleteFailedEmail(ctx context.Context, id pgtype.UUID) {
+	err := e.store.DeleteFailedEmail(ctx, id)
 	if err != nil {
 		slog.Error("failed to delete email from email_failures table", slog.Any("err", err))
 		return
 	}
 
-	slog.Debug("deleted email from email_failures table", slog.String("id", emailID.String()))
+	slog.Debug("deleted email from email_failures table", slog.String("id", id.String()))
 }
 
-func (e *EmailService) handleRetryFailure(ctx context.Context, retryParams RetryParams, err error) {
+func (e *EmailService) handleRetryFailure(ctx context.Context, retryParams *RetryParams, err error) {
 	if retryParams.retries > 0 {
 		e.updateFailedEmail(ctx, retryParams, err)
 		return
@@ -277,7 +277,7 @@ func (e *EmailService) handleRetryFailure(ctx context.Context, retryParams Retry
 	e.deleteFailedEmail(ctx, retryParams.ID)
 }
 
-func (e *EmailService) updateFailedEmail(ctx context.Context, retryParams RetryParams, err error) {
+func (e *EmailService) updateFailedEmail(ctx context.Context, retryParams *RetryParams, err error) {
 	sqlcParams := sqlc.UpdateFailedEmailParams{
 		Retries: int32(retryParams.retries) - 1, // #nosec G115 retry value is guaranteed to be small because 0 <= value >= 5
 		Error:   err.Error(),
