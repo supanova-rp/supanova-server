@@ -160,7 +160,7 @@ func (e *EmailService) Send(ctx context.Context, params EmailParams, templateNam
 }
 
 type RetryParams struct {
-	ID             string
+	ID             pgtype.UUID
 	templateParams EmailParams
 	templateName   string
 	emailName      string
@@ -196,7 +196,14 @@ func (e *EmailService) RetryJob() func(ctx context.Context) {
 		}
 
 		for _, sendP := range sendParams {
-			e.RetrySend(ctx, sendP)
+			err := e.RetrySend(ctx, sendP)
+			if err != nil {
+				slog.Error("email retry failed", slog.Any("err", err))
+				e.handleRetryFailure(ctx, sendP, err)
+			} else {
+				slog.Debug("email retry success", slog.String("id", sendP.ID.String()))
+				e.deleteFailedEmail(ctx, sendP.ID)
+			}
 		}
 	}
 }
@@ -208,8 +215,14 @@ func appendParams[T EmailParams](params *FailedEmail, sendParams []RetryParams) 
 		return sendParams
 	}
 
+	pgUUID, err := utils.PGUUIDFrom(params.ID.String())
+	if err != nil {
+		slog.Error("failed to parse failed email id", slog.Any("err", err), slog.String("id", params.ID.String()))
+		return sendParams
+	}
+
 	sendParams = append(sendParams, RetryParams{
-		ID:             params.ID.String(),
+		ID:             pgUUID,
 		templateName:   params.TemplateName,
 		templateParams: templateParams,
 		emailName:      params.EmailName,
@@ -219,7 +232,7 @@ func appendParams[T EmailParams](params *FailedEmail, sendParams []RetryParams) 
 	return sendParams
 }
 
-func (e *EmailService) RetrySend(ctx context.Context, params RetryParams) {
+func (e *EmailService) RetrySend(ctx context.Context, params RetryParams) error {
 	message := mailgun.NewMessage(
 		e.domain,
 		e.sender,
@@ -232,26 +245,16 @@ func (e *EmailService) RetrySend(ctx context.Context, params RetryParams) {
 
 	for key, value := range params.templateParams.ToTemplateVariables() {
 		if err := message.AddTemplateVariable(key, value); err != nil {
-			slog.Error("failed to resend email", slog.Any("err", err))
-			return
+			return err
 		}
 	}
 
-	pgUUID, err := utils.PGUUIDFrom(params.ID)
+	_, err := e.client.Send(ctx, message)
 	if err != nil {
-		slog.Error("failed to resend email", slog.Any("err", errors.InvalidUUID))
-		return
+		return err
 	}
 
-	_, err = e.client.Send(ctx, message)
-	if err != nil {
-		slog.Error("failed to resend email", slog.String("ID", pgUUID.String()), slog.Any("err", err))
-		e.updateFailedEmail(ctx, pgUUID, params.retries, err)
-		return
-	}
-
-	slog.Debug("resent email", slog.String("id", params.ID))
-	e.deleteFailedEmail(ctx, pgUUID)
+	return nil
 }
 
 func (e *EmailService) deleteFailedEmail(ctx context.Context, emailID pgtype.UUID) {
@@ -260,23 +263,31 @@ func (e *EmailService) deleteFailedEmail(ctx context.Context, emailID pgtype.UUI
 		slog.Error("failed to delete email from email_failures table", slog.Any("err", err))
 		return
 	}
+
 	slog.Debug("deleted email from email_failures table", slog.String("id", emailID.String()))
 }
 
-func (e *EmailService) updateFailedEmail(ctx context.Context, emailID pgtype.UUID, retries int, err error) {
-	if retries <= 1 {
-		slog.Debug("no retries left")
-		e.deleteFailedEmail(ctx, emailID)
-	}
-
-	sqlcParams := sqlc.UpdateFailedEmailParams{
-		Retries: int32(retries) - 1, // #nosec G115 retry value is guaranteed to be small because 0 <= value >= 5
-		Error:   err.Error(),
-	}
-	err = e.store.UpdateFailedEmail(ctx, sqlcParams)
-	if err != nil {
-		slog.Error("failed to update email", slog.String("ID", emailID.String()), slog.Any("err", err))
+func (e *EmailService) handleRetryFailure(ctx context.Context, retryParams RetryParams, err error) {
+	if retryParams.retries > 0 {
+		e.updateFailedEmail(ctx, retryParams, err)
 		return
 	}
+
+	slog.Debug("no retries left")
+	e.deleteFailedEmail(ctx, retryParams.ID)
+}
+
+func (e *EmailService) updateFailedEmail(ctx context.Context, retryParams RetryParams, err error) {
+	sqlcParams := sqlc.UpdateFailedEmailParams{
+		Retries: int32(retryParams.retries) - 1, // #nosec G115 retry value is guaranteed to be small because 0 <= value >= 5
+		Error:   err.Error(),
+	}
+
+	err = e.store.UpdateFailedEmail(ctx, sqlcParams)
+	if err != nil {
+		slog.Error("failed to update email", slog.String("id", retryParams.ID.String()), slog.Any("err", err))
+		return
+	}
+
 	slog.Debug("updated failed email")
 }
