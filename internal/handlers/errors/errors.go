@@ -64,6 +64,16 @@ func RetryDbQueryWithExponentialBackoff[T any](ctx context.Context, query func()
 	return retryWithExponentialBackoff(ctx, query, DbMaxRetries, DbBaseDelay, isRetryableDbError)
 }
 
+func RetryDbCommandWithExponentialBackoff(ctx context.Context, command func() error) error {
+	_, err := RetryDbQueryWithExponentialBackoff(
+		ctx,
+		func() (struct{}, error) {
+			return struct{}{}, command()
+		},
+	)
+	return err
+}
+
 func isRetryableDbError(err error) bool {
 	if err == nil {
 		return false
@@ -85,7 +95,6 @@ func isRetryableDbError(err error) bool {
 			"57":
 			return true
 		}
-
 		return false
 	}
 
