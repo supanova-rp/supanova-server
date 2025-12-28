@@ -92,12 +92,18 @@ func isRetryableDbError(err error) bool {
 	return false
 }
 
-func retryWithExponentialBackoff[T any](ctx context.Context, callback func() (T, error), maxRetries int, baseDelay time.Duration, shouldRetry func(error) bool) (T, error) {
+func retryWithExponentialBackoff[T any](
+	ctx context.Context,
+	callback func() (T, error),
+	maxRetries int,
+	baseDelay time.Duration,
+	shouldRetry func(error) bool,
+) (T, error) {
 	var result T
 	var err error
 
 	for attempt := 1; attempt <= maxRetries; attempt++ {
-		if err = ctx.Err(); err != nil {
+		if err := ctx.Err(); err != nil {
 			return result, err
 		}
 
