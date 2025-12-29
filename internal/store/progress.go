@@ -6,12 +6,11 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/supanova-rp/supanova-server/internal/domain"
-	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
 func (s *Store) GetProgress(ctx context.Context, args sqlc.GetProgressParams) (*domain.Progress, error) {
-	progress, err := errors.RetryDbQueryWithExponentialBackoff(
+	progress, err := ExecQuery(
 		ctx,
 		func() (sqlc.GetProgressRow, error) { return s.Queries.GetProgress(ctx, args) },
 	)
@@ -23,7 +22,7 @@ func (s *Store) GetProgress(ctx context.Context, args sqlc.GetProgressParams) (*
 }
 
 func (s *Store) UpdateProgress(ctx context.Context, args sqlc.UpdateProgressParams) error {
-	return errors.RetryDbCommandWithExponentialBackoff(ctx, func() error {
+	return ExecCommand(ctx, func() error {
 		return s.Queries.UpdateProgress(ctx, args)
 	})
 }

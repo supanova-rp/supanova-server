@@ -2,13 +2,23 @@ package store
 
 import (
 	"context"
+	stdErrors "errors"
 	"fmt"
+	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/supanova-rp/supanova-server/internal/domain"
+	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/store/cache"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
+	"github.com/supanova-rp/supanova-server/internal/utils"
+)
+
+const (
+	DbMaxRetries = 5
+	DbBaseDelay  = 100 * time.Millisecond
 )
 
 type Store struct {
@@ -53,4 +63,40 @@ func (s *Store) Close() {
 
 func (s *Store) PingDB(ctx context.Context) error {
 	return s.pool.Ping(ctx)
+}
+
+func ExecQuery[T any](ctx context.Context, query func() (T, error)) (T, error) {
+	return utils.RetryWithExponentialBackoff(ctx, query, DbMaxRetries, DbBaseDelay, isRetryableDbError)
+}
+
+func ExecCommand(ctx context.Context, command func() error) error {
+	_, err := ExecQuery(ctx, func() (*struct{}, error) { return nil, command()})
+	return err
+}
+
+func isRetryableDbError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if errors.IsNotFoundErr(err) {
+		return false
+	}
+
+	var pgErr *pgconn.PgError
+	if stdErrors.As(err, &pgErr) {
+		errClass := pgErr.Code[:2]
+		// Retry on transient error classes
+		switch errClass {
+		case "08",
+			"40",
+			"53",
+			"55",
+			"57":
+			return true
+		}
+		return false
+	}
+
+	return false
 }
