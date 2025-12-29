@@ -4,6 +4,7 @@ import (
 	"context"
 	stdErrors "errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -70,8 +71,16 @@ func ExecQuery[T any](ctx context.Context, query func() (T, error)) (T, error) {
 }
 
 func ExecCommand(ctx context.Context, command func() error) error {
-	_, err := ExecQuery(ctx, func() (*struct{}, error) { return nil, command()})
+	_, err := ExecQuery(ctx, func() (*struct{}, error) { return nil, command() })
 	return err
+}
+
+var transientPostgresErrorCodes = []string{
+	"08", // Connection exceptions (network problems, can't reach database)
+	"40", // Transaction rollback (like deadlocks or serialization failures)
+	"53", // Insufficient resources (out of memory, disk full)
+	"55", // Object not in prerequisite state (like trying to use a prepared statement that doesn't exist)
+	"57", // Operator intervention (admin killed the query, database shutting down)
 }
 
 func isRetryableDbError(err error) bool {
@@ -86,16 +95,7 @@ func isRetryableDbError(err error) bool {
 	var pgErr *pgconn.PgError
 	if stdErrors.As(err, &pgErr) {
 		errClass := pgErr.Code[:2]
-		// Retry on transient error classes
-		switch errClass {
-		case "08",
-			"40",
-			"53",
-			"55",
-			"57":
-			return true
-		}
-		return false
+		return slices.Contains(transientPostgresErrorCodes, errClass)
 	}
 
 	return false
