@@ -77,7 +77,7 @@ func ExecCommand(ctx context.Context, command func() error) error {
 
 var transientPostgresErrorCodes = []string{
 	"08", // Connection exceptions (network problems, can't reach database)
-	"40", // Transaction rollback (like deadlocks or serialization failures)
+	"40", // Transaction rollback (like deadlocks or serialisation failures)
 	"53", // Insufficient resources (out of memory, disk full)
 	"55", // Object not in prerequisite state (like trying to use a prepared statement that doesn't exist)
 	"57", // Operator intervention (admin killed the query, database shutting down)
