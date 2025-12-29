@@ -16,6 +16,11 @@ func RetryWithExponentialBackoff[T any](
 	var result T
 	var err error
 
+	result, err = callback()
+	if err == nil {
+		return result, nil
+	}
+
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		if err := ctx.Err(); err != nil {
 			return result, err
