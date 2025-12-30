@@ -79,6 +79,7 @@ func (s *Store) AddCourse(ctx context.Context, course sqlc.AddCourseParams) (*do
 		return nil, err
 	}
 
+	// TODO: might be able to remove but would need testing against FE logic to make sure
 	created, err := s.GetCourse(ctx, id)
 	if err != nil {
 		return nil, err
