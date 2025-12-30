@@ -22,5 +22,4 @@ func (s *Store) DisenrolInCourse(ctx context.Context, params sqlc.DisenrolInCour
 	return ExecCommand(ctx, func() error {
 		return s.Queries.DisenrolInCourse(ctx, params)
 	})
-
 }
