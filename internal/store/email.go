@@ -11,15 +11,21 @@ import (
 )
 
 func (s *Store) AddFailedEmail(ctx context.Context, params sqlc.AddFailedEmailParams) error {
-	return s.Queries.AddFailedEmail(ctx, params)
+	return ExecCommand(ctx, func() error {
+		return s.Queries.AddFailedEmail(ctx, params)
+	})
 }
 
 func (s *Store) UpdateFailedEmail(ctx context.Context, params sqlc.UpdateFailedEmailParams) error {
-	return s.Queries.UpdateFailedEmail(ctx, params)
+	return ExecCommand(ctx, func() error {
+		return s.Queries.UpdateFailedEmail(ctx, params)
+	})
 }
 
 func (s *Store) GetFailedEmails(ctx context.Context) ([]email.FailedEmail, error) {
-	rows, err := s.Queries.GetFailedEmails(ctx)
+	rows, err := ExecQuery(ctx, func() ([]sqlc.GetFailedEmailsRow, error) {
+		return s.Queries.GetFailedEmails(ctx)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -40,5 +46,7 @@ func failedEmailsFrom(row *sqlc.GetFailedEmailsRow) email.FailedEmail {
 }
 
 func (s *Store) DeleteFailedEmail(ctx context.Context, emailID pgtype.UUID) error {
-	return s.Queries.DeleteFailedEmail(ctx, emailID)
+	return ExecCommand(ctx, func() error {
+		return s.Queries.DeleteFailedEmail(ctx, emailID)
+	})
 }

@@ -92,7 +92,9 @@ The codebase follows a clean architecture pattern with clear separation of conce
 
 - **Repository Pattern**: Domain defines interfaces, store implements them. This allows the domain layer to be independent of database implementation.
 
-- **sqlc Code Generation**: Database queries are written in `internal/store/queries/*.sql`, and sqlc generates type-safe Go code in `internal/store/sqlc/`. Never edit generated files directly.
+- **sqlc Code Generation**: Database queries are written in `internal/store/queries/*.sql`, and sqlc generates type-safe Go code in `internal/store/sqlc/`. Never edit generated files directly. Use a retry with exponential backoff wrapper for every database operation:
+  - `ExecCommand` for INSERT/UPDATE/DELETE operations that only return errors
+  - `ExecQuery` for SELECT queries that return data
 
 - **Migrations**: Managed by golang-migrate. Migration files live in `internal/store/migrations/`.
 

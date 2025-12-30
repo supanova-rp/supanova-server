@@ -4,10 +4,13 @@ import (
 	"context"
 
 	"github.com/supanova-rp/supanova-server/internal/domain"
+	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
 func (s *Store) GetUser(ctx context.Context, id string) (*domain.User, error) {
-	user, err := s.Queries.GetUser(ctx, id)
+	user, err := ExecQuery(ctx, func() (sqlc.User, error) {
+		return s.Queries.GetUser(ctx, id)
+	})
 	if err != nil {
 		return nil, err
 	}

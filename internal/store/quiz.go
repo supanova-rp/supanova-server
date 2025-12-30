@@ -31,7 +31,9 @@ type SqlcQuizAnswer struct {
 }
 
 func (s *Store) GetQuizSections(ctx context.Context, courseID pgtype.UUID) ([]*domain.QuizSection, error) {
-	rows, err := s.Queries.GetCourseQuizSections(ctx, courseID)
+	rows, err := ExecQuery(ctx, func() ([]sqlc.GetCourseQuizSectionsRow, error) {
+		return s.Queries.GetCourseQuizSections(ctx, courseID)
+	})
 	if err != nil {
 		return nil, err
 	}
