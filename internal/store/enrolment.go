@@ -7,13 +7,20 @@ import (
 )
 
 func (s *Store) IsEnrolled(ctx context.Context, params sqlc.IsUserEnrolledInCourseParams) (bool, error) {
-	return s.Queries.IsUserEnrolledInCourse(ctx, params)
+	return ExecQuery(ctx, func() (bool, error) {
+		return s.Queries.IsUserEnrolledInCourse(ctx, params)
+	})
 }
 
 func (s *Store) EnrolInCourse(ctx context.Context, params sqlc.EnrolInCourseParams) error {
-	return s.Queries.EnrolInCourse(ctx, params)
+	return ExecCommand(ctx, func() error {
+		return s.Queries.EnrolInCourse(ctx, params)
+	})
 }
 
 func (s *Store) DisenrolInCourse(ctx context.Context, params sqlc.DisenrolInCourseParams) error {
-	return s.Queries.DisenrolInCourse(ctx, params)
+	return ExecCommand(ctx, func() error {
+		return s.Queries.DisenrolInCourse(ctx, params)
+	})
+
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
@@ -28,13 +29,17 @@ func (s *Store) UpdateProgress(ctx context.Context, args sqlc.UpdateProgressPara
 }
 
 func (s *Store) HasCompletedCourse(ctx context.Context, args sqlc.HasCompletedCourseParams) (bool, error) {
-	completed, err := s.Queries.HasCompletedCourse(ctx, args)
+	completed, err := ExecQuery(ctx, func() (pgtype.Bool, error) {
+		return s.Queries.HasCompletedCourse(ctx, args)
+	})
 
 	return completed.Bool, err
 }
 
 func (s *Store) SetCourseCompleted(ctx context.Context, args sqlc.SetCourseCompletedParams) error {
-	return s.Queries.SetCourseCompleted(ctx, args)
+	return ExecCommand(ctx, func() error {
+		return s.Queries.SetCourseCompleted(ctx, args)
+	})
 }
 
 func progressFrom(row sqlc.GetProgressRow) *domain.Progress {

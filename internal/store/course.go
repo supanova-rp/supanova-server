@@ -18,17 +18,23 @@ func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, 
 		return &cachedCourse, nil
 	}
 
-	course, err := s.Queries.GetCourse(ctx, id)
+	course, err := ExecQuery(ctx, func() (sqlc.Course, error) {
+		return s.Queries.GetCourse(ctx, id)
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	materials, err := s.Queries.GetCourseMaterials(ctx, id)
+	materials, err := ExecQuery(ctx, func() ([]sqlc.GetCourseMaterialsRow, error) {
+		return s.Queries.GetCourseMaterials(ctx, id)
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	videos, err := s.Queries.GetCourseVideoSections(ctx, id)
+	videos, err := ExecQuery(ctx, func() ([]sqlc.GetCourseVideoSectionsRow, error) {
+		return s.Queries.GetCourseVideoSections(ctx, id)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +72,9 @@ func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, 
 }
 
 func (s *Store) AddCourse(ctx context.Context, course sqlc.AddCourseParams) (*domain.Course, error) {
-	id, err := s.Queries.AddCourse(ctx, course)
+	id, err := ExecQuery(ctx, func() (pgtype.UUID, error) {
+		return s.Queries.AddCourse(ctx, course)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +88,9 @@ func (s *Store) AddCourse(ctx context.Context, course sqlc.AddCourseParams) (*do
 }
 
 func (s *Store) GetCoursesOverview(ctx context.Context) ([]domain.CourseOverview, error) {
-	rows, err := s.Queries.GetCoursesOverview(ctx)
+	rows, err := ExecQuery(ctx, func() ([]sqlc.GetCoursesOverviewRow, error) {
+		return s.Queries.GetCoursesOverview(ctx)
+	})
 	if err != nil {
 		return nil, err
 	}
