@@ -1,25 +1,32 @@
 package cache
 
+import "sync"
+
 type Cache[T any] struct {
-	itemsMap map[string]T
+	data map[string]T
+	rw sync.RWMutex
 }
 
 func New[T any]() *Cache[T] {
 	return &Cache[T]{
-		itemsMap: map[string]T{},
+		data: map[string]T{},
 	}
 }
 
 func (c *Cache[T]) Set(key string, value T) {
-	c.itemsMap[key] = value
+	c.rw.Lock()
+	c.data[key] = value
+	c.rw.Unlock()
 }
 
 func (c *Cache[T]) Get(key string) (T, bool) {
-	value, ok := c.itemsMap[key]
+	c.rw.RLock()
+	value, ok := c.data[key]
+	c.rw.RUnlock()
 
 	return value, ok
 }
 
 func (c *Cache[T]) Remove(key string) {
-	delete(c.itemsMap, key)
+	delete(c.data, key)
 }
