@@ -4,7 +4,7 @@ import "sync"
 
 type Cache[T any] struct {
 	data map[string]T
-	rw sync.RWMutex
+	rw   sync.RWMutex
 }
 
 func New[T any]() *Cache[T] {
