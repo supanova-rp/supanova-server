@@ -10,9 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
-	"github.com/supanova-rp/supanova-server/internal/store/cache"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 	"github.com/supanova-rp/supanova-server/internal/utils"
 )
@@ -23,9 +21,8 @@ const (
 )
 
 type Store struct {
-	pool        *pgxpool.Pool
-	Queries     *sqlc.Queries
-	courseCache *cache.Cache[domain.Course]
+	pool    *pgxpool.Pool
+	Queries *sqlc.Queries
 }
 
 func New(ctx context.Context, dbUrl string) (*Store, error) {
@@ -49,12 +46,9 @@ func New(ctx context.Context, dbUrl string) (*Store, error) {
 		return nil, fmt.Errorf("failed to run migrations: %v", err)
 	}
 
-	courseCache := cache.New[domain.Course]()
-
 	return &Store{
-		pool:        pool,
-		Queries:     sqlc.New(pool),
-		courseCache: courseCache,
+		pool:    pool,
+		Queries: sqlc.New(pool),
 	}, nil
 }
 
