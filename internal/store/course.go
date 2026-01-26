@@ -13,11 +13,6 @@ import (
 )
 
 func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
-	cachedCourse, ok := s.courseCache.Get(id.String())
-	if ok {
-		return &cachedCourse, nil
-	}
-
 	course, err := ExecQuery(ctx, func() (sqlc.Course, error) {
 		return s.Queries.GetCourse(ctx, id)
 	})
@@ -66,8 +61,6 @@ func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, 
 		Materials:         utils.Map(materials, courseMaterialFrom),
 	}
 
-	s.courseCache.Set(id.String(), *formattedCourse)
-
 	return formattedCourse, nil
 }
 
@@ -100,12 +93,10 @@ func (s *Store) GetCoursesOverview(ctx context.Context) ([]domain.CourseOverview
 }
 
 func (s *Store) EditCourse(ctx context.Context, id pgtype.UUID) error {
-	// TODO: update course in cache when course is edited
 	return nil
 }
 
 func (s *Store) DeleteCourse(ctx context.Context, id pgtype.UUID) error {
-	// TODO: remove course from cache when course is deleted
 	return nil
 }
 
