@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/supanova-rp/supanova-server/internal/config"
 )
 
