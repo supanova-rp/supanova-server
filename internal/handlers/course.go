@@ -5,10 +5,19 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 	"github.com/supanova-rp/supanova-server/internal/utils"
+)
+
+var (
+	getCourseRequests = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "get_course_requests_total",
+		Help: "Total number of get course requests",
+	})
 )
 
 const (
@@ -21,6 +30,7 @@ type GetCourseParams struct {
 }
 
 func (h *Handlers) GetCourse(e echo.Context) error {
+	getCourseRequests.Inc()
 	ctx := e.Request().Context()
 
 	var params GetCourseParams

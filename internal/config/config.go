@@ -28,6 +28,7 @@ type App struct {
 	AuthProviderCredentials string
 	ClientURLs              []string
 	EmailService            *EmailService
+	Metrics                 *Metrics
 }
 
 type Environment string
@@ -70,6 +71,11 @@ var logLevelMap = map[string]slog.Level{
 	"error": slog.LevelError,
 }
 
+type Metrics struct {
+	Port       string
+	ClientURLs []string
+}
+
 func ParseEnv() (*App, error) {
 	// Ignore error because in production there will be no .env file, env vars will be passed
 	// in at runtime via docker run command/docker-compose
@@ -95,6 +101,8 @@ func ParseEnv() (*App, error) {
 		"MAILGUN_RECIPIENT":               "",
 		"COURSE_COMPLETION_TEMPLATE_NAME": "",
 		"EMAIL_FAILURE_CRON_SCHEDULE":     "",
+		"METRICS_PORT":                    "",
+		"METRICS_CLIENT_URLS":             "",
 	}
 
 	for key := range envVars {
@@ -124,6 +132,15 @@ func ParseEnv() (*App, error) {
 		}
 	}
 
+	metricsClientURLsRaw := strings.Split(envVars["METRICS_CLIENT_URLS"], ",")
+	metricsClientURLs := make([]string, 0, len(metricsClientURLsRaw))
+	for _, url := range metricsClientURLsRaw {
+		trimmed := strings.TrimSpace(url)
+		if trimmed != "" {
+			metricsClientURLs = append(metricsClientURLs, trimmed)
+		}
+	}
+
 	return &App{
 		Port:        envVars["SERVER_PORT"],
 		DatabaseURL: envVars["DATABASE_URL"],
@@ -147,6 +164,10 @@ func ParseEnv() (*App, error) {
 			CronSchedule:                 envVars["EMAIL_FAILURE_CRON_SCHEDULE"],
 			Sender:                       envVars["MAILGUN_SENDER"],
 			Recipient:                    envVars["MAILGUN_RECIPIENT"],
+		},
+		Metrics: &Metrics{
+			Port:       envVars["METRICS_PORT"],
+			ClientURLs: metricsClientURLs,
 		},
 	}, nil
 }

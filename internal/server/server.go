@@ -44,7 +44,7 @@ func New(h *handlers.Handlers, authProvider middleware.AuthProvider, cfg *config
 		AllowOrigins: cfg.ClientURLs,
 	}))
 
-	e.Use(middleware.LoggingMiddleware)
+	e.Use(middleware.Logging)
 
 	// limits each unique IP to 60 requests per minute with a burst of 120.
 	e.Use(echoMiddleware.RateLimiter(echoMiddleware.NewRateLimiterMemoryStoreWithConfig(
