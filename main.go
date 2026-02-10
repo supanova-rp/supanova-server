@@ -15,6 +15,7 @@ import (
 
 	"github.com/supanova-rp/supanova-server/internal/app"
 	"github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/supanova-rp/supanova-server/internal/middleware"
 	"github.com/supanova-rp/supanova-server/internal/services/auth"
 	"github.com/supanova-rp/supanova-server/internal/services/email"
 	"github.com/supanova-rp/supanova-server/internal/services/metrics"
@@ -22,6 +23,10 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/services/secrets"
 	"github.com/supanova-rp/supanova-server/internal/store"
 )
+
+func init() {
+	middleware.RegisterMetrics()
+}
 
 func main() {
 	err := run()
