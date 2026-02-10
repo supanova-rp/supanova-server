@@ -73,3 +73,10 @@ docker/build-and-push:
 	--push \
 	-t $(DOCKER_USER)/$(IMAGE_NAME):latest \
 	-t $(DOCKER_USER)/$(IMAGE_NAME):$(GIT_HASH) .
+
+docker/build-and-push-metrics:
+	DOCKER_BUILDKIT=1 docker buildx build \
+	--platform linux/amd64 \
+	--push \
+	-t $(DOCKER_USER)/$(IMAGE_NAME):metrics \
+	-t $(DOCKER_USER)/$(IMAGE_NAME):$(GIT_HASH) .

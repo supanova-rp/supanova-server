@@ -24,10 +24,6 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
-func init() {
-	middleware.RegisterMetrics()
-}
-
 func main() {
 	err := run()
 	if err != nil {
@@ -96,6 +92,8 @@ func run() error {
 	})
 
 	errGroup.Go(func() error {
+		middleware.RegisterMetrics()
+
 		return metrics.Run(errCtx, cfg.Metrics)
 	})
 

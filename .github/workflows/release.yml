@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - metrics-setup
 
 jobs:
   build:
@@ -29,4 +30,5 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: make docker/build-and-push
+      # TODO: change this back before merging
+        run: make docker/build-and-push-metrics
