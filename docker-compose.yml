@@ -6,6 +6,7 @@ services:
     container_name: supanova-server
     ports:
       - "3003:3003"
+      - "9100:9100"
     env_file:
       - .env
     environment:
