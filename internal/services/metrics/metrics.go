@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
@@ -33,10 +32,6 @@ type Server struct {
 func New(cfg *config.Metrics) *Server {
 	e := echo.New()
 	e.HideBanner = true // Prevents startup banner from being logged
-
-	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
-		AllowOrigins: cfg.ClientURLs,
-	}))
 
 	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 

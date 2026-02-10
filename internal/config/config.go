@@ -72,8 +72,7 @@ var logLevelMap = map[string]slog.Level{
 }
 
 type Metrics struct {
-	Port       string
-	ClientURLs []string
+	Port string
 }
 
 func ParseEnv() (*App, error) {
@@ -132,15 +131,6 @@ func ParseEnv() (*App, error) {
 		}
 	}
 
-	metricsClientURLsRaw := strings.Split(envVars["METRICS_CLIENT_URLS"], ",")
-	metricsClientURLs := make([]string, 0, len(metricsClientURLsRaw))
-	for _, url := range metricsClientURLsRaw {
-		trimmed := strings.TrimSpace(url)
-		if trimmed != "" {
-			metricsClientURLs = append(metricsClientURLs, trimmed)
-		}
-	}
-
 	return &App{
 		Port:        envVars["SERVER_PORT"],
 		DatabaseURL: envVars["DATABASE_URL"],
@@ -166,8 +156,7 @@ func ParseEnv() (*App, error) {
 			Recipient:                    envVars["MAILGUN_RECIPIENT"],
 		},
 		Metrics: &Metrics{
-			Port:       envVars["METRICS_PORT"],
-			ClientURLs: metricsClientURLs,
+			Port: envVars["METRICS_PORT"],
 		},
 	}, nil
 }
