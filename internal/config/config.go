@@ -101,7 +101,6 @@ func ParseEnv() (*App, error) {
 		"COURSE_COMPLETION_TEMPLATE_NAME": "",
 		"EMAIL_FAILURE_CRON_SCHEDULE":     "",
 		"METRICS_PORT":                    "",
-		"METRICS_CLIENT_URLS":             "",
 	}
 
 	for key := range envVars {
