@@ -185,3 +185,18 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 
 	return e.NoContent(http.StatusNoContent)
 }
+
+func (h *Handlers) GetAllProgress(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	progress, err := h.Progress.GetAllProgress(ctx)
+	if err != nil {
+		if errors.IsNotFoundErr(err) {
+			return echo.NewHTTPError(http.StatusNotFound, errors.NotFound(progressResource))
+		}
+
+		return internalError(ctx, errors.Getting(progressResource), err)
+	}
+
+	return e.JSON(http.StatusOK, progress)
+}

@@ -11,6 +11,66 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getAllProgress = `-- name: GetAllProgress :many
+SELECT
+  COALESCE(uc.user_id, up.user_id) AS user_id,
+  COALESCE(uc.course_id, up.course_id) AS course_id,
+  u.name as user_name,
+  u.email,
+  c.title as course_title,
+  up.completed_intro,
+  up.completed_section_ids,
+  up.completed_course
+FROM usercourses uc
+FULL OUTER JOIN userprogress up
+  ON uc.user_id = up.user_id
+  AND uc.course_id = up.course_id
+LEFT JOIN users u
+  ON u.id = COALESCE(uc.user_id, up.user_id)
+LEFT JOIN courses c
+  ON c.id = COALESCE(uc.course_id, up.course_id)
+`
+
+type GetAllProgressRow struct {
+	UserID              string
+	CourseID            pgtype.UUID
+	UserName            pgtype.Text
+	Email               pgtype.Text
+	CourseTitle         pgtype.Text
+	CompletedIntro      pgtype.Bool
+	CompletedSectionIds []pgtype.UUID
+	CompletedCourse     pgtype.Bool
+}
+
+func (q *Queries) GetAllProgress(ctx context.Context) ([]GetAllProgressRow, error) {
+	rows, err := q.db.Query(ctx, getAllProgress)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllProgressRow
+	for rows.Next() {
+		var i GetAllProgressRow
+		if err := rows.Scan(
+			&i.UserID,
+			&i.CourseID,
+			&i.UserName,
+			&i.Email,
+			&i.CourseTitle,
+			&i.CompletedIntro,
+			&i.CompletedSectionIds,
+			&i.CompletedCourse,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getProgress = `-- name: GetProgress :one
 SELECT completed_intro, completed_section_ids FROM userprogress WHERE user_id = $1 AND course_id = $2
 `
