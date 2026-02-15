@@ -20,3 +20,22 @@ INSERT INTO userprogress (user_id, course_id, completed_section_ids, completed_c
 VALUES ($1, $2, ARRAY[]::uuid[], TRUE)
 ON CONFLICT (user_id, course_id)
 DO UPDATE SET completed_course = TRUE;
+
+-- name: GetAllProgress :many
+SELECT
+  COALESCE(uc.user_id, up.user_id) AS user_id,
+  COALESCE(uc.course_id, up.course_id) AS course_id,
+  u.name as user_name,
+  u.email,
+  c.title as course_title,
+  up.completed_intro,
+  up.completed_section_ids,
+  up.completed_course
+FROM usercourses uc
+FULL OUTER JOIN userprogress up
+  ON uc.user_id = up.user_id
+  AND uc.course_id = up.course_id
+LEFT JOIN users u
+  ON u.id = COALESCE(uc.user_id, up.user_id)
+LEFT JOIN courses c
+  ON c.id = COALESCE(uc.course_id, up.course_id);

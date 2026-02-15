@@ -29,6 +29,7 @@ const (
 	UpdateCourseEnrolmentHandler    = "UpdateCourseEnrolment"
 	EnrolUserInCourseHandlerName    = "EnrolInCourse"
 	DisenrolUserInCourseHandlerName = "DisenrolInCourse"
+	GetAllProgressHandlerName       = "GetAllProgress"
 	GetProgressHandlerName          = "GetProgress"
 	UpdateProgressHandlerName       = "UpdateProgress"
 	SetCourseCompletedHandlerName   = "SetCourseCompleted"

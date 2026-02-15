@@ -502,3 +502,102 @@ func TestCourseCompleted(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockUserRepo.GetUserCalls()), 1, testhelpers.GetUserHandlerName)
 	})
 }
+
+func TestGetAllProgress(t *testing.T) {
+	t.Run("returns all progress successfully", func(t *testing.T) {
+		sectionTitle := "Section 1"
+		expected := []*domain.FullProgress{
+			{
+				UserID:   "user-1",
+				UserName: "User A",
+				Email:    "usera@test.com",
+				Progress: []*domain.FullUserProgress{
+					{
+						CourseID:        testhelpers.Course.ID,
+						CourseName:      testhelpers.Course.Title,
+						CompletedIntro:  true,
+						CompletedCourse: false,
+						CourseSectionProgress: []domain.CourseSectionProgress{
+							{
+								ID:        uuid.New(),
+								Title:     &sectionTitle,
+								Type:      "video",
+								Completed: true,
+							},
+						},
+					},
+				},
+			},
+		}
+
+		mockRepo := &mocks.ProgressRepositoryMock{
+			GetAllProgressFunc: func(ctx context.Context) ([]*domain.FullProgress, error) {
+				return expected, nil
+			},
+		}
+
+		h := &handlers.Handlers{
+			Progress: mockRepo,
+		}
+
+		ctx, rec := testhelpers.SetupEchoContext(t, nil, "progress/all")
+
+		err := h.GetAllProgress(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		var actual []*domain.FullProgress
+		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+			t.Fatalf("failed to unmarshal response: %v", err)
+		}
+
+		if diff := cmp.Diff(expected, actual); diff != "" {
+			t.Errorf("progress mismatch (-want +got):\n%s", diff)
+		}
+
+		testhelpers.AssertRepoCalls(t, len(mockRepo.GetAllProgressCalls()), 1, testhelpers.GetAllProgressHandlerName)
+	})
+
+	t.Run("progress not found", func(t *testing.T) {
+		mockRepo := &mocks.ProgressRepositoryMock{
+			GetAllProgressFunc: func(ctx context.Context) ([]*domain.FullProgress, error) {
+				return nil, pgx.ErrNoRows
+			},
+		}
+
+		h := &handlers.Handlers{
+			Progress: mockRepo,
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, nil, "progress/all")
+
+		err := h.GetAllProgress(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusNotFound, errors.NotFound("user progress"))
+		testhelpers.AssertRepoCalls(t, len(mockRepo.GetAllProgressCalls()), 1, testhelpers.GetAllProgressHandlerName)
+	})
+
+	t.Run("internal server error", func(t *testing.T) {
+		mockRepo := &mocks.ProgressRepositoryMock{
+			GetAllProgressFunc: func(ctx context.Context) ([]*domain.FullProgress, error) {
+				return nil, stdErrors.New("database connection failed")
+			},
+		}
+
+		h := &handlers.Handlers{
+			Progress: mockRepo,
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, nil, "progress/all")
+
+		err := h.GetAllProgress(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("user progress"))
+		testhelpers.AssertRepoCalls(t, len(mockRepo.GetAllProgressCalls()), 1, testhelpers.GetAllProgressHandlerName)
+	})
+}

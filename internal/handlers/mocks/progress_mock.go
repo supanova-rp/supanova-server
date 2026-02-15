@@ -20,6 +20,9 @@ var _ domain.ProgressRepository = &ProgressRepositoryMock{}
 //
 //		// make and configure a mocked domain.ProgressRepository
 //		mockedProgressRepository := &ProgressRepositoryMock{
+//			GetAllProgressFunc: func(contextMoqParam context.Context) ([]*domain.FullProgress, error) {
+//				panic("mock out the GetAllProgress method")
+//			},
 //			GetProgressFunc: func(contextMoqParam context.Context, getProgressParams sqlc.GetProgressParams) (*domain.Progress, error) {
 //				panic("mock out the GetProgress method")
 //			},
@@ -39,6 +42,9 @@ var _ domain.ProgressRepository = &ProgressRepositoryMock{}
 //
 //	}
 type ProgressRepositoryMock struct {
+	// GetAllProgressFunc mocks the GetAllProgress method.
+	GetAllProgressFunc func(contextMoqParam context.Context) ([]*domain.FullProgress, error)
+
 	// GetProgressFunc mocks the GetProgress method.
 	GetProgressFunc func(contextMoqParam context.Context, getProgressParams sqlc.GetProgressParams) (*domain.Progress, error)
 
@@ -53,6 +59,11 @@ type ProgressRepositoryMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetAllProgress holds details about calls to the GetAllProgress method.
+		GetAllProgress []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+		}
 		// GetProgress holds details about calls to the GetProgress method.
 		GetProgress []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
@@ -82,10 +93,43 @@ type ProgressRepositoryMock struct {
 			UpdateProgressParams sqlc.UpdateProgressParams
 		}
 	}
+	lockGetAllProgress     sync.RWMutex
 	lockGetProgress        sync.RWMutex
 	lockHasCompletedCourse sync.RWMutex
 	lockSetCourseCompleted sync.RWMutex
 	lockUpdateProgress     sync.RWMutex
+}
+
+// GetAllProgress calls GetAllProgressFunc.
+func (mock *ProgressRepositoryMock) GetAllProgress(contextMoqParam context.Context) ([]*domain.FullProgress, error) {
+	if mock.GetAllProgressFunc == nil {
+		panic("ProgressRepositoryMock.GetAllProgressFunc: method is nil but ProgressRepository.GetAllProgress was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam context.Context
+	}{
+		ContextMoqParam: contextMoqParam,
+	}
+	mock.lockGetAllProgress.Lock()
+	mock.calls.GetAllProgress = append(mock.calls.GetAllProgress, callInfo)
+	mock.lockGetAllProgress.Unlock()
+	return mock.GetAllProgressFunc(contextMoqParam)
+}
+
+// GetAllProgressCalls gets all the calls that were made to GetAllProgress.
+// Check the length with:
+//
+//	len(mockedProgressRepository.GetAllProgressCalls())
+func (mock *ProgressRepositoryMock) GetAllProgressCalls() []struct {
+	ContextMoqParam context.Context
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+	}
+	mock.lockGetAllProgress.RLock()
+	calls = mock.calls.GetAllProgress
+	mock.lockGetAllProgress.RUnlock()
+	return calls
 }
 
 // GetProgress calls GetProgressFunc.

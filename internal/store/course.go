@@ -27,14 +27,33 @@ func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, 
 		return nil, err
 	}
 
+	sections, err := s.GetCourseSections(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	formattedCourse := &domain.Course{
+		ID:                uuid.UUID(course.ID.Bytes),
+		Title:             course.Title.String,
+		Description:       course.Description.String,
+		CompletionTitle:   course.CompletionTitle.String,
+		CompletionMessage: course.CompletionMessage.String,
+		Sections:          sections,
+		Materials:         utils.Map(materials, courseMaterialFrom),
+	}
+
+	return formattedCourse, nil
+}
+
+func (s *Store) GetCourseSections(ctx context.Context, courseID pgtype.UUID) ([]domain.CourseSection, error) {
 	videos, err := ExecQuery(ctx, func() ([]sqlc.GetCourseVideoSectionsRow, error) {
-		return s.Queries.GetCourseVideoSections(ctx, id)
+		return s.Queries.GetCourseVideoSections(ctx, courseID)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	quizzes, err := s.GetQuizSections(ctx, id)
+	quizzes, err := s.GetQuizSections(ctx, courseID)
 	if err != nil {
 		return nil, err
 	}
@@ -51,17 +70,7 @@ func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, 
 		return sections[i].GetPosition() < sections[j].GetPosition()
 	})
 
-	formattedCourse := &domain.Course{
-		ID:                uuid.UUID(course.ID.Bytes),
-		Title:             course.Title.String,
-		Description:       course.Description.String,
-		CompletionTitle:   course.CompletionTitle.String,
-		CompletionMessage: course.CompletionMessage.String,
-		Sections:          sections,
-		Materials:         utils.Map(materials, courseMaterialFrom),
-	}
-
-	return formattedCourse, nil
+	return sections, nil
 }
 
 func (s *Store) AddCourse(ctx context.Context, course sqlc.AddCourseParams) (*domain.Course, error) {
