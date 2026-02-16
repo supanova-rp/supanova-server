@@ -11,11 +11,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/supanova-rp/supanova-server/internal/app"
 	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/services/auth"
 	"github.com/supanova-rp/supanova-server/internal/services/email"
+	"github.com/supanova-rp/supanova-server/internal/services/metrics"
 	"github.com/supanova-rp/supanova-server/internal/services/objectstorage"
 	"github.com/supanova-rp/supanova-server/internal/services/secrets"
 	"github.com/supanova-rp/supanova-server/internal/store"
@@ -78,12 +80,23 @@ func run() error {
 		return fmt.Errorf("failed to initialise email service: %v", err)
 	}
 
-	return app.Run(ctx, cfg, app.Dependencies{
-		Store:         st,
-		ObjectStorage: objectStore,
-		AuthProvider:  authProvider,
-		EmailService:  emailService,
+	errGroup, errCtx := errgroup.WithContext(ctx)
+	errGroup.Go(func() error {
+		return app.Run(errCtx, cfg, app.Dependencies{
+			Store:         st,
+			ObjectStorage: objectStore,
+			AuthProvider:  authProvider,
+			EmailService:  emailService,
+		})
 	})
+
+	errGroup.Go(func() error {
+		metrics.RegisterMetrics()
+
+		return metrics.Run(errCtx, cfg.Metrics)
+	})
+
+	return errGroup.Wait()
 }
 
 func newAWSConfig(ctx context.Context, cfg *config.AWS) (*aws.Config, error) {

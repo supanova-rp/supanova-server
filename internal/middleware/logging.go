@@ -11,7 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func LoggingMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func Logging(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		start := time.Now()
 		req := c.Request()
