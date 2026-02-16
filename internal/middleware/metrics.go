@@ -5,22 +5,9 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/prometheus/client_golang/prometheus"
-)
 
-// histogram for request latency
-var HTTPRequestDuration = prometheus.NewHistogramVec(
-	prometheus.HistogramOpts{
-		Name:    "http_request_latency_seconds",
-		Help:    "Latency of HTTP requests in seconds",
-		Buckets: []float64{0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10},
-	},
-	[]string{"method", "path", "status"},
+	"github.com/supanova-rp/supanova-server/internal/services/metrics"
 )
-
-func RegisterMetrics() {
-	prometheus.MustRegister(HTTPRequestDuration)
-}
 
 func Metrics(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -30,7 +17,7 @@ func Metrics(next echo.HandlerFunc) echo.HandlerFunc {
 
 		status := c.Response().Status
 		path := c.Path()
-		HTTPRequestDuration.WithLabelValues(c.Request().Method, path, http.StatusText(status)).Observe(latency)
+		metrics.HTTPRequestDuration.WithLabelValues(c.Request().Method, path, http.StatusText(status)).Observe(latency)
 
 		return err
 	}

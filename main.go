@@ -15,7 +15,6 @@ import (
 
 	"github.com/supanova-rp/supanova-server/internal/app"
 	"github.com/supanova-rp/supanova-server/internal/config"
-	"github.com/supanova-rp/supanova-server/internal/middleware"
 	"github.com/supanova-rp/supanova-server/internal/services/auth"
 	"github.com/supanova-rp/supanova-server/internal/services/email"
 	"github.com/supanova-rp/supanova-server/internal/services/metrics"
@@ -92,7 +91,7 @@ func run() error {
 	})
 
 	errGroup.Go(func() error {
-		middleware.RegisterMetrics()
+		metrics.RegisterMetrics()
 
 		return metrics.Run(errCtx, cfg.Metrics)
 	})
