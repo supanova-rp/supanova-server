@@ -25,6 +25,7 @@ func Run(ctx context.Context, cfg *config.App, deps Dependencies) (err error) {
 		deps.Store,
 		deps.Store,
 		deps.Store,
+		deps.Store,
 		deps.ObjectStorage,
 		deps.EmailService,
 	)

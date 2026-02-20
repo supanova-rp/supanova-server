@@ -35,6 +35,14 @@ type EmailFailure struct {
 	Retries        int32
 }
 
+type QuizAttempt struct {
+	ID            pgtype.UUID
+	UserID        string
+	QuizID        pgtype.UUID
+	AttemptData   []byte
+	AttemptNumber int32
+}
+
 type Quizanswer struct {
 	ID             pgtype.UUID
 	Answer         pgtype.Text
@@ -64,11 +72,12 @@ type User struct {
 }
 
 type UserQuizState struct {
-	ID        pgtype.UUID
-	UserID    string
-	QuizID    pgtype.UUID
-	QuizState []byte
-	Attempts  int32
+	ID          pgtype.UUID
+	UserID      string
+	QuizID      pgtype.UUID
+	QuizState   []byte
+	QuizStateV2 []byte
+	Attempts    int32
 }
 
 type Usercourse struct {

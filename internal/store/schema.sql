@@ -87,6 +87,7 @@ CREATE TABLE user_quiz_state (
   user_id TEXT NOT NULL,
   quiz_id UUID NOT NULL,
   quiz_state JSONB NOT NULL DEFAULT '{}'::jsonb,
+  quiz_state_v2 JSONB NOT NULL DEFAULT '{}'::jsonb,
   attempts INT NOT NULL DEFAULT 0,
 
   CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -103,4 +104,16 @@ CREATE TABLE email_failures (
   template_params JSONB NOT NULL DEFAULT '{}'::jsonb,
   email_name TEXT NOT NULL,
   retries INT NOT NULL DEFAULT 5 
+);
+
+CREATE TABLE quiz_attempts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+  user_id TEXT NOT NULL,
+  quiz_id UUID NOT NULL,
+  attempt_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  attempt_number INT NOT NULL,
+
+  CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_quizsections FOREIGN KEY(quiz_id) REFERENCES quizsections(id) ON DELETE CASCADE,
+  CONSTRAINT quiz_attempts_user_quiz_attempt_unique UNIQUE (user_id, quiz_id, attempt_number)
 );

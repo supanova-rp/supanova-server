@@ -100,3 +100,72 @@ func quizAnswerFrom(q SqlcQuizAnswer) (domain.QuizAnswer, error) {
 		IsCorrectAnswer: q.CorrectAnswer,
 	}, nil
 }
+
+func (s *Store) SaveQuizAttempt(ctx context.Context, params sqlc.SaveQuizAttemptParams) error {
+	return ExecCommand(ctx, func() error {
+		tx, err := s.pool.Begin(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to begin transaction: %w", err)
+		}
+		defer tx.Rollback(ctx) //nolint:errcheck
+
+		qtx := s.Queries.WithTx(tx)
+
+		if err := qtx.SaveQuizAttempt(ctx, params); err != nil {
+			return fmt.Errorf("failed to save quiz attempt: %w", err)
+		}
+
+		if err := qtx.IncrementAttempts(ctx, sqlc.IncrementAttemptsParams{
+			UserID: params.UserID,
+			QuizID: params.QuizID,
+		}); err != nil {
+			return fmt.Errorf("failed to increment attempts: %w", err)
+		}
+
+		return tx.Commit(ctx)
+	})
+}
+
+func (s *Store) GetQuizAttemptsByUserID(ctx context.Context, userID string) ([]*domain.QuizAttemptHistory, error) {
+	rows, err := ExecQuery(ctx, func() ([]sqlc.GetQuizAttemptsByUserIDRow, error) {
+		return s.Queries.GetQuizAttemptsByUserID(ctx, userID)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	attemptsByQuizID := map[uuid.UUID]*domain.QuizAttemptHistory{}
+
+	for _, row := range rows {
+		quizID := utils.UUIDFrom(row.QuizID)
+		if _, exists := attemptsByQuizID[quizID]; !exists {
+			attemptsByQuizID[quizID] = &domain.QuizAttemptHistory{
+				QuizID:        quizID,
+				TotalAttempts: row.TotalAttempts,
+			}
+		}
+		if row.ID.Valid {
+			attemptsByQuizID[quizID].Attempts = append(attemptsByQuizID[quizID].Attempts, quizAttemptFrom(&row))
+		}
+	}
+
+	result := make([]*domain.QuizAttemptHistory, 0, len(attemptsByQuizID))
+	for _, quizAttempt := range attemptsByQuizID {
+		result = append(result, quizAttempt)
+	}
+
+	return result, nil
+}
+
+func (s *Store) UpsertQuizState(ctx context.Context, params sqlc.UpsertQuizStateParams) error {
+	return ExecCommand(ctx, func() error {
+		return s.Queries.UpsertQuizState(ctx, params)
+	})
+}
+
+func quizAttemptFrom(row *sqlc.GetQuizAttemptsByUserIDRow) *domain.QuizAttempt {
+	return &domain.QuizAttempt{
+		AttemptData:   row.AttemptData,
+		AttemptNumber: row.AttemptNumber.Int32,
+	}
+}

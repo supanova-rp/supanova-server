@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"slices"
+	"sort"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -104,6 +105,10 @@ func (s *Store) GetAllProgress(ctx context.Context) ([]*domain.FullProgress, err
 			Progress: progress,
 		})
 	}
+
+	sort.SliceStable(result, func(i, j int) bool {
+		return result[i].UserName < result[j].UserName
+	})
 
 	return result, nil
 }
