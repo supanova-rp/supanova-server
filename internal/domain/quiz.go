@@ -14,16 +14,17 @@ import (
 type QuizRepository interface {
 	SaveQuizAttempt(context.Context, sqlc.SaveQuizAttemptParams) error
 	UpsertQuizState(context.Context, sqlc.UpsertQuizStateParams) error
-	GetQuizAttemptsByUserID(context.Context, string) ([]*QuizAttemptHistory, error)
+	GetQuizAttemptsByUserID(context.Context, string) ([]*QuizAttempts, error)
 }
 
-type QuizAttemptHistory struct {
-	QuizID        uuid.UUID      `json:"quizID"`
-	TotalAttempts int32          `json:"total"`
-	Attempts      []*QuizAttempt `json:"attempts"`
+type QuizAttempts struct {
+	QuizID         uuid.UUID        `json:"quizID"`
+	TotalAttempts  int32            `json:"total"`
+	Attempts       []*QuizAttempt   `json:"attempts"`
+	CurrentAttempt *json.RawMessage `json:"currentAttempt"`
 }
 
 type QuizAttempt struct {
-	AttemptData   json.RawMessage `json:"attemptData"`
+	Answers       json.RawMessage `json:"answers"`
 	AttemptNumber int32           `json:"attemptNumber"`
 }

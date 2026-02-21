@@ -1,9 +1,9 @@
 -- name: SaveQuizAttempt :exec
-INSERT INTO quiz_attempts (user_id, quiz_id, attempt_data, attempt_number)
+INSERT INTO quiz_attempts (user_id, quiz_id, answers, attempt_number)
 VALUES (
   sqlc.arg('user_id'),
   sqlc.arg('quiz_id'),
-  sqlc.arg('attempt_data'),
+  sqlc.arg('answers'),
   (SELECT COALESCE(MAX(attempt_number), 0) + 1 FROM quiz_attempts WHERE user_id = sqlc.arg('user_id') AND quiz_id = sqlc.arg('quiz_id'))
 );
 
@@ -12,7 +12,7 @@ SELECT
   qah.id,
   uqs.user_id,
   uqs.quiz_id,
-  qah.attempt_data,
+  qah.answers,
   qah.attempt_number,
   uqs.attempts AS total_attempts
 FROM user_quiz_state uqs
@@ -29,6 +29,9 @@ VALUES (
 )
 ON CONFLICT (user_id, quiz_id)
 DO UPDATE SET attempts = user_quiz_state.attempts + 1;
+
+-- name: GetQuizStatesByUserID :many
+SELECT quiz_id, quiz_state_v2 FROM user_quiz_state WHERE user_id = $1;
 
 -- name: UpsertQuizState :exec
 INSERT INTO user_quiz_state (user_id, quiz_id, quiz_state_v2)

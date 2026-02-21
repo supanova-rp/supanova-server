@@ -16,7 +16,7 @@ SELECT
   qah.id,
   uqs.user_id,
   uqs.quiz_id,
-  qah.attempt_data,
+  qah.answers,
   qah.attempt_number,
   uqs.attempts AS total_attempts
 FROM user_quiz_state uqs
@@ -29,7 +29,7 @@ type GetQuizAttemptsByUserIDRow struct {
 	ID            pgtype.UUID
 	UserID        string
 	QuizID        pgtype.UUID
-	AttemptData   []byte
+	Answers       []byte
 	AttemptNumber pgtype.Int4
 	TotalAttempts int32
 }
@@ -47,10 +47,39 @@ func (q *Queries) GetQuizAttemptsByUserID(ctx context.Context, userID string) ([
 			&i.ID,
 			&i.UserID,
 			&i.QuizID,
-			&i.AttemptData,
+			&i.Answers,
 			&i.AttemptNumber,
 			&i.TotalAttempts,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getQuizStatesByUserID = `-- name: GetQuizStatesByUserID :many
+SELECT quiz_id, quiz_state_v2 FROM user_quiz_state WHERE user_id = $1
+`
+
+type GetQuizStatesByUserIDRow struct {
+	QuizID      pgtype.UUID
+	QuizStateV2 []byte
+}
+
+func (q *Queries) GetQuizStatesByUserID(ctx context.Context, userID string) ([]GetQuizStatesByUserIDRow, error) {
+	rows, err := q.db.Query(ctx, getQuizStatesByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetQuizStatesByUserIDRow
+	for rows.Next() {
+		var i GetQuizStatesByUserIDRow
+		if err := rows.Scan(&i.QuizID, &i.QuizStateV2); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -83,7 +112,7 @@ func (q *Queries) IncrementAttempts(ctx context.Context, arg IncrementAttemptsPa
 }
 
 const saveQuizAttempt = `-- name: SaveQuizAttempt :exec
-INSERT INTO quiz_attempts (user_id, quiz_id, attempt_data, attempt_number)
+INSERT INTO quiz_attempts (user_id, quiz_id, answers, attempt_number)
 VALUES (
   $1,
   $2,
@@ -93,13 +122,13 @@ VALUES (
 `
 
 type SaveQuizAttemptParams struct {
-	UserID      string
-	QuizID      pgtype.UUID
-	AttemptData []byte
+	UserID  string
+	QuizID  pgtype.UUID
+	Answers []byte
 }
 
 func (q *Queries) SaveQuizAttempt(ctx context.Context, arg SaveQuizAttemptParams) error {
-	_, err := q.db.Exec(ctx, saveQuizAttempt, arg.UserID, arg.QuizID, arg.AttemptData)
+	_, err := q.db.Exec(ctx, saveQuizAttempt, arg.UserID, arg.QuizID, arg.Answers)
 	return err
 }
 

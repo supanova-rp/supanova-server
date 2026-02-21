@@ -39,7 +39,7 @@ type QuizAttempt struct {
 	ID            pgtype.UUID
 	UserID        string
 	QuizID        pgtype.UUID
-	AttemptData   []byte
+	Answers       []byte
 	AttemptNumber int32
 }
 

@@ -21,6 +21,9 @@ VALUES ($1, $2, ARRAY[]::uuid[], TRUE)
 ON CONFLICT (user_id, course_id)
 DO UPDATE SET completed_course = TRUE;
 
+-- name: GetCompletedSectionIDsByUserID :many
+SELECT completed_section_ids FROM userprogress WHERE user_id = $1;
+
 -- name: GetAllProgress :many
 SELECT
   COALESCE(uc.user_id, up.user_id) AS user_id,

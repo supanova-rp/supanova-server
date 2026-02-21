@@ -17,15 +17,15 @@ const (
 	quizAttemptResource = "quiz attempt"
 )
 
-type QuizStateQuestion struct {
+type QuizStateAnswers struct {
 	QuestionID        string   `json:"questionID" validate:"required"`
 	SelectedAnswerIDs []string `json:"selectedAnswerIDs" validate:"required"`
 	Correct           bool     `json:"correct"`
 }
 
 type SaveQuizAttemptParams struct {
-	QuizID    string              `json:"quizID" validate:"required"`
-	Questions []QuizStateQuestion `json:"questions" validate:"required,dive"`
+	QuizID  string             `json:"quizID" validate:"required"`
+	Answers []QuizStateAnswers `json:"answers" validate:"required,dive"`
 }
 
 func (h *Handlers) SaveQuizAttempt(e echo.Context) error {
@@ -46,15 +46,15 @@ func (h *Handlers) SaveQuizAttempt(e echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
-	attemptData, err := json.Marshal(params.Questions)
+	answers, err := json.Marshal(params.Answers)
 	if err != nil {
 		return internalError(ctx, errors.Creating(quizAttemptResource), err, slog.String("quiz_id", params.QuizID))
 	}
 
 	err = h.Quiz.SaveQuizAttempt(ctx, sqlc.SaveQuizAttemptParams{
-		UserID:      userID,
-		QuizID:      quizID,
-		AttemptData: attemptData,
+		UserID:  userID,
+		QuizID:  quizID,
+		Answers: answers,
 	})
 	if err != nil {
 		return internalError(ctx, errors.Creating(quizAttemptResource), err, slog.String("quiz_id", params.QuizID))
@@ -64,8 +64,8 @@ func (h *Handlers) SaveQuizAttempt(e echo.Context) error {
 }
 
 type SaveQuizStateParams struct {
-	QuizID    string              `json:"quizID" validate:"required"`
-	Questions []QuizStateQuestion `json:"questions" validate:"required,dive"`
+	QuizID    string             `json:"quizID" validate:"required"`
+	Questions []QuizStateAnswers `json:"answers" validate:"required,dive"`
 }
 
 func (h *Handlers) SaveQuizState(e echo.Context) error {
