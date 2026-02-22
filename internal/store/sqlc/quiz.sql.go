@@ -11,6 +11,97 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const deleteQuizAttempts = `-- name: DeleteQuizAttempts :exec
+DELETE FROM quiz_attempts WHERE user_id = $1 AND quiz_id = $2
+`
+
+type DeleteQuizAttemptsParams struct {
+	UserID string
+	QuizID pgtype.UUID
+}
+
+func (q *Queries) DeleteQuizAttempts(ctx context.Context, arg DeleteQuizAttemptsParams) error {
+	_, err := q.db.Exec(ctx, deleteQuizAttempts, arg.UserID, arg.QuizID)
+	return err
+}
+
+const deleteUserQuizState = `-- name: DeleteUserQuizState :exec
+DELETE FROM user_quiz_state WHERE user_id = $1 AND quiz_id = $2
+`
+
+type DeleteUserQuizStateParams struct {
+	UserID string
+	QuizID pgtype.UUID
+}
+
+func (q *Queries) DeleteUserQuizState(ctx context.Context, arg DeleteUserQuizStateParams) error {
+	_, err := q.db.Exec(ctx, deleteUserQuizState, arg.UserID, arg.QuizID)
+	return err
+}
+
+const getAllQuizSections = `-- name: GetAllQuizSections :many
+SELECT
+  qs.id,
+  qs.position,
+  qs.course_id,
+  json_agg(
+    json_build_object(
+      'id', qq.id,
+      'question', qq.question,
+      'position', qq.position,
+      'is_multi_answer', qq.is_multi_answer,
+      'answers', (
+        SELECT json_agg(
+          json_build_object(
+            'id', qa.id,
+            'answer', qa.answer,
+            'correct_answer', qa.correct_answer,
+            'position', qa.position
+          ) ORDER BY qa.position
+        )
+        FROM quizanswers qa
+        WHERE qa.quiz_question_id = qq.id
+      )
+    ) ORDER BY qq.position
+  ) AS questions
+FROM quizsections qs
+LEFT JOIN quizquestions qq ON qq.quiz_section_id = qs.id
+GROUP BY qs.id, qs.position, qs.course_id
+ORDER BY qs.course_id, qs.position
+`
+
+type GetAllQuizSectionsRow struct {
+	ID        pgtype.UUID
+	Position  pgtype.Int4
+	CourseID  pgtype.UUID
+	Questions []byte
+}
+
+func (q *Queries) GetAllQuizSections(ctx context.Context) ([]GetAllQuizSectionsRow, error) {
+	rows, err := q.db.Query(ctx, getAllQuizSections)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllQuizSectionsRow
+	for rows.Next() {
+		var i GetAllQuizSectionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Position,
+			&i.CourseID,
+			&i.Questions,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getQuizAttemptsByUserID = `-- name: GetQuizAttemptsByUserID :many
 SELECT
   qah.id,

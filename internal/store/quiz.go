@@ -169,6 +169,52 @@ func (s *Store) GetQuizAttemptsByUserID(ctx context.Context, userID string) ([]*
 	return result, nil
 }
 
+func (s *Store) GetAllQuizSections(ctx context.Context) ([]*domain.QuizSection, error) {
+	rows, err := ExecQuery(ctx, func() ([]sqlc.GetAllQuizSectionsRow, error) {
+		return s.Queries.GetAllQuizSections(ctx)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	sections, err := utils.MapToWithError(rows, func(row sqlc.GetAllQuizSectionsRow) (*domain.QuizSection, error) {
+		return quizSectionFrom(sqlc.GetCourseQuizSectionsRow(row))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return sections, nil
+}
+
+func (s *Store) ResetQuizProgress(ctx context.Context, userID string, quizID pgtype.UUID) error {
+	return ExecCommand(ctx, func() error {
+		tx, err := s.pool.Begin(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to begin transaction: %w", err)
+		}
+		defer tx.Rollback(ctx) //nolint:errcheck
+
+		qtx := s.Queries.WithTx(tx)
+
+		if err := qtx.DeleteUserQuizState(ctx, sqlc.DeleteUserQuizStateParams{
+			UserID: userID,
+			QuizID: quizID,
+		}); err != nil {
+			return fmt.Errorf("failed to delete user quiz state: %w", err)
+		}
+
+		if err := qtx.DeleteQuizAttempts(ctx, sqlc.DeleteQuizAttemptsParams{
+			UserID: userID,
+			QuizID: quizID,
+		}); err != nil {
+			return fmt.Errorf("failed to delete quiz attempts: %w", err)
+		}
+
+		return tx.Commit(ctx)
+	})
+}
+
 func (s *Store) UpsertQuizState(ctx context.Context, params sqlc.UpsertQuizStateParams) error {
 	return ExecCommand(ctx, func() error {
 		return s.Queries.UpsertQuizState(ctx, params)

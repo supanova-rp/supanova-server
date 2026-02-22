@@ -26,9 +26,11 @@ func RegisterProgressRoutes(private *echo.Group, h *handlers.Handlers) {
 func RegisterQuizRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/quiz/save-attempt", h.SaveQuizAttempt)
 	private.POST("/quiz/save-state", h.SaveQuizState)
+	private.POST("/quiz/get-all-sections", h.GetAllQuizSections)
 
 	// admin routes
 	private.POST("/admin/quiz/get-attempts", h.GetQuizAttemptsByUserID)
+	private.POST("/admin/quiz/reset-progress", h.ResetQuizProgress)
 }
 
 func RegisterMediaRoutes(private *echo.Group, h *handlers.Handlers) {

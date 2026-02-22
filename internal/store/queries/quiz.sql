@@ -33,6 +33,42 @@ DO UPDATE SET attempts = user_quiz_state.attempts + 1;
 -- name: GetQuizStatesByUserID :many
 SELECT quiz_id, quiz_state_v2 FROM user_quiz_state WHERE user_id = $1;
 
+-- name: GetAllQuizSections :many
+SELECT
+  qs.id,
+  qs.position,
+  qs.course_id,
+  json_agg(
+    json_build_object(
+      'id', qq.id,
+      'question', qq.question,
+      'position', qq.position,
+      'is_multi_answer', qq.is_multi_answer,
+      'answers', (
+        SELECT json_agg(
+          json_build_object(
+            'id', qa.id,
+            'answer', qa.answer,
+            'correct_answer', qa.correct_answer,
+            'position', qa.position
+          ) ORDER BY qa.position
+        )
+        FROM quizanswers qa
+        WHERE qa.quiz_question_id = qq.id
+      )
+    ) ORDER BY qq.position
+  ) AS questions
+FROM quizsections qs
+LEFT JOIN quizquestions qq ON qq.quiz_section_id = qs.id
+GROUP BY qs.id, qs.position, qs.course_id
+ORDER BY qs.course_id, qs.position;
+
+-- name: DeleteUserQuizState :exec
+DELETE FROM user_quiz_state WHERE user_id = $1 AND quiz_id = $2;
+
+-- name: DeleteQuizAttempts :exec
+DELETE FROM quiz_attempts WHERE user_id = $1 AND quiz_id = $2;
+
 -- name: UpsertQuizState :exec
 INSERT INTO user_quiz_state (user_id, quiz_id, quiz_state_v2)
 VALUES ($1, $2, $3)

@@ -47,6 +47,7 @@ var nonAdminPaths = []string{
 	fmt.Sprintf("/%s/set-quiz-state", config.APIVersion),
 	fmt.Sprintf("/%s/quiz/save-state", config.APIVersion),
 	fmt.Sprintf("/%s/quiz/save-attempt", config.APIVersion),
+	fmt.Sprintf("/%s/quiz/get-all-sections", config.APIVersion),
 }
 
 func AuthMiddleware(next echo.HandlerFunc, authProvider AuthProvider) echo.HandlerFunc {

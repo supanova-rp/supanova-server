@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
@@ -15,6 +16,8 @@ type QuizRepository interface {
 	SaveQuizAttempt(context.Context, sqlc.SaveQuizAttemptParams) error
 	UpsertQuizState(context.Context, sqlc.UpsertQuizStateParams) error
 	GetQuizAttemptsByUserID(context.Context, string) ([]*QuizAttempts, error)
+	GetAllQuizSections(context.Context) ([]*QuizSection, error)
+	ResetQuizProgress(ctx context.Context, userID string, quizID pgtype.UUID) error
 }
 
 type QuizAttempts struct {
