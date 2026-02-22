@@ -50,6 +50,10 @@ func internalError(ctx context.Context, message string, err error, attrs ...slog
 		logAttrs = append(logAttrs, attr)
 	}
 
+	if userID, ok := getUserID(ctx); ok {
+		logAttrs = append(logAttrs, slog.String("user_id", userID))
+	}
+
 	slog.ErrorContext(ctx, message, logAttrs...)
 	return echo.NewHTTPError(http.StatusInternalServerError, message)
 }

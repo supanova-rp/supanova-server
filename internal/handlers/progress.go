@@ -130,8 +130,7 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 	})
 	if err != nil {
 		return internalError(ctx, errors.Updating(progressResource), err,
-			slog.String("course_id", params.CourseID),
-			slog.String("user_id", userID))
+			slog.String("course_id", params.CourseID))
 	}
 
 	if prevCompleted {
@@ -144,15 +143,13 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 	})
 	if err != nil {
 		return internalError(ctx, errors.Updating(progressResource), err,
-			slog.String("course_id", params.CourseID),
-			slog.String("user_id", userID))
+			slog.String("course_id", params.CourseID))
 	}
 
 	user, err := h.User.GetUser(ctx, userID)
 	if err != nil {
 		return internalError(ctx, errors.Updating(progressResource), err,
-			slog.String("course_id", params.CourseID),
-			slog.String("user_id", userID))
+			slog.String("course_id", params.CourseID))
 	}
 
 	emailParams := &email.CourseCompletionParams{
