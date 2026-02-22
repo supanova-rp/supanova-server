@@ -87,7 +87,7 @@ CREATE TABLE user_quiz_state (
   user_id TEXT NOT NULL,
   quiz_id UUID NOT NULL,
   quiz_state JSONB NOT NULL DEFAULT '{}'::jsonb,
-  quiz_state_v2 JSONB NOT NULL DEFAULT '{}'::jsonb,
+  quiz_answers JSONB NOT NULL DEFAULT '[]'::jsonb,
   attempts INT NOT NULL DEFAULT 0,
 
   CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,

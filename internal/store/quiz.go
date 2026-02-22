@@ -134,7 +134,7 @@ func (s *Store) GetQuizAttemptsByUserID(ctx context.Context, userID string) ([]*
 		return nil, err
 	}
 
-	quizStateByQuizID, err := s.GetQuizStatesByUserID(ctx, userID)
+	currentAnswersByQuizID, err := s.GetCurrentQuizAnswersByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -151,9 +151,9 @@ func (s *Store) GetQuizAttemptsByUserID(ctx context.Context, userID string) ([]*
 		}
 
 		// If user has a current attempt/state for this quiz, add it to the attempt data
-		quizState, ok := quizStateByQuizID[quizID]
+		currentAnswers, ok := currentAnswersByQuizID[quizID]
 		if ok {
-			attemptsByQuizID[quizID].CurrentAttempt = &quizState
+			attemptsByQuizID[quizID].CurrentAnswers = &currentAnswers
 		}
 
 		if row.ID.Valid {
@@ -228,14 +228,14 @@ func quizAttemptFrom(row *sqlc.GetQuizAttemptsByUserIDRow) *domain.QuizAttempt {
 	}
 }
 
-func (s *Store) GetQuizStatesByUserID(ctx context.Context, userID string) (map[uuid.UUID]json.RawMessage, error) {
+func (s *Store) GetCurrentQuizAnswersByUserID(ctx context.Context, userID string) (map[uuid.UUID]json.RawMessage, error) {
 	completedSectionIDs, err := s.getCompletedSectionIDs(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := ExecQuery(ctx, func() ([]sqlc.GetQuizStatesByUserIDRow, error) {
-		return s.Queries.GetQuizStatesByUserID(ctx, userID)
+	rows, err := ExecQuery(ctx, func() ([]sqlc.GetCurrentQuizAnswersByUserIDRow, error) {
+		return s.Queries.GetCurrentQuizAnswersByUserID(ctx, userID)
 	})
 	if err != nil {
 		return nil, err
@@ -252,7 +252,7 @@ func (s *Store) GetQuizStatesByUserID(ctx context.Context, userID string) (map[u
 		if _, ok := completedSet[quizID]; ok {
 			continue
 		}
-		result[quizID] = row.QuizStateV2
+		result[quizID] = row.QuizAnswers
 	}
 
 	return result, nil

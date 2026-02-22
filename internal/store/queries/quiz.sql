@@ -30,8 +30,8 @@ VALUES (
 ON CONFLICT (user_id, quiz_id)
 DO UPDATE SET attempts = user_quiz_state.attempts + 1;
 
--- name: GetQuizStatesByUserID :many
-SELECT quiz_id, quiz_state_v2 FROM user_quiz_state WHERE user_id = $1;
+-- name: GetCurrentQuizAnswersByUserID :many
+SELECT quiz_id, quiz_answers FROM user_quiz_state WHERE user_id = $1;
 
 -- name: GetAllQuizSections :many
 SELECT
@@ -70,7 +70,7 @@ DELETE FROM user_quiz_state WHERE user_id = $1 AND quiz_id = $2;
 DELETE FROM quiz_attempts WHERE user_id = $1 AND quiz_id = $2;
 
 -- name: UpsertQuizState :exec
-INSERT INTO user_quiz_state (user_id, quiz_id, quiz_state_v2)
+INSERT INTO user_quiz_state (user_id, quiz_id, quiz_answers)
 VALUES ($1, $2, $3)
 ON CONFLICT (user_id, quiz_id)
-DO UPDATE SET quiz_state_v2 = EXCLUDED.quiz_state_v2;
+DO UPDATE SET quiz_answers = EXCLUDED.quiz_answers;
