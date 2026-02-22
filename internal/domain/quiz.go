@@ -24,7 +24,7 @@ type QuizAttempts struct {
 	QuizID         uuid.UUID        `json:"quizID"`
 	TotalAttempts  int32            `json:"total"`
 	Attempts       []*QuizAttempt   `json:"attempts"`
-	CurrentAttempt *json.RawMessage `json:"currentAttempt"`
+	CurrentAnswers *json.RawMessage `json:"currentAnswers"`
 }
 
 type QuizAttempt struct {

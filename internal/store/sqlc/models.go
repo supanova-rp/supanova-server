@@ -76,7 +76,7 @@ type UserQuizState struct {
 	UserID      string
 	QuizID      pgtype.UUID
 	QuizState   []byte
-	QuizStateV2 []byte
+	QuizAnswers []byte
 	Attempts    int32
 }
 

@@ -64,8 +64,8 @@ func (h *Handlers) SaveQuizAttempt(e echo.Context) error {
 }
 
 type SaveQuizStateParams struct {
-	QuizID    string             `json:"quizID" validate:"required"`
-	Questions []QuizStateAnswers `json:"answers" validate:"required,dive"`
+	QuizID  string             `json:"quizID" validate:"required"`
+	Answers []QuizStateAnswers `json:"answers" validate:"required,dive"`
 }
 
 func (h *Handlers) SaveQuizState(e echo.Context) error {
@@ -86,7 +86,7 @@ func (h *Handlers) SaveQuizState(e echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
-	quizState, err := json.Marshal(params.Questions)
+	quizAnswers, err := json.Marshal(params.Answers)
 	if err != nil {
 		return internalError(ctx, errors.Creating(quizStateResource), err, slog.String("quiz_id", params.QuizID))
 	}
@@ -94,7 +94,7 @@ func (h *Handlers) SaveQuizState(e echo.Context) error {
 	err = h.Quiz.UpsertQuizState(ctx, sqlc.UpsertQuizStateParams{
 		UserID:      userID,
 		QuizID:      quizID,
-		QuizStateV2: quizState,
+		QuizAnswers: quizAnswers,
 	})
 	if err != nil {
 		return internalError(ctx, errors.Creating(quizStateResource), err, slog.String("quiz_id", params.QuizID))

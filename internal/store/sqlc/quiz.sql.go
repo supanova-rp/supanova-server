@@ -102,6 +102,35 @@ func (q *Queries) GetAllQuizSections(ctx context.Context) ([]GetAllQuizSectionsR
 	return items, nil
 }
 
+const getCurrentQuizAnswersByUserID = `-- name: GetCurrentQuizAnswersByUserID :many
+SELECT quiz_id, quiz_answers FROM user_quiz_state WHERE user_id = $1
+`
+
+type GetCurrentQuizAnswersByUserIDRow struct {
+	QuizID      pgtype.UUID
+	QuizAnswers []byte
+}
+
+func (q *Queries) GetCurrentQuizAnswersByUserID(ctx context.Context, userID string) ([]GetCurrentQuizAnswersByUserIDRow, error) {
+	rows, err := q.db.Query(ctx, getCurrentQuizAnswersByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetCurrentQuizAnswersByUserIDRow
+	for rows.Next() {
+		var i GetCurrentQuizAnswersByUserIDRow
+		if err := rows.Scan(&i.QuizID, &i.QuizAnswers); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getQuizAttemptsByUserID = `-- name: GetQuizAttemptsByUserID :many
 SELECT
   qah.id,
@@ -142,35 +171,6 @@ func (q *Queries) GetQuizAttemptsByUserID(ctx context.Context, userID string) ([
 			&i.AttemptNumber,
 			&i.TotalAttempts,
 		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getQuizStatesByUserID = `-- name: GetQuizStatesByUserID :many
-SELECT quiz_id, quiz_state_v2 FROM user_quiz_state WHERE user_id = $1
-`
-
-type GetQuizStatesByUserIDRow struct {
-	QuizID      pgtype.UUID
-	QuizStateV2 []byte
-}
-
-func (q *Queries) GetQuizStatesByUserID(ctx context.Context, userID string) ([]GetQuizStatesByUserIDRow, error) {
-	rows, err := q.db.Query(ctx, getQuizStatesByUserID, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetQuizStatesByUserIDRow
-	for rows.Next() {
-		var i GetQuizStatesByUserIDRow
-		if err := rows.Scan(&i.QuizID, &i.QuizStateV2); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -224,19 +224,19 @@ func (q *Queries) SaveQuizAttempt(ctx context.Context, arg SaveQuizAttemptParams
 }
 
 const upsertQuizState = `-- name: UpsertQuizState :exec
-INSERT INTO user_quiz_state (user_id, quiz_id, quiz_state_v2)
+INSERT INTO user_quiz_state (user_id, quiz_id, quiz_answers)
 VALUES ($1, $2, $3)
 ON CONFLICT (user_id, quiz_id)
-DO UPDATE SET quiz_state_v2 = EXCLUDED.quiz_state_v2
+DO UPDATE SET quiz_answers = EXCLUDED.quiz_answers
 `
 
 type UpsertQuizStateParams struct {
 	UserID      string
 	QuizID      pgtype.UUID
-	QuizStateV2 []byte
+	QuizAnswers []byte
 }
 
 func (q *Queries) UpsertQuizState(ctx context.Context, arg UpsertQuizStateParams) error {
-	_, err := q.db.Exec(ctx, upsertQuizState, arg.UserID, arg.QuizID, arg.QuizStateV2)
+	_, err := q.db.Exec(ctx, upsertQuizState, arg.UserID, arg.QuizID, arg.QuizAnswers)
 	return err
 }
