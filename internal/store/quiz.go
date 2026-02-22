@@ -60,7 +60,7 @@ func quizSectionFrom(q sqlc.GetCourseQuizSectionsRow) (*domain.QuizSection, erro
 
 	return &domain.QuizSection{
 		ID:        utils.UUIDFrom(q.ID),
-		Title:     fmt.Sprintf("Quiz %d", q.Position.Int32),
+		Title:     "Quiz",
 		Position:  int(q.Position.Int32),
 		Type:      domain.SectionTypeQuiz,
 		Questions: questions,
