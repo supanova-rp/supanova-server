@@ -45,7 +45,9 @@ var nonAdminPaths = []string{
 	fmt.Sprintf("/%s/materials", config.APIVersion),
 	fmt.Sprintf("/%s/get-quiz-state", config.APIVersion),
 	fmt.Sprintf("/%s/set-quiz-state", config.APIVersion),
-	fmt.Sprintf("/%s/increment-attempts", config.APIVersion),
+	fmt.Sprintf("/%s/quiz/save-state", config.APIVersion),
+	fmt.Sprintf("/%s/quiz/save-attempt", config.APIVersion),
+	fmt.Sprintf("/%s/quiz/get-all-sections", config.APIVersion),
 }
 
 func AuthMiddleware(next echo.HandlerFunc, authProvider AuthProvider) echo.HandlerFunc {

@@ -13,6 +13,7 @@ type Handlers struct {
 	Progress  domain.ProgressRepository
 	Enrolment domain.EnrolmentRepository
 	User      domain.UserRepository
+	Quiz      domain.QuizRepository
 
 	ObjectStorage ObjectStorage
 	EmailService  EmailService
@@ -41,6 +42,7 @@ func NewHandlers(
 	progress domain.ProgressRepository,
 	enrolment domain.EnrolmentRepository,
 	user domain.UserRepository,
+	quiz domain.QuizRepository,
 	objectStorage ObjectStorage,
 	emailService EmailService,
 ) *Handlers {
@@ -50,6 +52,7 @@ func NewHandlers(
 		Progress:      progress,
 		Enrolment:     enrolment,
 		User:          user,
+		Quiz:          quiz,
 		ObjectStorage: objectStorage,
 		EmailService:  emailService,
 	}

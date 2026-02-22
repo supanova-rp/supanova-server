@@ -71,6 +71,30 @@ func (q *Queries) GetAllProgress(ctx context.Context) ([]GetAllProgressRow, erro
 	return items, nil
 }
 
+const getCompletedSectionIDsByUserID = `-- name: GetCompletedSectionIDsByUserID :many
+SELECT completed_section_ids FROM userprogress WHERE user_id = $1
+`
+
+func (q *Queries) GetCompletedSectionIDsByUserID(ctx context.Context, userID string) ([][]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, getCompletedSectionIDsByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items [][]pgtype.UUID
+	for rows.Next() {
+		var completed_section_ids []pgtype.UUID
+		if err := rows.Scan(&completed_section_ids); err != nil {
+			return nil, err
+		}
+		items = append(items, completed_section_ids)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getProgress = `-- name: GetProgress :one
 SELECT completed_intro, completed_section_ids FROM userprogress WHERE user_id = $1 AND course_id = $2
 `

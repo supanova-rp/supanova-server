@@ -100,3 +100,178 @@ func quizAnswerFrom(q SqlcQuizAnswer) (domain.QuizAnswer, error) {
 		IsCorrectAnswer: q.CorrectAnswer,
 	}, nil
 }
+
+func (s *Store) SaveQuizAttempt(ctx context.Context, params sqlc.SaveQuizAttemptParams) error {
+	return ExecCommand(ctx, func() error {
+		tx, err := s.pool.Begin(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to begin transaction: %w", err)
+		}
+		defer tx.Rollback(ctx) //nolint:errcheck
+
+		qtx := s.Queries.WithTx(tx)
+
+		if err := qtx.SaveQuizAttempt(ctx, params); err != nil {
+			return fmt.Errorf("failed to save quiz attempt: %w", err)
+		}
+
+		if err := qtx.IncrementAttempts(ctx, sqlc.IncrementAttemptsParams{
+			UserID: params.UserID,
+			QuizID: params.QuizID,
+		}); err != nil {
+			return fmt.Errorf("failed to increment attempts: %w", err)
+		}
+
+		return tx.Commit(ctx)
+	})
+}
+
+func (s *Store) GetQuizAttemptsByUserID(ctx context.Context, userID string) ([]*domain.QuizAttempts, error) {
+	attemptRows, err := ExecQuery(ctx, func() ([]sqlc.GetQuizAttemptsByUserIDRow, error) {
+		return s.Queries.GetQuizAttemptsByUserID(ctx, userID)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	quizStateByQuizID, err := s.GetQuizStatesByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	attemptsByQuizID := map[uuid.UUID]*domain.QuizAttempts{}
+
+	for _, row := range attemptRows {
+		quizID := utils.UUIDFrom(row.QuizID)
+		if _, ok := attemptsByQuizID[quizID]; !ok {
+			attemptsByQuizID[quizID] = &domain.QuizAttempts{
+				QuizID:        quizID,
+				TotalAttempts: row.TotalAttempts,
+			}
+		}
+
+		// If user has a current attempt/state for this quiz, add it to the attempt data
+		quizState, ok := quizStateByQuizID[quizID]
+		if ok {
+			attemptsByQuizID[quizID].CurrentAttempt = &quizState
+		}
+
+		if row.ID.Valid {
+			attemptsByQuizID[quizID].Attempts = append(attemptsByQuizID[quizID].Attempts, quizAttemptFrom(&row))
+		}
+	}
+
+	result := make([]*domain.QuizAttempts, 0, len(attemptsByQuizID))
+	for _, quizAttempt := range attemptsByQuizID {
+		result = append(result, quizAttempt)
+	}
+
+	return result, nil
+}
+
+func (s *Store) GetAllQuizSections(ctx context.Context) ([]*domain.QuizSection, error) {
+	rows, err := ExecQuery(ctx, func() ([]sqlc.GetAllQuizSectionsRow, error) {
+		return s.Queries.GetAllQuizSections(ctx)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	sections, err := utils.MapToWithError(rows, func(row sqlc.GetAllQuizSectionsRow) (*domain.QuizSection, error) {
+		return quizSectionFrom(sqlc.GetCourseQuizSectionsRow(row))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return sections, nil
+}
+
+func (s *Store) ResetQuizProgress(ctx context.Context, userID string, quizID pgtype.UUID) error {
+	return ExecCommand(ctx, func() error {
+		tx, err := s.pool.Begin(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to begin transaction: %w", err)
+		}
+		defer tx.Rollback(ctx) //nolint:errcheck
+
+		qtx := s.Queries.WithTx(tx)
+
+		if err := qtx.DeleteUserQuizState(ctx, sqlc.DeleteUserQuizStateParams{
+			UserID: userID,
+			QuizID: quizID,
+		}); err != nil {
+			return fmt.Errorf("failed to delete user quiz state: %w", err)
+		}
+
+		if err := qtx.DeleteQuizAttempts(ctx, sqlc.DeleteQuizAttemptsParams{
+			UserID: userID,
+			QuizID: quizID,
+		}); err != nil {
+			return fmt.Errorf("failed to delete quiz attempts: %w", err)
+		}
+
+		return tx.Commit(ctx)
+	})
+}
+
+func (s *Store) UpsertQuizState(ctx context.Context, params sqlc.UpsertQuizStateParams) error {
+	return ExecCommand(ctx, func() error {
+		return s.Queries.UpsertQuizState(ctx, params)
+	})
+}
+
+func quizAttemptFrom(row *sqlc.GetQuizAttemptsByUserIDRow) *domain.QuizAttempt {
+	return &domain.QuizAttempt{
+		Answers:       row.Answers,
+		AttemptNumber: row.AttemptNumber.Int32,
+	}
+}
+
+func (s *Store) GetQuizStatesByUserID(ctx context.Context, userID string) (map[uuid.UUID]json.RawMessage, error) {
+	completedSectionIDs, err := s.getCompletedSectionIDs(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := ExecQuery(ctx, func() ([]sqlc.GetQuizStatesByUserIDRow, error) {
+		return s.Queries.GetQuizStatesByUserID(ctx, userID)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	completedSet := make(map[uuid.UUID]struct{}, len(completedSectionIDs))
+	for _, id := range completedSectionIDs {
+		completedSet[id] = struct{}{}
+	}
+
+	result := map[uuid.UUID]json.RawMessage{}
+	for _, row := range rows {
+		quizID := uuid.UUID(row.QuizID.Bytes)
+		if _, ok := completedSet[quizID]; ok {
+			continue
+		}
+		result[quizID] = row.QuizStateV2
+	}
+
+	return result, nil
+}
+
+func (s *Store) getCompletedSectionIDs(ctx context.Context, userID string) ([]uuid.UUID, error) {
+	rows, err := ExecQuery(ctx, func() ([][]pgtype.UUID, error) {
+		return s.Queries.GetCompletedSectionIDsByUserID(ctx, userID)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var result []uuid.UUID
+	for _, sectionIDs := range rows {
+		for _, id := range sectionIDs {
+			result = append(result, uuid.UUID(id.Bytes))
+		}
+	}
+
+	return result, nil
+}

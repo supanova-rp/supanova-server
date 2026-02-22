@@ -59,6 +59,7 @@ func New(h *handlers.Handlers, authProvider middleware.AuthProvider, cfg *config
 
 	// Public route (no auth middleware)
 	public := e.Group("/" + config.APIVersion)
+
 	// Private group with auth middleware
 	private := e.Group("/" + config.APIVersion)
 
@@ -104,6 +105,7 @@ func registerRoutes(private, public *echo.Group, h *handlers.Handlers) {
 
 	RegisterCourseRoutes(private, h)
 	RegisterProgressRoutes(private, h)
+	RegisterQuizRoutes(private, h)
 	RegisterMediaRoutes(private, h)
 	RegisterEnrolmentRoutes(private, h)
 }
