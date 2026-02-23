@@ -117,7 +117,7 @@ func (e *EmailService) SetupRetry() (context.CancelFunc, error) {
 func (e *EmailService) AddFailedEmail(ctx context.Context, err error, templateParams EmailParams, templateName, emailName string) {
 	paramBytes, marshalErr := json.Marshal(templateParams)
 	if marshalErr != nil {
-		slog.Error("failed to marshal template params", slog.Any("err", marshalErr))
+		slog.Error("failed to marshal template params", slog.Any("error", marshalErr))
 		return
 	}
 
@@ -130,7 +130,7 @@ func (e *EmailService) AddFailedEmail(ctx context.Context, err error, templatePa
 
 	err = e.store.AddFailedEmail(ctx, sqlcParams)
 	if err != nil {
-		slog.Error("failed to add email to DB", slog.Any("err", err))
+		slog.Error("failed to add email to DB", slog.Any("error", err))
 	} else {
 		slog.Debug("added email to DB")
 	}
@@ -176,7 +176,7 @@ func (e *EmailService) RetryJob() func(ctx context.Context) {
 		failedEmails, err := e.store.GetFailedEmails(ctx)
 
 		if err != nil {
-			slog.Error(errors.Getting("failed emails"), slog.Any("err", err))
+			slog.Error(errors.Getting("failed emails"), slog.Any("error", err))
 			return
 		}
 
@@ -202,7 +202,7 @@ func (e *EmailService) RetryJob() func(ctx context.Context) {
 		for _, sendP := range sendParams {
 			err := e.RetrySend(ctx, &sendP)
 			if err != nil {
-				slog.Error("email retry failed", slog.Any("err", err))
+				slog.Error("email retry failed", slog.Any("error", err))
 				e.handleRetryFailure(ctx, &sendP, err)
 			} else {
 				slog.Debug("email retry success", slog.String("id", sendP.ID.String()))
@@ -215,13 +215,13 @@ func (e *EmailService) RetryJob() func(ctx context.Context) {
 func appendParams[T EmailParams](params *FailedEmail, sendParams []RetryParams) []RetryParams {
 	var templateParams T
 	if err := json.Unmarshal(params.TemplateParams, &templateParams); err != nil {
-		slog.Error("failed to unmarshal template params", slog.Any("err", err))
+		slog.Error("failed to unmarshal template params", slog.Any("error", err))
 		return sendParams
 	}
 
 	pgUUID, err := utils.PGUUIDFrom(params.ID.String())
 	if err != nil {
-		slog.Error("failed to parse failed email id", slog.Any("err", err), slog.String("id", params.ID.String()))
+		slog.Error("failed to parse failed email id", slog.Any("error", err), slog.String("id", params.ID.String()))
 		return sendParams
 	}
 
@@ -264,7 +264,7 @@ func (e *EmailService) RetrySend(ctx context.Context, params *RetryParams) error
 func (e *EmailService) deleteFailedEmail(ctx context.Context, id pgtype.UUID) {
 	err := e.store.DeleteFailedEmail(ctx, id)
 	if err != nil {
-		slog.Error("failed to delete email", slog.Any("err", err))
+		slog.Error("failed to delete email", slog.Any("error", err))
 		return
 	}
 
@@ -289,7 +289,7 @@ func (e *EmailService) updateFailedEmail(ctx context.Context, retryParams *Retry
 
 	err = e.store.UpdateFailedEmail(ctx, sqlcParams)
 	if err != nil {
-		slog.Error("failed to update email", slog.String("id", retryParams.ID.String()), slog.Any("err", err))
+		slog.Error("failed to update email", slog.String("id", retryParams.ID.String()), slog.Any("error", err))
 		return
 	}
 
