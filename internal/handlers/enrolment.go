@@ -5,13 +5,12 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
-	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
-	"github.com/supanova-rp/supanova-server/internal/utils"
 )
 
 const enrolmentResource = "enrolment"
@@ -34,22 +33,22 @@ func (h *Handlers) UpdateCourseEnrolment(e echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
 	}
 
-	courseID, err := utils.PGUUIDFrom(params.CourseID)
+	courseID, err := uuid.Parse(params.CourseID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
 	if params.IsEnrolled {
-		err = h.Enrolment.DisenrolInCourse(ctx, sqlc.DisenrolInCourseParams{
-			UserID:   utils.PGTextFrom(userID),
+		err := h.Enrolment.DisenrolInCourse(ctx, domain.DisenrolInCourseParams{
+			UserID:   userID,
 			CourseID: courseID,
 		})
 		if err != nil {
 			return internalError(ctx, errors.Deleting(enrolmentResource), err, slog.String("course_id", params.CourseID))
 		}
 	} else {
-		err = h.Enrolment.EnrolInCourse(ctx, sqlc.EnrolInCourseParams{
-			UserID:   utils.PGTextFrom(userID),
+		err := h.Enrolment.EnrolInCourse(ctx, domain.EnrolInCourseParams{
+			UserID:   userID,
 			CourseID: courseID,
 		})
 		if err != nil {
@@ -60,7 +59,7 @@ func (h *Handlers) UpdateCourseEnrolment(e echo.Context) error {
 	return e.NoContent(http.StatusOK)
 }
 
-func (h *Handlers) isEnrolled(ctx context.Context, courseID pgtype.UUID) (bool, error) {
+func (h *Handlers) isEnrolled(ctx context.Context, courseID uuid.UUID) (bool, error) {
 	role, ok := getUserRole(ctx)
 	if !ok {
 		return false, errors.Wrap(errors.NotFoundInCtx("role"))
@@ -76,8 +75,8 @@ func (h *Handlers) isEnrolled(ctx context.Context, courseID pgtype.UUID) (bool, 
 		return false, errors.Wrap(errors.NotFoundInCtx("user"))
 	}
 
-	return h.Enrolment.IsEnrolled(ctx, sqlc.IsUserEnrolledInCourseParams{
-		UserID:   utils.PGTextFrom(userID),
+	return h.Enrolment.IsEnrolled(ctx, domain.IsEnrolledParams{
+		UserID:   userID,
 		CourseID: courseID,
 	})
 }

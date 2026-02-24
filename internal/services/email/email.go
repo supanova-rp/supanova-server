@@ -219,7 +219,7 @@ func appendParams[T EmailParams](params *FailedEmail, sendParams []RetryParams) 
 		return sendParams
 	}
 
-	pgUUID, err := utils.PGUUIDFrom(params.ID.String())
+	pgUUID, err := utils.PGUUIDFromString(params.ID.String())
 	if err != nil {
 		slog.Error("failed to parse failed email id", slog.Any("error", err), slog.String("id", params.ID.String()))
 		return sendParams

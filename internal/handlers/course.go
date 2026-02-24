@@ -28,7 +28,7 @@ func (h *Handlers) GetCourse(e echo.Context) error {
 		return err
 	}
 
-	courseID, err := utils.PGUUIDFrom(params.ID)
+	courseID, err := utils.PGUUIDFromString(params.ID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
@@ -42,7 +42,7 @@ func (h *Handlers) GetCourse(e echo.Context) error {
 		return internalError(ctx, errors.Getting(courseResource), err, slog.String("course_id", params.ID))
 	}
 
-	enrolled, err := h.isEnrolled(ctx, courseID)
+	enrolled, err := h.isEnrolled(ctx, utils.UUIDFrom(courseID))
 	if err != nil {
 		return internalError(ctx, errors.Getting(courseResource), err, slog.String("course_id", params.ID))
 	}

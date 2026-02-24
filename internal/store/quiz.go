@@ -101,7 +101,14 @@ func quizAnswerFrom(q SqlcQuizAnswer) (domain.QuizAnswer, error) {
 	}, nil
 }
 
-func (s *Store) SaveQuizAttempt(ctx context.Context, params sqlc.SaveQuizAttemptParams) error {
+func (s *Store) SaveQuizAttempt(ctx context.Context, params domain.SaveQuizAttemptParams) error {
+	quizID := utils.PGUUIDFromUUID(params.QuizID)
+	sqlcParams := sqlc.SaveQuizAttemptParams{
+		UserID:  params.UserID,
+		QuizID:  quizID,
+		Answers: params.Answers,
+	}
+
 	return ExecCommand(ctx, func() error {
 		tx, err := s.pool.Begin(ctx)
 		if err != nil {
@@ -111,13 +118,13 @@ func (s *Store) SaveQuizAttempt(ctx context.Context, params sqlc.SaveQuizAttempt
 
 		qtx := s.Queries.WithTx(tx)
 
-		if err := qtx.SaveQuizAttempt(ctx, params); err != nil {
+		if err := qtx.SaveQuizAttempt(ctx, sqlcParams); err != nil {
 			return fmt.Errorf("failed to save quiz attempt: %w", err)
 		}
 
 		if err := qtx.IncrementAttempts(ctx, sqlc.IncrementAttemptsParams{
 			UserID: params.UserID,
-			QuizID: params.QuizID,
+			QuizID: quizID,
 		}); err != nil {
 			return fmt.Errorf("failed to increment attempts: %w", err)
 		}
@@ -187,7 +194,8 @@ func (s *Store) GetAllQuizSections(ctx context.Context) ([]*domain.QuizSection, 
 	return sections, nil
 }
 
-func (s *Store) ResetQuizProgress(ctx context.Context, userID string, quizID pgtype.UUID) error {
+func (s *Store) ResetQuizProgress(ctx context.Context, userID string, quizID uuid.UUID) error {
+	pgQuizID := utils.PGUUIDFromUUID(quizID)
 	return ExecCommand(ctx, func() error {
 		tx, err := s.pool.Begin(ctx)
 		if err != nil {
@@ -199,14 +207,14 @@ func (s *Store) ResetQuizProgress(ctx context.Context, userID string, quizID pgt
 
 		if err := qtx.DeleteUserQuizState(ctx, sqlc.DeleteUserQuizStateParams{
 			UserID: userID,
-			QuizID: quizID,
+			QuizID: pgQuizID,
 		}); err != nil {
 			return fmt.Errorf("failed to delete user quiz state: %w", err)
 		}
 
 		if err := qtx.DeleteQuizAttempts(ctx, sqlc.DeleteQuizAttemptsParams{
 			UserID: userID,
-			QuizID: quizID,
+			QuizID: pgQuizID,
 		}); err != nil {
 			return fmt.Errorf("failed to delete quiz attempts: %w", err)
 		}
@@ -215,9 +223,15 @@ func (s *Store) ResetQuizProgress(ctx context.Context, userID string, quizID pgt
 	})
 }
 
-func (s *Store) UpsertQuizState(ctx context.Context, params sqlc.UpsertQuizStateParams) error {
+func (s *Store) UpsertQuizState(ctx context.Context, params domain.UpsertQuizStateParams) error {
+	sqlcParams := sqlc.UpsertQuizStateParams{
+		UserID:      params.UserID,
+		QuizID:      utils.PGUUIDFromUUID(params.QuizID),
+		QuizAnswers: params.QuizAnswers,
+	}
+
 	return ExecCommand(ctx, func() error {
-		return s.Queries.UpsertQuizState(ctx, params)
+		return s.Queries.UpsertQuizState(ctx, sqlcParams)
 	})
 }
 

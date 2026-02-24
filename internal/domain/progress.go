@@ -4,18 +4,37 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-
-	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
 //go:generate moq -out ../handlers/mocks/progress_mock.go -pkg mocks . ProgressRepository
 
 type ProgressRepository interface {
-	GetProgress(context.Context, sqlc.GetProgressParams) (*Progress, error)
-	UpdateProgress(context.Context, sqlc.UpdateProgressParams) error
+	GetProgress(context.Context, GetProgressParams) (*Progress, error)
+	UpdateProgress(context.Context, UpdateProgressParams) error
 	GetAllProgress(context.Context) ([]*FullProgress, error)
-	HasCompletedCourse(context.Context, sqlc.HasCompletedCourseParams) (bool, error)
-	SetCourseCompleted(context.Context, sqlc.SetCourseCompletedParams) error
+	HasCompletedCourse(context.Context, HasCompletedCourseParams) (bool, error)
+	SetCourseCompleted(context.Context, SetCourseCompletedParams) error
+}
+
+type GetProgressParams struct {
+	UserID   string
+	CourseID uuid.UUID
+}
+
+type UpdateProgressParams struct {
+	UserID    string
+	CourseID  uuid.UUID
+	SectionID uuid.UUID
+}
+
+type HasCompletedCourseParams struct {
+	UserID   string
+	CourseID uuid.UUID
+}
+
+type SetCourseCompletedParams struct {
+	UserID   string
+	CourseID uuid.UUID
 }
 
 type Progress struct {

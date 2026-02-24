@@ -9,10 +9,14 @@ func UUIDFrom(pgUUID pgtype.UUID) uuid.UUID {
 	return uuid.UUID(pgUUID.Bytes)
 }
 
-func PGUUIDFrom(id string) (pgtype.UUID, error) {
+func PGUUIDFromString(id string) (pgtype.UUID, error) {
 	var pgUUID pgtype.UUID
 	err := pgUUID.Scan(id)
 	return pgUUID, err
+}
+
+func PGUUIDFromUUID(id uuid.UUID) pgtype.UUID {
+	return pgtype.UUID{Bytes: id, Valid: true}
 }
 
 func PGTextFrom(text string) pgtype.Text {

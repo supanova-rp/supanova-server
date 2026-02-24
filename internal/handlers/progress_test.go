@@ -18,7 +18,6 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
 	"github.com/supanova-rp/supanova-server/internal/handlers/testhelpers"
 	"github.com/supanova-rp/supanova-server/internal/services/email"
-	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
 func TestGetProgress(t *testing.T) {
@@ -26,7 +25,7 @@ func TestGetProgress(t *testing.T) {
 		expected := testhelpers.Progress
 
 		mockProgressRepo := &mocks.ProgressRepositoryMock{
-			GetProgressFunc: func(ctx context.Context, params sqlc.GetProgressParams) (*domain.Progress, error) {
+			GetProgressFunc: func(ctx context.Context, params domain.GetProgressParams) (*domain.Progress, error) {
 				return expected, nil
 			},
 		}
@@ -102,7 +101,7 @@ func TestGetProgress(t *testing.T) {
 		courseID := testhelpers.Course.ID
 
 		mockRepo := &mocks.ProgressRepositoryMock{
-			GetProgressFunc: func(ctx context.Context, params sqlc.GetProgressParams) (*domain.Progress, error) {
+			GetProgressFunc: func(ctx context.Context, params domain.GetProgressParams) (*domain.Progress, error) {
 				return nil, pgx.ErrNoRows
 			},
 		}
@@ -127,7 +126,7 @@ func TestGetProgress(t *testing.T) {
 		courseID := testhelpers.Course.ID
 
 		mockRepo := &mocks.ProgressRepositoryMock{
-			GetProgressFunc: func(ctx context.Context, params sqlc.GetProgressParams) (*domain.Progress, error) {
+			GetProgressFunc: func(ctx context.Context, params domain.GetProgressParams) (*domain.Progress, error) {
 				return nil, stdErrors.New("database connection failed")
 			},
 		}
@@ -155,7 +154,7 @@ func TestUpdateProgress(t *testing.T) {
 		sectionID := uuid.New()
 
 		mockProgressRepo := &mocks.ProgressRepositoryMock{
-			UpdateProgressFunc: func(ctx context.Context, params sqlc.UpdateProgressParams) error {
+			UpdateProgressFunc: func(ctx context.Context, params domain.UpdateProgressParams) error {
 				return nil
 			},
 		}
@@ -274,7 +273,7 @@ func TestUpdateProgress(t *testing.T) {
 		sectionID := uuid.New()
 
 		mockRepo := &mocks.ProgressRepositoryMock{
-			UpdateProgressFunc: func(ctx context.Context, params sqlc.UpdateProgressParams) error {
+			UpdateProgressFunc: func(ctx context.Context, params domain.UpdateProgressParams) error {
 				return stdErrors.New("database connection failed")
 			},
 		}
@@ -303,7 +302,7 @@ func TestCourseCompleted(t *testing.T) {
 		courseName := testhelpers.Course.Title
 
 		mockProgressRepo := &mocks.ProgressRepositoryMock{
-			HasCompletedCourseFunc: func(ctx context.Context, params sqlc.HasCompletedCourseParams) (bool, error) {
+			HasCompletedCourseFunc: func(ctx context.Context, params domain.HasCompletedCourseParams) (bool, error) {
 				return true, nil
 			},
 		}
@@ -339,10 +338,10 @@ func TestCourseCompleted(t *testing.T) {
 		courseName := testhelpers.Course.Title
 
 		mockProgressRepo := &mocks.ProgressRepositoryMock{
-			HasCompletedCourseFunc: func(ctx context.Context, params sqlc.HasCompletedCourseParams) (bool, error) {
+			HasCompletedCourseFunc: func(ctx context.Context, params domain.HasCompletedCourseParams) (bool, error) {
 				return false, nil
 			},
-			SetCourseCompletedFunc: func(ctx context.Context, params sqlc.SetCourseCompletedParams) error {
+			SetCourseCompletedFunc: func(ctx context.Context, params domain.SetCourseCompletedParams) error {
 				return nil
 			},
 		}
@@ -469,10 +468,10 @@ func TestCourseCompleted(t *testing.T) {
 		courseName := testhelpers.Course.Title
 
 		mockProgressRepo := &mocks.ProgressRepositoryMock{
-			HasCompletedCourseFunc: func(ctx context.Context, params sqlc.HasCompletedCourseParams) (bool, error) {
+			HasCompletedCourseFunc: func(ctx context.Context, params domain.HasCompletedCourseParams) (bool, error) {
 				return false, nil
 			},
-			SetCourseCompletedFunc: func(ctx context.Context, params sqlc.SetCourseCompletedParams) error {
+			SetCourseCompletedFunc: func(ctx context.Context, params domain.SetCourseCompletedParams) error {
 				return nil
 			},
 		}

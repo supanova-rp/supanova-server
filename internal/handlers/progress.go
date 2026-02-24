@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
+	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/services/email"
-	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
-	"github.com/supanova-rp/supanova-server/internal/utils"
 )
 
 var location, _ = time.LoadLocation("Europe/London")
@@ -45,17 +45,15 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 		return err
 	}
 
-	courseID, err := utils.PGUUIDFrom(params.CourseID)
+	courseID, err := uuid.Parse(params.CourseID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
-	sqlcParams := sqlc.GetProgressParams{
+	progress, err := h.Progress.GetProgress(e.Request().Context(), domain.GetProgressParams{
 		UserID:   userID,
 		CourseID: courseID,
-	}
-
-	progress, err := h.Progress.GetProgress(e.Request().Context(), sqlcParams)
+	})
 	if err != nil {
 		if errors.IsNotFoundErr(err) {
 			return echo.NewHTTPError(http.StatusNotFound, errors.NotFound(progressResource))
@@ -80,23 +78,21 @@ func (h *Handlers) UpdateProgress(e echo.Context) error {
 		return err
 	}
 
-	courseID, err := utils.PGUUIDFrom(params.CourseID)
+	courseID, err := uuid.Parse(params.CourseID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
-	sectionID, err := utils.PGUUIDFrom(params.SectionID)
+	sectionID, err := uuid.Parse(params.SectionID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
-	sqlcParams := sqlc.UpdateProgressParams{
+	err = h.Progress.UpdateProgress(ctx, domain.UpdateProgressParams{
 		UserID:    userID,
 		CourseID:  courseID,
 		SectionID: sectionID,
-	}
-
-	err = h.Progress.UpdateProgress(ctx, sqlcParams)
+	})
 	if err != nil {
 		return internalError(ctx, errors.Updating(progressResource), err,
 			slog.String("course_id", params.CourseID),
@@ -119,12 +115,12 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 		return err
 	}
 
-	courseID, err := utils.PGUUIDFrom(params.CourseID)
+	courseID, err := uuid.Parse(params.CourseID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
-	prevCompleted, err := h.Progress.HasCompletedCourse(ctx, sqlc.HasCompletedCourseParams{
+	prevCompleted, err := h.Progress.HasCompletedCourse(ctx, domain.HasCompletedCourseParams{
 		UserID:   userID,
 		CourseID: courseID,
 	})
@@ -137,7 +133,7 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 		return e.NoContent(http.StatusNoContent)
 	}
 
-	err = h.Progress.SetCourseCompleted(ctx, sqlc.SetCourseCompletedParams{
+	err = h.Progress.SetCourseCompleted(ctx, domain.SetCourseCompletedParams{
 		UserID:   userID,
 		CourseID: courseID,
 	})
