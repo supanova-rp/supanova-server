@@ -1,6 +1,10 @@
-# Make admin tool
+# Make admin Firebase tool
 
-Used to update the user's admin status (i.e. make user admin/remove admin status).
+Used to update the user's admin status (i.e. make user admin/remove admin status) on Firebase.
+
+### Prerequisites
+
+`FIREBASE_CREDENTIALS` variable in `.env` file.
 
 ### Usage
 
@@ -11,4 +15,6 @@ Used to update the user's admin status (i.e. make user admin/remove admin status
 - Remove user admin status:
 1. from the terminal, run: `go run cmd/make_admin/main.go make-admin=false`
 2. you will be prompted to add the user's email address
+
+
 
