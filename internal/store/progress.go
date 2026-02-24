@@ -10,6 +10,7 @@ import (
 
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
+	"github.com/supanova-rp/supanova-server/internal/utils"
 )
 
 type UserDetails struct {
@@ -18,10 +19,15 @@ type UserDetails struct {
 	Email string
 }
 
-func (s *Store) GetProgress(ctx context.Context, args sqlc.GetProgressParams) (*domain.Progress, error) {
+func (s *Store) GetProgress(ctx context.Context, args domain.GetProgressParams) (*domain.Progress, error) {
+	sqlcArgs := sqlc.GetProgressParams{
+		UserID:   args.UserID,
+		CourseID: utils.PGUUIDFromUUID(args.CourseID),
+	}
+
 	progress, err := ExecQuery(
 		ctx,
-		func() (sqlc.GetProgressRow, error) { return s.Queries.GetProgress(ctx, args) },
+		func() (sqlc.GetProgressRow, error) { return s.Queries.GetProgress(ctx, sqlcArgs) },
 	)
 	if err != nil {
 		return nil, err
@@ -30,23 +36,39 @@ func (s *Store) GetProgress(ctx context.Context, args sqlc.GetProgressParams) (*
 	return progressFrom(progress), nil
 }
 
-func (s *Store) UpdateProgress(ctx context.Context, args sqlc.UpdateProgressParams) error {
+func (s *Store) UpdateProgress(ctx context.Context, args domain.UpdateProgressParams) error {
+	sqlcArgs := sqlc.UpdateProgressParams{
+		UserID:    args.UserID,
+		CourseID:  utils.PGUUIDFromUUID(args.CourseID),
+		SectionID: utils.PGUUIDFromUUID(args.SectionID),
+	}
+
 	return ExecCommand(ctx, func() error {
-		return s.Queries.UpdateProgress(ctx, args)
+		return s.Queries.UpdateProgress(ctx, sqlcArgs)
 	})
 }
 
-func (s *Store) HasCompletedCourse(ctx context.Context, args sqlc.HasCompletedCourseParams) (bool, error) {
+func (s *Store) HasCompletedCourse(ctx context.Context, args domain.HasCompletedCourseParams) (bool, error) {
+	sqlcArgs := sqlc.HasCompletedCourseParams{
+		UserID:   args.UserID,
+		CourseID: utils.PGUUIDFromUUID(args.CourseID),
+	}
+
 	completed, err := ExecQuery(ctx, func() (pgtype.Bool, error) {
-		return s.Queries.HasCompletedCourse(ctx, args)
+		return s.Queries.HasCompletedCourse(ctx, sqlcArgs)
 	})
 
 	return completed.Bool, err
 }
 
-func (s *Store) SetCourseCompleted(ctx context.Context, args sqlc.SetCourseCompletedParams) error {
+func (s *Store) SetCourseCompleted(ctx context.Context, args domain.SetCourseCompletedParams) error {
+	sqlcArgs := sqlc.SetCourseCompletedParams{
+		UserID:   args.UserID,
+		CourseID: utils.PGUUIDFromUUID(args.CourseID),
+	}
+
 	return ExecCommand(ctx, func() error {
-		return s.Queries.SetCourseCompleted(ctx, args)
+		return s.Queries.SetCourseCompleted(ctx, sqlcArgs)
 	})
 }
 

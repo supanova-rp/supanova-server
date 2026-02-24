@@ -5,11 +5,11 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
+	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
-	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
-	"github.com/supanova-rp/supanova-server/internal/utils"
 )
 
 const (
@@ -41,7 +41,7 @@ func (h *Handlers) SaveQuizAttempt(e echo.Context) error {
 		return err
 	}
 
-	quizID, err := utils.PGUUIDFrom(params.QuizID)
+	quizID, err := uuid.Parse(params.QuizID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
@@ -51,7 +51,7 @@ func (h *Handlers) SaveQuizAttempt(e echo.Context) error {
 		return internalError(ctx, errors.Creating(quizAttemptResource), err, slog.String("quiz_id", params.QuizID))
 	}
 
-	err = h.Quiz.SaveQuizAttempt(ctx, sqlc.SaveQuizAttemptParams{
+	err = h.Quiz.SaveQuizAttempt(ctx, domain.SaveQuizAttemptParams{
 		UserID:  userID,
 		QuizID:  quizID,
 		Answers: answers,
@@ -81,7 +81,7 @@ func (h *Handlers) SaveQuizState(e echo.Context) error {
 		return err
 	}
 
-	quizID, err := utils.PGUUIDFrom(params.QuizID)
+	quizID, err := uuid.Parse(params.QuizID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
@@ -91,7 +91,7 @@ func (h *Handlers) SaveQuizState(e echo.Context) error {
 		return internalError(ctx, errors.Creating(quizStateResource), err, slog.String("quiz_id", params.QuizID))
 	}
 
-	err = h.Quiz.UpsertQuizState(ctx, sqlc.UpsertQuizStateParams{
+	err = h.Quiz.UpsertQuizState(ctx, domain.UpsertQuizStateParams{
 		UserID:      userID,
 		QuizID:      quizID,
 		QuizAnswers: quizAnswers,
@@ -131,7 +131,7 @@ func (h *Handlers) ResetQuizProgress(e echo.Context) error {
 		return err
 	}
 
-	quizID, err := utils.PGUUIDFrom(params.QuizID)
+	quizID, err := uuid.Parse(params.QuizID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}

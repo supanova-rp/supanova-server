@@ -124,4 +124,5 @@ Required environment variables: see `.env.example`
 - Handlers should NOT directly use sqlc-generated models; convert between sqlc models and domain models in the store layer
 - Context is passed through all layers for cancellation and timeout support
 - All database queries use pgx/v5 (not database/sql)
+- Use `make mocks` command to generate mocks, not go generate
 - As a final step after making a series of changes, run `make lint` to ensure lint errors are fixed. If there are any errors then fix them.

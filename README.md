@@ -75,23 +75,6 @@ make migrate/create name=<migration_name>
 make mocks
 ```
 
-#### Get Firebase access token (for testing):
-Get an ID token for API authentication:
-```bash
-go run cmd/access_token/main.go -api-key=<firebase_web_api_key> -email=<email> -password=<password>
-```
-
-Get verbose output (includes user ID, expiration, refresh token):
-```bash
-go run cmd/access_token/main.go -api-key=<firebase_web_api_key> -email=<email> -password=<password> -verbose
-```
-
-Use the token in a curl request:
-```bash
-TOKEN=$(go run cmd/access_token/main.go -api-key=AIza... -email=test@example.com -password=pass123)
-curl -X POST http://localhost:3000/v2/course \
-  -H "Content-Type: application/json" \
-  -d "{\"access_token\": \"$TOKEN\", \"courseId\": \"course-123\"}"
-```
-
-**Note:** The Firebase Web API Key can be found in Firebase Console → Project Settings → Web API Key
+#### Firebase utility commands:
+- [Get Firebase access token](cmd/access_token/README.md) (for testing)
+- [Make user admin / remove admin status](cmd/make_admin/README.md)

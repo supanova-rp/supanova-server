@@ -72,7 +72,7 @@ func TestGetCourse(t *testing.T) {
 		}
 
 		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
-			IsEnrolledFunc: func(ctx context.Context, params sqlc.IsUserEnrolledInCourseParams) (bool, error) {
+			IsEnrolledFunc: func(ctx context.Context, params domain.IsEnrolledParams) (bool, error) {
 				return true, nil
 			},
 		}
@@ -204,7 +204,7 @@ func TestGetCourse(t *testing.T) {
 		}
 
 		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
-			IsEnrolledFunc: func(ctx context.Context, params sqlc.IsUserEnrolledInCourseParams) (bool, error) {
+			IsEnrolledFunc: func(ctx context.Context, params domain.IsEnrolledParams) (bool, error) {
 				return false, nil
 			},
 		}

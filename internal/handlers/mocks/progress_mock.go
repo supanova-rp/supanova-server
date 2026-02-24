@@ -6,7 +6,6 @@ package mocks
 import (
 	"context"
 	"github.com/supanova-rp/supanova-server/internal/domain"
-	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 	"sync"
 )
 
@@ -23,16 +22,16 @@ var _ domain.ProgressRepository = &ProgressRepositoryMock{}
 //			GetAllProgressFunc: func(contextMoqParam context.Context) ([]*domain.FullProgress, error) {
 //				panic("mock out the GetAllProgress method")
 //			},
-//			GetProgressFunc: func(contextMoqParam context.Context, getProgressParams sqlc.GetProgressParams) (*domain.Progress, error) {
+//			GetProgressFunc: func(contextMoqParam context.Context, getProgressParams domain.GetProgressParams) (*domain.Progress, error) {
 //				panic("mock out the GetProgress method")
 //			},
-//			HasCompletedCourseFunc: func(contextMoqParam context.Context, hasCompletedCourseParams sqlc.HasCompletedCourseParams) (bool, error) {
+//			HasCompletedCourseFunc: func(contextMoqParam context.Context, hasCompletedCourseParams domain.HasCompletedCourseParams) (bool, error) {
 //				panic("mock out the HasCompletedCourse method")
 //			},
-//			SetCourseCompletedFunc: func(contextMoqParam context.Context, setCourseCompletedParams sqlc.SetCourseCompletedParams) error {
+//			SetCourseCompletedFunc: func(contextMoqParam context.Context, setCourseCompletedParams domain.SetCourseCompletedParams) error {
 //				panic("mock out the SetCourseCompleted method")
 //			},
-//			UpdateProgressFunc: func(contextMoqParam context.Context, updateProgressParams sqlc.UpdateProgressParams) error {
+//			UpdateProgressFunc: func(contextMoqParam context.Context, updateProgressParams domain.UpdateProgressParams) error {
 //				panic("mock out the UpdateProgress method")
 //			},
 //		}
@@ -46,16 +45,16 @@ type ProgressRepositoryMock struct {
 	GetAllProgressFunc func(contextMoqParam context.Context) ([]*domain.FullProgress, error)
 
 	// GetProgressFunc mocks the GetProgress method.
-	GetProgressFunc func(contextMoqParam context.Context, getProgressParams sqlc.GetProgressParams) (*domain.Progress, error)
+	GetProgressFunc func(contextMoqParam context.Context, getProgressParams domain.GetProgressParams) (*domain.Progress, error)
 
 	// HasCompletedCourseFunc mocks the HasCompletedCourse method.
-	HasCompletedCourseFunc func(contextMoqParam context.Context, hasCompletedCourseParams sqlc.HasCompletedCourseParams) (bool, error)
+	HasCompletedCourseFunc func(contextMoqParam context.Context, hasCompletedCourseParams domain.HasCompletedCourseParams) (bool, error)
 
 	// SetCourseCompletedFunc mocks the SetCourseCompleted method.
-	SetCourseCompletedFunc func(contextMoqParam context.Context, setCourseCompletedParams sqlc.SetCourseCompletedParams) error
+	SetCourseCompletedFunc func(contextMoqParam context.Context, setCourseCompletedParams domain.SetCourseCompletedParams) error
 
 	// UpdateProgressFunc mocks the UpdateProgress method.
-	UpdateProgressFunc func(contextMoqParam context.Context, updateProgressParams sqlc.UpdateProgressParams) error
+	UpdateProgressFunc func(contextMoqParam context.Context, updateProgressParams domain.UpdateProgressParams) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -69,28 +68,28 @@ type ProgressRepositoryMock struct {
 			// ContextMoqParam is the contextMoqParam argument value.
 			ContextMoqParam context.Context
 			// GetProgressParams is the getProgressParams argument value.
-			GetProgressParams sqlc.GetProgressParams
+			GetProgressParams domain.GetProgressParams
 		}
 		// HasCompletedCourse holds details about calls to the HasCompletedCourse method.
 		HasCompletedCourse []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
 			ContextMoqParam context.Context
 			// HasCompletedCourseParams is the hasCompletedCourseParams argument value.
-			HasCompletedCourseParams sqlc.HasCompletedCourseParams
+			HasCompletedCourseParams domain.HasCompletedCourseParams
 		}
 		// SetCourseCompleted holds details about calls to the SetCourseCompleted method.
 		SetCourseCompleted []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
 			ContextMoqParam context.Context
 			// SetCourseCompletedParams is the setCourseCompletedParams argument value.
-			SetCourseCompletedParams sqlc.SetCourseCompletedParams
+			SetCourseCompletedParams domain.SetCourseCompletedParams
 		}
 		// UpdateProgress holds details about calls to the UpdateProgress method.
 		UpdateProgress []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
 			ContextMoqParam context.Context
 			// UpdateProgressParams is the updateProgressParams argument value.
-			UpdateProgressParams sqlc.UpdateProgressParams
+			UpdateProgressParams domain.UpdateProgressParams
 		}
 	}
 	lockGetAllProgress     sync.RWMutex
@@ -133,13 +132,13 @@ func (mock *ProgressRepositoryMock) GetAllProgressCalls() []struct {
 }
 
 // GetProgress calls GetProgressFunc.
-func (mock *ProgressRepositoryMock) GetProgress(contextMoqParam context.Context, getProgressParams sqlc.GetProgressParams) (*domain.Progress, error) {
+func (mock *ProgressRepositoryMock) GetProgress(contextMoqParam context.Context, getProgressParams domain.GetProgressParams) (*domain.Progress, error) {
 	if mock.GetProgressFunc == nil {
 		panic("ProgressRepositoryMock.GetProgressFunc: method is nil but ProgressRepository.GetProgress was just called")
 	}
 	callInfo := struct {
 		ContextMoqParam   context.Context
-		GetProgressParams sqlc.GetProgressParams
+		GetProgressParams domain.GetProgressParams
 	}{
 		ContextMoqParam:   contextMoqParam,
 		GetProgressParams: getProgressParams,
@@ -156,11 +155,11 @@ func (mock *ProgressRepositoryMock) GetProgress(contextMoqParam context.Context,
 //	len(mockedProgressRepository.GetProgressCalls())
 func (mock *ProgressRepositoryMock) GetProgressCalls() []struct {
 	ContextMoqParam   context.Context
-	GetProgressParams sqlc.GetProgressParams
+	GetProgressParams domain.GetProgressParams
 } {
 	var calls []struct {
 		ContextMoqParam   context.Context
-		GetProgressParams sqlc.GetProgressParams
+		GetProgressParams domain.GetProgressParams
 	}
 	mock.lockGetProgress.RLock()
 	calls = mock.calls.GetProgress
@@ -169,13 +168,13 @@ func (mock *ProgressRepositoryMock) GetProgressCalls() []struct {
 }
 
 // HasCompletedCourse calls HasCompletedCourseFunc.
-func (mock *ProgressRepositoryMock) HasCompletedCourse(contextMoqParam context.Context, hasCompletedCourseParams sqlc.HasCompletedCourseParams) (bool, error) {
+func (mock *ProgressRepositoryMock) HasCompletedCourse(contextMoqParam context.Context, hasCompletedCourseParams domain.HasCompletedCourseParams) (bool, error) {
 	if mock.HasCompletedCourseFunc == nil {
 		panic("ProgressRepositoryMock.HasCompletedCourseFunc: method is nil but ProgressRepository.HasCompletedCourse was just called")
 	}
 	callInfo := struct {
 		ContextMoqParam          context.Context
-		HasCompletedCourseParams sqlc.HasCompletedCourseParams
+		HasCompletedCourseParams domain.HasCompletedCourseParams
 	}{
 		ContextMoqParam:          contextMoqParam,
 		HasCompletedCourseParams: hasCompletedCourseParams,
@@ -192,11 +191,11 @@ func (mock *ProgressRepositoryMock) HasCompletedCourse(contextMoqParam context.C
 //	len(mockedProgressRepository.HasCompletedCourseCalls())
 func (mock *ProgressRepositoryMock) HasCompletedCourseCalls() []struct {
 	ContextMoqParam          context.Context
-	HasCompletedCourseParams sqlc.HasCompletedCourseParams
+	HasCompletedCourseParams domain.HasCompletedCourseParams
 } {
 	var calls []struct {
 		ContextMoqParam          context.Context
-		HasCompletedCourseParams sqlc.HasCompletedCourseParams
+		HasCompletedCourseParams domain.HasCompletedCourseParams
 	}
 	mock.lockHasCompletedCourse.RLock()
 	calls = mock.calls.HasCompletedCourse
@@ -205,13 +204,13 @@ func (mock *ProgressRepositoryMock) HasCompletedCourseCalls() []struct {
 }
 
 // SetCourseCompleted calls SetCourseCompletedFunc.
-func (mock *ProgressRepositoryMock) SetCourseCompleted(contextMoqParam context.Context, setCourseCompletedParams sqlc.SetCourseCompletedParams) error {
+func (mock *ProgressRepositoryMock) SetCourseCompleted(contextMoqParam context.Context, setCourseCompletedParams domain.SetCourseCompletedParams) error {
 	if mock.SetCourseCompletedFunc == nil {
 		panic("ProgressRepositoryMock.SetCourseCompletedFunc: method is nil but ProgressRepository.SetCourseCompleted was just called")
 	}
 	callInfo := struct {
 		ContextMoqParam          context.Context
-		SetCourseCompletedParams sqlc.SetCourseCompletedParams
+		SetCourseCompletedParams domain.SetCourseCompletedParams
 	}{
 		ContextMoqParam:          contextMoqParam,
 		SetCourseCompletedParams: setCourseCompletedParams,
@@ -228,11 +227,11 @@ func (mock *ProgressRepositoryMock) SetCourseCompleted(contextMoqParam context.C
 //	len(mockedProgressRepository.SetCourseCompletedCalls())
 func (mock *ProgressRepositoryMock) SetCourseCompletedCalls() []struct {
 	ContextMoqParam          context.Context
-	SetCourseCompletedParams sqlc.SetCourseCompletedParams
+	SetCourseCompletedParams domain.SetCourseCompletedParams
 } {
 	var calls []struct {
 		ContextMoqParam          context.Context
-		SetCourseCompletedParams sqlc.SetCourseCompletedParams
+		SetCourseCompletedParams domain.SetCourseCompletedParams
 	}
 	mock.lockSetCourseCompleted.RLock()
 	calls = mock.calls.SetCourseCompleted
@@ -241,13 +240,13 @@ func (mock *ProgressRepositoryMock) SetCourseCompletedCalls() []struct {
 }
 
 // UpdateProgress calls UpdateProgressFunc.
-func (mock *ProgressRepositoryMock) UpdateProgress(contextMoqParam context.Context, updateProgressParams sqlc.UpdateProgressParams) error {
+func (mock *ProgressRepositoryMock) UpdateProgress(contextMoqParam context.Context, updateProgressParams domain.UpdateProgressParams) error {
 	if mock.UpdateProgressFunc == nil {
 		panic("ProgressRepositoryMock.UpdateProgressFunc: method is nil but ProgressRepository.UpdateProgress was just called")
 	}
 	callInfo := struct {
 		ContextMoqParam      context.Context
-		UpdateProgressParams sqlc.UpdateProgressParams
+		UpdateProgressParams domain.UpdateProgressParams
 	}{
 		ContextMoqParam:      contextMoqParam,
 		UpdateProgressParams: updateProgressParams,
@@ -264,11 +263,11 @@ func (mock *ProgressRepositoryMock) UpdateProgress(contextMoqParam context.Conte
 //	len(mockedProgressRepository.UpdateProgressCalls())
 func (mock *ProgressRepositoryMock) UpdateProgressCalls() []struct {
 	ContextMoqParam      context.Context
-	UpdateProgressParams sqlc.UpdateProgressParams
+	UpdateProgressParams domain.UpdateProgressParams
 } {
 	var calls []struct {
 		ContextMoqParam      context.Context
-		UpdateProgressParams sqlc.UpdateProgressParams
+		UpdateProgressParams domain.UpdateProgressParams
 	}
 	mock.lockUpdateProgress.RLock()
 	calls = mock.calls.UpdateProgress

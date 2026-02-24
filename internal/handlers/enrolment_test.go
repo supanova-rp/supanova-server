@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
 	"github.com/supanova-rp/supanova-server/internal/handlers/testhelpers"
-	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
 func TestUpdateCourseEnrolment(t *testing.T) {
@@ -18,7 +18,7 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 		courseID := testhelpers.Course.ID
 
 		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
-			EnrolInCourseFunc: func(ctx context.Context, params sqlc.EnrolInCourseParams) error {
+			EnrolInCourseFunc: func(ctx context.Context, params domain.EnrolInCourseParams) error {
 				return nil
 			},
 		}
@@ -51,7 +51,7 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 		courseID := testhelpers.Course.ID
 
 		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
-			DisenrolInCourseFunc: func(ctx context.Context, params sqlc.DisenrolInCourseParams) error {
+			DisenrolInCourseFunc: func(ctx context.Context, params domain.DisenrolInCourseParams) error {
 				return nil
 			},
 		}
@@ -125,7 +125,7 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 		courseID := testhelpers.Course.ID
 
 		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
-			EnrolInCourseFunc: func(ctx context.Context, params sqlc.EnrolInCourseParams) error {
+			EnrolInCourseFunc: func(ctx context.Context, params domain.EnrolInCourseParams) error {
 				return stdErrors.New("database connection failed")
 			},
 		}

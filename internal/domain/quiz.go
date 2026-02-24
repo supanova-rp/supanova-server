@@ -5,19 +5,28 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
-
-	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
 //go:generate moq -out ../handlers/mocks/quiz_mock.go -pkg mocks . QuizRepository
 
 type QuizRepository interface {
-	SaveQuizAttempt(context.Context, sqlc.SaveQuizAttemptParams) error
-	UpsertQuizState(context.Context, sqlc.UpsertQuizStateParams) error
+	SaveQuizAttempt(context.Context, SaveQuizAttemptParams) error
+	UpsertQuizState(context.Context, UpsertQuizStateParams) error
 	GetQuizAttemptsByUserID(context.Context, string) ([]*QuizAttempts, error)
 	GetAllQuizSections(context.Context) ([]*QuizSection, error)
-	ResetQuizProgress(ctx context.Context, userID string, quizID pgtype.UUID) error
+	ResetQuizProgress(ctx context.Context, userID string, quizID uuid.UUID) error
+}
+
+type SaveQuizAttemptParams struct {
+	UserID  string
+	QuizID  uuid.UUID
+	Answers []byte
+}
+
+type UpsertQuizStateParams struct {
+	UserID      string
+	QuizID      uuid.UUID
+	QuizAnswers []byte
 }
 
 type QuizAttempts struct {
