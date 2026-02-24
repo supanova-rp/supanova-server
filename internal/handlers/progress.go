@@ -172,7 +172,7 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 			slog.ErrorContext(
 				ctx,
 				"failed to send email",
-				slog.Any("err", err),
+				slog.Any("error", err),
 				slog.String("email_name", emailName),
 				slog.String("course_id", params.CourseID),
 				slog.String("user_id", userID),
