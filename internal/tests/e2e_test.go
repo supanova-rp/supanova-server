@@ -50,6 +50,14 @@ func TestCourse(t *testing.T) {
 			Description:       courseDescription,
 			CompletionTitle:   courseCompletionTitle,
 			CompletionMessage: courseCompletionMessage,
+			Materials: []handlers.AddMaterialParams{
+				{
+					ID:         uuid.New().String(),
+					Name:       "Study Guide",
+					StorageKey: uuid.New().String(),
+					Position:   0,
+				},
+			},
 			Sections: []handlers.AddSectionParams{
 				{Video: &handlers.AddVideoSectionParams{
 					Title:      "Video Section",
