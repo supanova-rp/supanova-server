@@ -55,8 +55,12 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 		CourseID: courseID,
 	})
 	if err != nil {
+		// If there is no progress on this course, return a default entry
 		if errors.IsNotFoundErr(err) {
-			return echo.NewHTTPError(http.StatusNotFound, errors.NotFound(progressResource))
+			return e.JSON(http.StatusOK, &domain.Progress{
+				CompletedIntro:      false,
+				CompletedSectionIDs: []uuid.UUID{},
+			})
 		}
 
 		return internalError(ctx, errors.Getting(progressResource), err, slog.String("course_id", params.CourseID))

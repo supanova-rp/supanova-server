@@ -94,6 +94,20 @@ func updateProgress(t *testing.T, baseURL string, courseID, sectionID uuid.UUID)
 	}
 }
 
+func getMaterials(t *testing.T, baseURL string, courseID uuid.UUID) []domain.CourseMaterialWithURL {
+	t.Helper()
+
+	resp := makePOSTRequest(t, baseURL, "materials", map[string]string{
+		"courseId": courseID.String(),
+	})
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", resp.StatusCode)
+	}
+
+	return *parseJSONResponse[[]domain.CourseMaterialWithURL](t, resp)
+}
+
 func enrolUserInCourse(t *testing.T, baseURL string, courseID uuid.UUID) {
 	t.Helper()
 

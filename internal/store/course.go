@@ -148,6 +148,17 @@ func (s *Store) GetCoursesOverview(ctx context.Context) ([]domain.CourseOverview
 	return utils.Map(rows, courseOverviewFrom), nil
 }
 
+func (s *Store) GetCourseMaterials(ctx context.Context, courseID uuid.UUID) ([]domain.CourseMaterial, error) {
+	rows, err := ExecQuery(ctx, func() ([]sqlc.GetCourseMaterialsRow, error) {
+		return s.Queries.GetCourseMaterials(ctx, utils.PGUUIDFromUUID(courseID))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return utils.Map(rows, courseMaterialFrom), nil
+}
+
 func (s *Store) EditCourse(ctx context.Context, id pgtype.UUID) error {
 	return nil
 }

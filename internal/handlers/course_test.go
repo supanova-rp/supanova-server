@@ -20,7 +20,7 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/handlers/testhelpers"
 )
 
-func TestGetCourse(t *testing.T) {
+func TestGetCourse_HappyPath(t *testing.T) {
 	t.Run("returns course successfully - admin user", func(t *testing.T) {
 		expected := testhelpers.Course
 
@@ -108,123 +108,124 @@ func TestGetCourse(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseCalls()), 1, testhelpers.GetCourseHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.IsEnrolledCalls()), 1, testhelpers.IsEnrolledHandlerName)
 	})
+}
 
-	t.Run("validation error - missing id", func(t *testing.T) {
-		mockRepo := &mocks.CourseRepositoryMock{}
+func TestGetCourse_UnhappyPath(t *testing.T) {
+	courseID := testhelpers.Course.ID
+	userRole := config.UserRole
 
-		h := &handlers.Handlers{
-			Course: mockRepo,
-		}
+	type testCase struct {
+		name           string
+		reqBody        handlers.GetCourseParams
+		userRole       *config.Role
+		setup          func() *handlers.Handlers
+		wantStatus     int
+		expectedErrMsg string
+	}
 
-		reqBody := handlers.GetCourseParams{}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
-
-		err := h.GetCourse(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
-		testhelpers.AssertRepoCalls(t, len(mockRepo.GetCourseCalls()), 0, testhelpers.GetCourseHandlerName)
-	})
-
-	t.Run("validation error - invalid uuid format", func(t *testing.T) {
-		mockRepo := &mocks.CourseRepositoryMock{}
-
-		h := &handlers.Handlers{
-			Course: mockRepo,
-		}
-
-		reqBody := handlers.GetCourseParams{
-			ID: "invalid-uuid",
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
-
-		err := h.GetCourse(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.InvalidUUID)
-		testhelpers.AssertRepoCalls(t, len(mockRepo.GetCourseCalls()), 0, testhelpers.GetCourseHandlerName)
-	})
-
-	t.Run("course not found", func(t *testing.T) {
-		courseID := testhelpers.Course.ID
-
-		mockRepo := &mocks.CourseRepositoryMock{
-			GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
-				return nil, pgx.ErrNoRows
+	tests := []testCase{
+		{
+			name:           "validation - missing id",
+			reqBody:        handlers.GetCourseParams{},
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+			setup: func() *handlers.Handlers {
+				courseRepo := &mocks.CourseRepositoryMock{}
+				h := &handlers.Handlers{Course: courseRepo}
+				return h
 			},
-		}
-
-		h := &handlers.Handlers{
-			Course: mockRepo,
-		}
-
-		reqBody := handlers.GetCourseParams{
-			ID: courseID.String(),
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
-
-		err := h.GetCourse(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusNotFound, errors.NotFound("course"))
-		testhelpers.AssertRepoCalls(t, len(mockRepo.GetCourseCalls()), 1, testhelpers.GetCourseHandlerName)
-	})
-
-	t.Run("internal server error", func(t *testing.T) {
-		courseID := testhelpers.Course.ID
-
-		mockRepo := &mocks.CourseRepositoryMock{
-			GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
-				return nil, stdErrors.New("database connection failed")
+		},
+		{
+			name: "validation - invalid uuid",
+			reqBody: handlers.GetCourseParams{
+				ID: "invalid-uuid",
 			},
-		}
-
-		h := &handlers.Handlers{
-			Course: mockRepo,
-		}
-
-		reqBody := handlers.GetCourseParams{
-			ID: courseID.String(),
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
-
-		err := h.GetCourse(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("course"))
-		testhelpers.AssertRepoCalls(t, len(mockRepo.GetCourseCalls()), 1, testhelpers.GetCourseHandlerName)
-	})
-
-	t.Run("forbidden - user not enrolled", func(t *testing.T) {
-		mockCourseRepo := &mocks.CourseRepositoryMock{
-			GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
-				return testhelpers.Course, nil
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.InvalidUUID,
+			setup: func() *handlers.Handlers {
+				courseRepo := &mocks.CourseRepositoryMock{}
+				h := &handlers.Handlers{Course: courseRepo}
+				return h
 			},
-		}
-
-		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
-			IsEnrolledFunc: func(ctx context.Context, params domain.IsEnrolledParams) (bool, error) {
-				return false, nil
+		},
+		{
+			name: "course not found",
+			reqBody: handlers.GetCourseParams{
+				ID: courseID.String(),
 			},
-		}
+			wantStatus:     http.StatusNotFound,
+			expectedErrMsg: errors.NotFound("course"),
+			setup: func() *handlers.Handlers {
+				courseRepo := &mocks.CourseRepositoryMock{
+					GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
+						return nil, pgx.ErrNoRows
+					},
+				}
+				h := &handlers.Handlers{Course: courseRepo}
+				return h
+			},
+		},
+		{
+			name: "internal server error",
+			reqBody: handlers.GetCourseParams{
+				ID: courseID.String(),
+			},
+			wantStatus:     http.StatusInternalServerError,
+			expectedErrMsg: errors.Getting("course"),
+			setup: func() *handlers.Handlers {
+				courseRepo := &mocks.CourseRepositoryMock{
+					GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
+						return nil, stdErrors.New("db error")
+					},
+				}
+				h := &handlers.Handlers{Course: courseRepo}
+				return h
+			},
+		},
+		{
+			name: "forbidden - user not enrolled",
+			reqBody: handlers.GetCourseParams{
+				ID: courseID.String(),
+			},
+			userRole:       &userRole,
+			wantStatus:     http.StatusForbidden,
+			expectedErrMsg: errors.Forbidden("course"),
+			setup: func() *handlers.Handlers {
+				courseRepo := &mocks.CourseRepositoryMock{
+					GetCourseFunc: func(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
+						return testhelpers.Course, nil
+					},
+				}
+				enrolRepo := &mocks.EnrolmentRepositoryMock{
+					IsEnrolledFunc: func(ctx context.Context, params domain.IsEnrolledParams) (bool, error) {
+						return false, nil
+					},
+				}
+				h := &handlers.Handlers{
+					Course:    courseRepo,
+					Enrolment: enrolRepo,
+				}
+				return h
+			},
+		},
+	}
 
-		h := &handlers.Handlers{
-			Course:    mockCourseRepo,
-			Enrolment: mockEnrolmentRepo,
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := tt.setup()
 
-		reqBody := handlers.GetCourseParams{
-			ID: testhelpers.Course.ID.String(),
-		}
+			var opts []testhelpers.EchoTestOption
+			if tt.userRole != nil {
+				opts = append(opts, testhelpers.WithRole(*tt.userRole))
+			}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course", testhelpers.WithRole(config.UserRole))
+			ctx, _ := testhelpers.SetupEchoContext(t, tt.reqBody, "course", opts...)
 
-		err := h.GetCourse(ctx)
+			err := h.GetCourse(ctx)
 
-		testhelpers.AssertHTTPError(t, err, http.StatusForbidden, errors.Forbidden("course"))
-		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseCalls()), 1, testhelpers.GetCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.IsEnrolledCalls()), 1, testhelpers.IsEnrolledHandlerName)
-	})
+			testhelpers.AssertHTTPError(t, err, tt.wantStatus, tt.expectedErrMsg)
+		})
+	}
 }
 
 func TestAddCourse(t *testing.T) {
@@ -486,5 +487,167 @@ func TestGetCoursesOverview(t *testing.T) {
 
 		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("course overview"))
 		testhelpers.AssertRepoCalls(t, len(mockRepo.GetCoursesOverviewCalls()), 1, testhelpers.GetCoursesOverviewHandlerName)
+	})
+}
+
+func TestGetCourseMaterials(t *testing.T) {
+	courseID := testhelpers.Course.ID
+
+	material1 := domain.CourseMaterial{
+		ID:         uuid.New(),
+		Name:       "Material 1",
+		Position:   0,
+		StorageKey: uuid.New(),
+	}
+	material2 := domain.CourseMaterial{
+		ID:         uuid.New(),
+		Name:       "Material 2",
+		Position:   1,
+		StorageKey: uuid.New(),
+	}
+
+	t.Run("returns materials with urls successfully", func(t *testing.T) {
+		mockCourseRepo := &mocks.CourseRepositoryMock{
+			GetCourseMaterialsFunc: func(ctx context.Context, id uuid.UUID) ([]domain.CourseMaterial, error) {
+				return []domain.CourseMaterial{material1, material2}, nil
+			},
+		}
+
+		mockObjectStorage := &mocks.ObjectStorageMock{
+			GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
+				return "https://cdn.example.com/" + key, nil
+			},
+		}
+
+		h := &handlers.Handlers{
+			Course:        mockCourseRepo,
+			ObjectStorage: mockObjectStorage,
+		}
+
+		reqBody := handlers.GetCourseMaterialsParams{
+			CourseID: courseID.String(),
+		}
+
+		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "materials")
+
+		err := h.GetCourseMaterials(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		var actual []domain.CourseMaterialWithURL
+		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+			t.Fatalf("failed to unmarshal response: %v", err)
+		}
+
+		if len(actual) != 2 {
+			t.Fatalf("expected 2 materials, got %d", len(actual))
+		}
+
+		if actual[0].ID != material1.ID || actual[0].Name != material1.Name || actual[0].Position != material1.Position {
+			t.Errorf("unexpected first material: %+v", actual[0])
+		}
+		if actual[0].URL == "" {
+			t.Error("expected non-empty URL for material 1")
+		}
+
+		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseMaterialsCalls()), 1, testhelpers.GetCourseMaterialsHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockObjectStorage.GetCDNURLCalls()), 2, "GetCDNURL")
+	})
+
+	t.Run("validation error - missing course id", func(t *testing.T) {
+		mockCourseRepo := &mocks.CourseRepositoryMock{}
+
+		h := &handlers.Handlers{Course: mockCourseRepo}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, handlers.GetCourseMaterialsParams{}, "materials")
+
+		err := h.GetCourseMaterials(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
+		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseMaterialsCalls()), 0, testhelpers.GetCourseMaterialsHandlerName)
+	})
+
+	t.Run("validation error - invalid uuid format", func(t *testing.T) {
+		mockCourseRepo := &mocks.CourseRepositoryMock{}
+
+		h := &handlers.Handlers{Course: mockCourseRepo}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, handlers.GetCourseMaterialsParams{CourseID: "invalid-uuid"}, "materials")
+
+		err := h.GetCourseMaterials(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.InvalidUUID)
+		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseMaterialsCalls()), 0, testhelpers.GetCourseMaterialsHandlerName)
+	})
+
+	t.Run("forbidden - user not enrolled", func(t *testing.T) {
+		mockCourseRepo := &mocks.CourseRepositoryMock{}
+
+		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
+			IsEnrolledFunc: func(ctx context.Context, params domain.IsEnrolledParams) (bool, error) {
+				return false, nil
+			},
+		}
+
+		h := &handlers.Handlers{
+			Course:    mockCourseRepo,
+			Enrolment: mockEnrolmentRepo,
+		}
+
+		reqBody := handlers.GetCourseMaterialsParams{CourseID: courseID.String()}
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "materials", testhelpers.WithRole(config.UserRole))
+
+		err := h.GetCourseMaterials(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusForbidden, errors.Forbidden("course materials"))
+		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseMaterialsCalls()), 0, testhelpers.GetCourseMaterialsHandlerName)
+	})
+
+	t.Run("internal server error from repo", func(t *testing.T) {
+		mockCourseRepo := &mocks.CourseRepositoryMock{
+			GetCourseMaterialsFunc: func(ctx context.Context, id uuid.UUID) ([]domain.CourseMaterial, error) {
+				return nil, stdErrors.New("database connection failed")
+			},
+		}
+
+		h := &handlers.Handlers{Course: mockCourseRepo}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, handlers.GetCourseMaterialsParams{CourseID: courseID.String()}, "materials")
+
+		err := h.GetCourseMaterials(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("course materials"))
+		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseMaterialsCalls()), 1, testhelpers.GetCourseMaterialsHandlerName)
+	})
+
+	t.Run("internal server error from object storage", func(t *testing.T) {
+		mockCourseRepo := &mocks.CourseRepositoryMock{
+			GetCourseMaterialsFunc: func(ctx context.Context, id uuid.UUID) ([]domain.CourseMaterial, error) {
+				return []domain.CourseMaterial{material1}, nil
+			},
+		}
+
+		mockObjectStorage := &mocks.ObjectStorageMock{
+			GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
+				return "", stdErrors.New("cdn error")
+			},
+		}
+
+		h := &handlers.Handlers{
+			Course:        mockCourseRepo,
+			ObjectStorage: mockObjectStorage,
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, handlers.GetCourseMaterialsParams{CourseID: courseID.String()}, "materials")
+
+		err := h.GetCourseMaterials(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("course materials"))
+		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseMaterialsCalls()), 1, testhelpers.GetCourseMaterialsHandlerName)
 	})
 }

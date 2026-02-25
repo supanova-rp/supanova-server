@@ -116,6 +116,46 @@ func TestCourse(t *testing.T) {
 	})
 }
 
+func TestMaterials(t *testing.T) {
+	t.Run("materials happy path", func(t *testing.T) {
+		materialID := uuid.New()
+		storageKey := uuid.New()
+
+		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
+			Title:             courseTitle,
+			Description:       courseDescription,
+			CompletionTitle:   courseCompletionTitle,
+			CompletionMessage: courseCompletionMessage,
+			Materials: []handlers.AddMaterialParams{
+				{
+					ID:         materialID.String(),
+					Name:       "Study Guide",
+					StorageKey: storageKey.String(),
+					Position:   0,
+				},
+			},
+		})
+
+		enrolUserInCourse(t, testResources.AppURL, created.ID)
+
+		materials := getMaterials(t, testResources.AppURL, created.ID)
+
+		expectedURL := fmt.Sprintf("https://cdn.example.com/%s/materials/%s", created.ID.String(), storageKey.String())
+		expected := []domain.CourseMaterialWithURL{
+			{
+				ID:       materialID,
+				Name:     "Study Guide",
+				Position: 0,
+				URL:      expectedURL,
+			},
+		}
+
+		if diff := cmp.Diff(expected, materials); diff != "" {
+			t.Errorf("materials mismatch (-want +got):\n%s", diff)
+		}
+	})
+}
+
 func TestProgress(t *testing.T) {
 	t.Run("user progress - happy path", func(t *testing.T) {
 		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
