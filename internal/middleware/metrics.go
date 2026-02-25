@@ -16,8 +16,15 @@ func Metrics(next echo.HandlerFunc) echo.HandlerFunc {
 		latency := time.Since(start).Seconds() // prometheus measures latency in seconds
 
 		status := c.Response().Status
+		statusText := http.StatusText(status)
+		method := c.Request().Method
 		path := c.Path()
-		metrics.HTTPRequestDuration.WithLabelValues(c.Request().Method, path, http.StatusText(status)).Observe(latency)
+		
+		metrics.HTTPRequestDuration.WithLabelValues(method, path, statusText).Observe(latency)
+		metrics.HTTPRequestsTotal.WithLabelValues(method, path).Inc()
+		if err != nil {
+			metrics.HTTPRequestsErrorsTotal.WithLabelValues(method, path, statusText).Inc()
+		}
 
 		return err
 	}
