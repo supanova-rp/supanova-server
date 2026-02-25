@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -16,6 +17,16 @@ func Metrics(next echo.HandlerFunc) echo.HandlerFunc {
 		latency := time.Since(start).Seconds() // prometheus measures latency in seconds
 
 		status := c.Response().Status
+		// echo writes response after middleware, so c.Response().Status defaults to 200; read from error instead
+		if err != nil {
+			var httpErr *echo.HTTPError
+			if errors.As(err, &httpErr) {
+				status = httpErr.Code
+			} else {
+				status = http.StatusInternalServerError
+			}
+		}
+
 		statusText := http.StatusText(status)
 		method := c.Request().Method
 		path := c.Path()
