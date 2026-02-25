@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCourse(t *testing.T) {
-	t.Run("course - happy path", func(t *testing.T) {
+	t.Run("course happy path - add, get, delete", func(t *testing.T) {
 		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
 			Title:             courseTitle,
 			Description:       courseDescription,
@@ -88,6 +88,17 @@ func TestCourse(t *testing.T) {
 
 		if diff := cmp.Diff(created, actual); diff != "" {
 			t.Errorf("course mismatch (-want +got):\n%s", diff)
+		}
+
+		deleteCourse(t, testResources.AppURL, created.ID)
+
+		resp := makePOSTRequest(t, testResources.AppURL, "course", &handlers.GetCourseParams{
+			ID: created.ID.String(),
+		})
+		defer resp.Body.Close() //nolint:errcheck
+
+		if resp.StatusCode != http.StatusNotFound {
+			t.Fatalf("expected status 404 after deletion, got %d", resp.StatusCode)
 		}
 	})
 

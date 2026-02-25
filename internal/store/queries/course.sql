@@ -77,3 +77,6 @@ VALUES ($1, $2, $3, $4) RETURNING id;
 -- name: InsertQuizAnswer :exec
 INSERT INTO quizanswers (answer, correct_answer, position, quiz_question_id)
 VALUES ($1, $2, $3, $4);
+
+-- name: DeleteCourse :exec
+DELETE FROM courses WHERE id = $1;

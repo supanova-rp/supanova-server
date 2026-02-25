@@ -208,6 +208,30 @@ func addQuizQuestionParamsFrom(questions []AddQuizQuestionParams) []domain.AddSe
 	})
 }
 
+type DeleteCourseParams struct {
+	CourseID string `json:"course_id" validate:"required"`
+}
+
+func (h *Handlers) DeleteCourse(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	var params DeleteCourseParams
+	if err := bindAndValidate(e, &params); err != nil {
+		return err
+	}
+
+	courseID, err := uuid.Parse(params.CourseID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+	}
+
+	if err := h.Course.DeleteCourse(ctx, courseID); err != nil {
+		return internalError(ctx, errors.Deleting(courseResource), err, slog.String("course_id", params.CourseID))
+	}
+
+	return e.JSON(http.StatusOK, params.CourseID)
+}
+
 func (h *Handlers) GetCoursesOverview(e echo.Context) error {
 	ctx := e.Request().Context()
 

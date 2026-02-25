@@ -5,6 +5,7 @@ package mocks
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"sync"
@@ -23,6 +24,9 @@ var _ domain.CourseRepository = &CourseRepositoryMock{}
 //			AddCourseFunc: func(contextMoqParam context.Context, addCourseParams *domain.AddCourseParams) (*domain.Course, error) {
 //				panic("mock out the AddCourse method")
 //			},
+//			DeleteCourseFunc: func(contextMoqParam context.Context, uUID uuid.UUID) error {
+//				panic("mock out the DeleteCourse method")
+//			},
 //			GetCourseFunc: func(contextMoqParam context.Context, uUID pgtype.UUID) (*domain.Course, error) {
 //				panic("mock out the GetCourse method")
 //			},
@@ -39,6 +43,9 @@ type CourseRepositoryMock struct {
 	// AddCourseFunc mocks the AddCourse method.
 	AddCourseFunc func(contextMoqParam context.Context, addCourseParams *domain.AddCourseParams) (*domain.Course, error)
 
+	// DeleteCourseFunc mocks the DeleteCourse method.
+	DeleteCourseFunc func(contextMoqParam context.Context, uUID uuid.UUID) error
+
 	// GetCourseFunc mocks the GetCourse method.
 	GetCourseFunc func(contextMoqParam context.Context, uUID pgtype.UUID) (*domain.Course, error)
 
@@ -54,6 +61,13 @@ type CourseRepositoryMock struct {
 			// AddCourseParams is the addCourseParams argument value.
 			AddCourseParams *domain.AddCourseParams
 		}
+		// DeleteCourse holds details about calls to the DeleteCourse method.
+		DeleteCourse []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// UUID is the uUID argument value.
+			UUID uuid.UUID
+		}
 		// GetCourse holds details about calls to the GetCourse method.
 		GetCourse []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
@@ -68,6 +82,7 @@ type CourseRepositoryMock struct {
 		}
 	}
 	lockAddCourse          sync.RWMutex
+	lockDeleteCourse       sync.RWMutex
 	lockGetCourse          sync.RWMutex
 	lockGetCoursesOverview sync.RWMutex
 }
@@ -105,6 +120,42 @@ func (mock *CourseRepositoryMock) AddCourseCalls() []struct {
 	mock.lockAddCourse.RLock()
 	calls = mock.calls.AddCourse
 	mock.lockAddCourse.RUnlock()
+	return calls
+}
+
+// DeleteCourse calls DeleteCourseFunc.
+func (mock *CourseRepositoryMock) DeleteCourse(contextMoqParam context.Context, uUID uuid.UUID) error {
+	if mock.DeleteCourseFunc == nil {
+		panic("CourseRepositoryMock.DeleteCourseFunc: method is nil but CourseRepository.DeleteCourse was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam context.Context
+		UUID            uuid.UUID
+	}{
+		ContextMoqParam: contextMoqParam,
+		UUID:            uUID,
+	}
+	mock.lockDeleteCourse.Lock()
+	mock.calls.DeleteCourse = append(mock.calls.DeleteCourse, callInfo)
+	mock.lockDeleteCourse.Unlock()
+	return mock.DeleteCourseFunc(contextMoqParam, uUID)
+}
+
+// DeleteCourseCalls gets all the calls that were made to DeleteCourse.
+// Check the length with:
+//
+//	len(mockedCourseRepository.DeleteCourseCalls())
+func (mock *CourseRepositoryMock) DeleteCourseCalls() []struct {
+	ContextMoqParam context.Context
+	UUID            uuid.UUID
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+		UUID            uuid.UUID
+	}
+	mock.lockDeleteCourse.RLock()
+	calls = mock.calls.DeleteCourse
+	mock.lockDeleteCourse.RUnlock()
 	return calls
 }
 

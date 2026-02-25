@@ -15,6 +15,7 @@ type CourseRepository interface {
 	GetCourse(context.Context, pgtype.UUID) (*Course, error)
 	GetCoursesOverview(context.Context) ([]CourseOverview, error)
 	AddCourse(context.Context, *AddCourseParams) (*Course, error)
+	DeleteCourse(context.Context, uuid.UUID) error
 }
 
 type AddMaterialParams struct {
