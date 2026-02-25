@@ -23,8 +23,10 @@ const (
 	testUserName  = "Test User"
 	testUserEmail = "test@gmail.com"
 
-	courseTitle       = "Course A"
-	courseDescription = "Course description"
+	courseTitle             = "Course A"
+	courseDescription       = "Course description"
+	courseCompletionTitle   = "Course Complete"
+	courseCompletionMessage = "Well done on completing the course"
 )
 
 func getCourse(t *testing.T, baseURL string, id uuid.UUID) *domain.Course {
@@ -65,6 +67,19 @@ func getProgress(t *testing.T, baseURL string, courseID uuid.UUID) *domain.Progr
 	}
 
 	return parseJSONResponse[domain.Progress](t, resp)
+}
+
+func updateProgress(t *testing.T, baseURL string, courseID, sectionID uuid.UUID) {
+	t.Helper()
+
+	resp := makePOSTRequest(t, baseURL, "update-progress", &handlers.UpdateProgressParams{
+		CourseID:  courseID.String(),
+		SectionID: sectionID.String(),
+	})
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("update progress failed, expected status 204, got %d", resp.StatusCode)
+	}
 }
 
 func enrolUserInCourse(t *testing.T, baseURL string, courseID uuid.UUID) {

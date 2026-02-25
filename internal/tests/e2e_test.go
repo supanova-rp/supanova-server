@@ -46,8 +46,30 @@ func TestMain(m *testing.M) {
 func TestCourse(t *testing.T) {
 	t.Run("course - happy path", func(t *testing.T) {
 		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
-			Title:       courseTitle,
-			Description: courseDescription,
+			Title:             courseTitle,
+			Description:       courseDescription,
+			CompletionTitle:   courseCompletionTitle,
+			CompletionMessage: courseCompletionMessage,
+			Sections: []handlers.AddSectionParams{
+				{Video: &handlers.AddVideoSectionParams{
+					Title:      "Video Section",
+					StorageKey: uuid.New().String(),
+					Position:   0,
+				}},
+				{Quiz: &handlers.AddQuizSectionParams{
+					Position: 1,
+					Questions: []handlers.AddQuizQuestionParams{
+						{
+							Question: "What is the correct answer?",
+							Position: 0,
+							Answers: []handlers.AddQuizAnswerParams{
+								{Answer: "Correct", IsCorrectAnswer: true, Position: 0},
+								{Answer: "Wrong", IsCorrectAnswer: false, Position: 1},
+							},
+						},
+					},
+				}},
+			},
 		})
 
 		enrolUserInCourse(t, testResources.AppURL, created.ID)
@@ -75,25 +97,31 @@ func TestCourse(t *testing.T) {
 
 func TestProgress(t *testing.T) {
 	t.Run("user progress - happy path", func(t *testing.T) {
-		// TODO: remove this once test is implemented
-		t.Skip("Skipping this test until update-progress is implemented")
-
-		courseID := uuid.New()
-
-		// TODO: once add-course endpoint has been updated to accept sections:
-		// - call add-course endpoint to create a course for which progress can be updated
-		// - use update-progress endpoint to insert progress data for the course
-		// - use getProgress endpoint to asset that it was updated correctly
-
-		expected := domain.Progress{
-			CompletedSectionIDs: []uuid.UUID{
-				uuid.New(),
-				uuid.New(),
+		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
+			Title:             courseTitle,
+			Description:       courseDescription,
+			CompletionTitle:   courseCompletionTitle,
+			CompletionMessage: courseCompletionMessage,
+			Sections: []handlers.AddSectionParams{
+				{Video: &handlers.AddVideoSectionParams{
+					Title:      "Video Section",
+					StorageKey: uuid.New().String(),
+					Position:   0,
+				}},
 			},
-			CompletedIntro: true,
+		})
+
+		enrolUserInCourse(t, testResources.AppURL, created.ID)
+
+		sectionID := created.Sections[0].GetID()
+		updateProgress(t, testResources.AppURL, created.ID, sectionID)
+
+		expected := &domain.Progress{
+			CompletedSectionIDs: []uuid.UUID{sectionID},
+			CompletedIntro:      false,
 		}
 
-		actual := getProgress(t, testResources.AppURL, courseID)
+		actual := getProgress(t, testResources.AppURL, created.ID)
 
 		if diff := cmp.Diff(expected, actual); diff != "" {
 			t.Errorf("progress mismatch (-want +got):\n%s", diff)

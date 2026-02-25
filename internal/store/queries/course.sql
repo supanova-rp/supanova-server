@@ -56,4 +56,24 @@ GROUP BY qs.id, qs.position, qs.course_id
 ORDER BY qs.position;
 
 -- name: AddCourse :one
-INSERT INTO courses (title, description) VALUES ($1, $2) RETURNING id;
+INSERT INTO courses (title, description, completion_title, completion_message)
+VALUES ($1, $2, $3, $4) RETURNING id;
+
+-- name: InsertCourseMaterial :exec
+INSERT INTO course_materials (id, name, storage_key, position, course_id)
+VALUES ($1, $2, $3, $4, $5);
+
+-- name: InsertVideoSection :exec
+INSERT INTO videosections (title, storage_key, position, course_id)
+VALUES ($1, $2, $3, $4);
+
+-- name: InsertQuizSection :one
+INSERT INTO quizsections (position, course_id) VALUES ($1, $2) RETURNING id;
+
+-- name: InsertQuizQuestion :one
+INSERT INTO quizquestions (question, position, is_multi_answer, quiz_section_id)
+VALUES ($1, $2, $3, $4) RETURNING id;
+
+-- name: InsertQuizAnswer :exec
+INSERT INTO quizanswers (answer, correct_answer, position, quiz_question_id)
+VALUES ($1, $2, $3, $4);

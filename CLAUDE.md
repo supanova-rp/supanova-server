@@ -61,11 +61,6 @@ make sqlc                          # Regenerate sqlc code from queries
 make migrate/create name=<name>    # Create a new migration file
 ```
 
-### Building
-```bash
-make build            # Build Linux binary (CGO_ENABLED=0, GOOS=linux, GOARCH=amd64)
-```
-
 ## Architecture
 
 ### Layer Structure

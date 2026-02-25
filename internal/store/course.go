@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	"github.com/google/uuid"
@@ -73,21 +74,67 @@ func (s *Store) GetCourseSections(ctx context.Context, courseID pgtype.UUID) ([]
 	return sections, nil
 }
 
-func (s *Store) AddCourse(ctx context.Context, course sqlc.AddCourseParams) (*domain.Course, error) {
-	id, err := ExecQuery(ctx, func() (pgtype.UUID, error) {
-		return s.Queries.AddCourse(ctx, course)
+func (s *Store) AddCourse(ctx context.Context, params *domain.AddCourseParams) (*domain.Course, error) {
+	var courseID pgtype.UUID
+
+	err := ExecCommand(ctx, func() error {
+		tx, err := s.pool.Begin(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to begin transaction: %w", err)
+		}
+		defer tx.Rollback(ctx) //nolint:errcheck
+
+		qtx := s.Queries.WithTx(tx)
+
+		id, err := qtx.AddCourse(ctx, sqlc.AddCourseParams{
+			Title:             utils.PGTextFrom(params.Title),
+			Description:       utils.PGTextFrom(params.Description),
+			CompletionTitle:   utils.PGTextFrom(params.CompletionTitle),
+			CompletionMessage: utils.PGTextFrom(params.CompletionMessage),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to insert course: %w", err)
+		}
+		courseID = id
+
+		for _, m := range params.Materials {
+			if err := qtx.InsertCourseMaterial(ctx, insertCourseMaterialParamsFrom(m, id)); err != nil {
+				return fmt.Errorf("failed to insert material: %w", err)
+			}
+		}
+
+		for _, s := range params.Sections {
+			switch sec := s.(type) {
+			case *domain.AddVideoSectionParams:
+				if err := qtx.InsertVideoSection(ctx, insertVideoSectionParamsFrom(sec, id)); err != nil {
+					return fmt.Errorf("failed to insert video section: %w", err)
+				}
+			case *domain.AddQuizSectionParams:
+				sectionID, err := qtx.InsertQuizSection(ctx, insertQuizSectionParamsFrom(sec, id))
+				if err != nil {
+					return fmt.Errorf("failed to insert quiz section: %w", err)
+				}
+				for _, q := range sec.Questions {
+					questionID, err := qtx.InsertQuizQuestion(ctx, insertQuizQuestionParamsFrom(q, sectionID))
+					if err != nil {
+						return fmt.Errorf("failed to insert quiz question: %w", err)
+					}
+					for _, a := range q.Answers {
+						if err := qtx.InsertQuizAnswer(ctx, insertQuizAnswerParamsFrom(a, questionID)); err != nil {
+							return fmt.Errorf("failed to insert quiz answer: %w", err)
+						}
+					}
+				}
+			}
+		}
+
+		return tx.Commit(ctx)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: might be able to remove but would need testing against FE logic to make sure
-	created, err := s.GetCourse(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return created, nil
+	return s.GetCourse(ctx, courseID)
 }
 
 func (s *Store) GetCoursesOverview(ctx context.Context) ([]domain.CourseOverview, error) {
@@ -107,6 +154,50 @@ func (s *Store) EditCourse(ctx context.Context, id pgtype.UUID) error {
 
 func (s *Store) DeleteCourse(ctx context.Context, id pgtype.UUID) error {
 	return nil
+}
+
+func insertVideoSectionParamsFrom(sec *domain.AddVideoSectionParams, courseID pgtype.UUID) sqlc.InsertVideoSectionParams {
+	return sqlc.InsertVideoSectionParams{
+		Title:      utils.PGTextFrom(sec.Title),
+		StorageKey: pgtype.UUID{Bytes: sec.StorageKey, Valid: true},
+		Position:   pgtype.Int4{Int32: int32(sec.Position), Valid: true}, //nolint:gosec
+		CourseID:   courseID,
+	}
+}
+
+func insertQuizSectionParamsFrom(sec *domain.AddQuizSectionParams, courseID pgtype.UUID) sqlc.InsertQuizSectionParams {
+	return sqlc.InsertQuizSectionParams{
+		Position: pgtype.Int4{Int32: int32(sec.Position), Valid: true}, //nolint:gosec
+		CourseID: courseID,
+	}
+}
+
+func insertQuizQuestionParamsFrom(q domain.AddSectionQuestionParams, sectionID pgtype.UUID) sqlc.InsertQuizQuestionParams {
+	return sqlc.InsertQuizQuestionParams{
+		Question:      utils.PGTextFrom(q.Question),
+		Position:      pgtype.Int4{Int32: int32(q.Position), Valid: true}, //nolint:gosec
+		IsMultiAnswer: q.IsMultiAnswer,
+		QuizSectionID: sectionID,
+	}
+}
+
+func insertQuizAnswerParamsFrom(a domain.AddSectionQuestionAnswerParams, questionID pgtype.UUID) sqlc.InsertQuizAnswerParams {
+	return sqlc.InsertQuizAnswerParams{
+		Answer:         utils.PGTextFrom(a.Answer),
+		CorrectAnswer:  pgtype.Bool{Bool: a.IsCorrectAnswer, Valid: true},
+		Position:       pgtype.Int4{Int32: int32(a.Position), Valid: true}, //nolint:gosec
+		QuizQuestionID: questionID,
+	}
+}
+
+func insertCourseMaterialParamsFrom(m domain.AddMaterialParams, courseID pgtype.UUID) sqlc.InsertCourseMaterialParams {
+	return sqlc.InsertCourseMaterialParams{
+		ID:         pgtype.UUID{Bytes: m.ID, Valid: true},
+		Name:       m.Name,
+		StorageKey: pgtype.UUID{Bytes: m.StorageKey, Valid: true},
+		Position:   pgtype.Int4{Int32: int32(m.Position), Valid: true}, //nolint:gosec
+		CourseID:   courseID,
+	}
 }
 
 func courseOverviewFrom(row sqlc.GetCoursesOverviewRow) domain.CourseOverview {
