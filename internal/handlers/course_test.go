@@ -249,9 +249,11 @@ func TestAddCourse(t *testing.T) {
 					Title:      "Intro Video",
 					StorageKey: uuid.New().String(),
 					Position:   0,
+					Type:       domain.SectionTypeVideo,
 				}},
 				{Quiz: &handlers.AddQuizSectionParams{
 					Position: 0,
+					Type:     domain.SectionTypeQuiz,
 					Questions: []handlers.AddQuizQuestionParams{
 						{
 							Question: "What is 2+2?",
@@ -351,6 +353,7 @@ func TestAddCourse(t *testing.T) {
 				{Video: &handlers.AddVideoSectionParams{
 					StorageKey: uuid.New().String(),
 					Position:   0,
+					Type:       domain.SectionTypeVideo,
 				}},
 			},
 		}
@@ -377,6 +380,7 @@ func TestAddCourse(t *testing.T) {
 				{Quiz: &handlers.AddQuizSectionParams{
 					Position:  0,
 					Questions: []handlers.AddQuizQuestionParams{},
+					Type:      domain.SectionTypeQuiz,
 				}},
 			},
 		}

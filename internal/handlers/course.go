@@ -86,12 +86,14 @@ type AddQuizQuestionParams struct {
 }
 
 type AddVideoSectionParams struct {
-	Title      string `json:"title"      validate:"required"`
-	StorageKey string `json:"storageKey" validate:"required,uuid"`
-	Position   int    `json:"position"   validate:"gte=0"`
+	Type       domain.SectionType `json:"type"`
+	Title      string             `json:"title"      validate:"required"`
+	StorageKey string             `json:"storageKey" validate:"required,uuid"`
+	Position   int                `json:"position"   validate:"gte=0"`
 }
 
 type AddQuizSectionParams struct {
+	Type      domain.SectionType      `json:"type"`
 	Position  int                     `json:"position"  validate:"gte=0"`
 	Questions []AddQuizQuestionParams `json:"questions" validate:"required,min=1,dive"`
 }
@@ -101,6 +103,8 @@ type AddSectionParams struct {
 	Quiz  *AddQuizSectionParams  `validate:"omitempty"`
 }
 
+// Custom UnmarshalJSON function needed to handle unmarshalling a section which could be
+// a video or quiz (or other section in future)
 func (s *AddSectionParams) UnmarshalJSON(data []byte) error {
 	// Just unmarshal the type field first to figure out if it is a video/quiz
 	var typeChecker struct {
@@ -122,20 +126,13 @@ func (s *AddSectionParams) UnmarshalJSON(data []byte) error {
 	}
 }
 
+// Custom MarshalJSON func needed to be able to marshal AddSectionParams in tests
 func (s AddSectionParams) MarshalJSON() ([]byte, error) {
-	type videoWire struct {
-		Type string `json:"type"`
-		*AddVideoSectionParams
-	}
-	type quizWire struct {
-		Type string `json:"type"`
-		*AddQuizSectionParams
-	}
 	if s.Video != nil {
-		return json.Marshal(videoWire{"video", s.Video})
+		return json.Marshal(s.Video)
 	}
 	if s.Quiz != nil {
-		return json.Marshal(quizWire{"quiz", s.Quiz})
+		return json.Marshal(s.Quiz)
 	}
 	return nil, fmt.Errorf("AddSectionParams: neither Video nor Quiz is set")
 }
