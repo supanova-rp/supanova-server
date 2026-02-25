@@ -152,8 +152,10 @@ func (s *Store) EditCourse(ctx context.Context, id pgtype.UUID) error {
 	return nil
 }
 
-func (s *Store) DeleteCourse(ctx context.Context, id pgtype.UUID) error {
-	return nil
+func (s *Store) DeleteCourse(ctx context.Context, id uuid.UUID) error {
+	return ExecCommand(ctx, func() error {
+		return s.Queries.DeleteCourse(ctx, utils.PGUUIDFromUUID(id))
+	})
 }
 
 func insertVideoSectionParamsFrom(sec *domain.AddVideoSectionParams, courseID pgtype.UUID) sqlc.InsertVideoSectionParams {

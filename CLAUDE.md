@@ -75,7 +75,7 @@ The codebase follows a clean architecture pattern with clear separation of conce
 
 3. **internal/handlers**: HTTP request handlers. Each handler validates input, calls domain repository methods, and returns responses. Dependencies are injected via the `Handlers` struct.
 
-4. **internal/domain**: Domain interfaces and models. Defines repository interfaces (e.g., `CourseRepository`, `ProgressRepository`) that the handlers depend on. This layer contains pure business models, not database models.
+4. **internal/domain**: Domain interfaces and models. Defines repository interfaces (e.g., `CourseRepository`, `ProgressRepository`) that the handlers depend on. This layer contains pure business models, not database models. Do not reference database layer types in here (e.g. pgtype, sqlc)
 
 5. **internal/store**: Database layer implementing domain repository interfaces. Uses sqlc-generated code for type-safe queries. The `Store` struct embeds sqlc queries and implements all repository interfaces.
 
@@ -116,7 +116,9 @@ Required environment variables: see `.env.example`
 ## Important Notes
 
 - The main branch is `main`
-- Handlers should NOT directly use sqlc-generated models; convert between sqlc models and domain models in the store layer
+- Handlers should NOT directly use sqlc-generated models
+- The domain layer should not reference sqlc-generated models or pgtype types
+- The store layer should accept domain models and convert them to sqlc models
 - Context is passed through all layers for cancellation and timeout support
 - All database queries use pgx/v5 (not database/sql)
 - Use `make mocks` command to generate mocks, not go generate

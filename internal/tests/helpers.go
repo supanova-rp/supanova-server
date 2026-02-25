@@ -43,6 +43,18 @@ func getCourse(t *testing.T, baseURL string, id uuid.UUID) *domain.Course {
 	return parseJSONResponse[domain.Course](t, resp)
 }
 
+func deleteCourse(t *testing.T, baseURL string, id uuid.UUID) {
+	t.Helper()
+
+	resp := makePOSTRequest(t, baseURL, "delete-course", map[string]string{
+		"course_id": id.String(),
+	})
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("delete course failed, expected status 200, got %d", resp.StatusCode)
+	}
+}
+
 func addCourse(t *testing.T, baseURL string, params *handlers.AddCourseParams) *domain.Course {
 	t.Helper()
 
