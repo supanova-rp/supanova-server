@@ -97,7 +97,7 @@ func TestGetProgress(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockRepo.GetProgressCalls()), 0, testhelpers.GetProgressHandlerName)
 	})
 
-	t.Run("progress not found", func(t *testing.T) {
+	t.Run("progress not found - returns empty progress struct", func(t *testing.T) {
 		courseID := testhelpers.Course.ID
 
 		mockRepo := &mocks.ProgressRepositoryMock{
@@ -114,11 +114,31 @@ func TestGetProgress(t *testing.T) {
 			CourseID: courseID.String(),
 		}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, params, "progress")
+		ctx, rec := testhelpers.SetupEchoContext(t, params, "progress")
 
 		err := h.GetProgress(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
-		testhelpers.AssertHTTPError(t, err, http.StatusNotFound, errors.NotFound("user progress"))
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		expected := &domain.Progress{
+			CompletedIntro:      false,
+			CompletedSectionIDs: []uuid.UUID{},
+		}
+
+		var actual domain.Progress
+		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+			t.Fatalf("failed to unmarshal response: %v", err)
+		}
+
+		if diff := cmp.Diff(expected, &actual); diff != "" {
+			t.Errorf("progress mismatch (-want +got):\n%s", diff)
+		}
+
 		testhelpers.AssertRepoCalls(t, len(mockRepo.GetProgressCalls()), 1, testhelpers.GetProgressHandlerName)
 	})
 

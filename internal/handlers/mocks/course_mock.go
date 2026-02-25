@@ -30,6 +30,9 @@ var _ domain.CourseRepository = &CourseRepositoryMock{}
 //			GetCourseFunc: func(contextMoqParam context.Context, uUID pgtype.UUID) (*domain.Course, error) {
 //				panic("mock out the GetCourse method")
 //			},
+//			GetCourseMaterialsFunc: func(contextMoqParam context.Context, uUID uuid.UUID) ([]domain.CourseMaterial, error) {
+//				panic("mock out the GetCourseMaterials method")
+//			},
 //			GetCoursesOverviewFunc: func(contextMoqParam context.Context) ([]domain.CourseOverview, error) {
 //				panic("mock out the GetCoursesOverview method")
 //			},
@@ -48,6 +51,9 @@ type CourseRepositoryMock struct {
 
 	// GetCourseFunc mocks the GetCourse method.
 	GetCourseFunc func(contextMoqParam context.Context, uUID pgtype.UUID) (*domain.Course, error)
+
+	// GetCourseMaterialsFunc mocks the GetCourseMaterials method.
+	GetCourseMaterialsFunc func(contextMoqParam context.Context, uUID uuid.UUID) ([]domain.CourseMaterial, error)
 
 	// GetCoursesOverviewFunc mocks the GetCoursesOverview method.
 	GetCoursesOverviewFunc func(contextMoqParam context.Context) ([]domain.CourseOverview, error)
@@ -75,6 +81,13 @@ type CourseRepositoryMock struct {
 			// UUID is the uUID argument value.
 			UUID pgtype.UUID
 		}
+		// GetCourseMaterials holds details about calls to the GetCourseMaterials method.
+		GetCourseMaterials []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// UUID is the uUID argument value.
+			UUID uuid.UUID
+		}
 		// GetCoursesOverview holds details about calls to the GetCoursesOverview method.
 		GetCoursesOverview []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
@@ -84,6 +97,7 @@ type CourseRepositoryMock struct {
 	lockAddCourse          sync.RWMutex
 	lockDeleteCourse       sync.RWMutex
 	lockGetCourse          sync.RWMutex
+	lockGetCourseMaterials sync.RWMutex
 	lockGetCoursesOverview sync.RWMutex
 }
 
@@ -192,6 +206,42 @@ func (mock *CourseRepositoryMock) GetCourseCalls() []struct {
 	mock.lockGetCourse.RLock()
 	calls = mock.calls.GetCourse
 	mock.lockGetCourse.RUnlock()
+	return calls
+}
+
+// GetCourseMaterials calls GetCourseMaterialsFunc.
+func (mock *CourseRepositoryMock) GetCourseMaterials(contextMoqParam context.Context, uUID uuid.UUID) ([]domain.CourseMaterial, error) {
+	if mock.GetCourseMaterialsFunc == nil {
+		panic("CourseRepositoryMock.GetCourseMaterialsFunc: method is nil but CourseRepository.GetCourseMaterials was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam context.Context
+		UUID            uuid.UUID
+	}{
+		ContextMoqParam: contextMoqParam,
+		UUID:            uUID,
+	}
+	mock.lockGetCourseMaterials.Lock()
+	mock.calls.GetCourseMaterials = append(mock.calls.GetCourseMaterials, callInfo)
+	mock.lockGetCourseMaterials.Unlock()
+	return mock.GetCourseMaterialsFunc(contextMoqParam, uUID)
+}
+
+// GetCourseMaterialsCalls gets all the calls that were made to GetCourseMaterials.
+// Check the length with:
+//
+//	len(mockedCourseRepository.GetCourseMaterialsCalls())
+func (mock *CourseRepositoryMock) GetCourseMaterialsCalls() []struct {
+	ContextMoqParam context.Context
+	UUID            uuid.UUID
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+		UUID            uuid.UUID
+	}
+	mock.lockGetCourseMaterials.RLock()
+	calls = mock.calls.GetCourseMaterials
+	mock.lockGetCourseMaterials.RUnlock()
 	return calls
 }
 

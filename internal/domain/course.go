@@ -16,6 +16,7 @@ type CourseRepository interface {
 	GetCoursesOverview(context.Context) ([]CourseOverview, error)
 	AddCourse(context.Context, *AddCourseParams) (*Course, error)
 	DeleteCourse(context.Context, uuid.UUID) error
+	GetCourseMaterials(context.Context, uuid.UUID) ([]CourseMaterial, error)
 }
 
 type AddMaterialParams struct {
@@ -130,10 +131,17 @@ type CourseOverview struct {
 }
 
 type CourseMaterial struct {
-	ID         uuid.UUID `json:"id"`
-	Name       string    `json:"name"`
-	Position   int       `json:"position"`
-	StorageKey uuid.UUID `json:"storageKey"`
+	ID         uuid.UUID
+	Name       string
+	Position   int
+	StorageKey uuid.UUID
+}
+
+type CourseMaterialWithURL struct {
+	ID       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	Position int       `json:"position"`
+	URL      string    `json:"url"`
 }
 
 type CourseSection interface {

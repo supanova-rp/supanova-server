@@ -23,6 +23,7 @@ const (
 	AddCourseHandlerName            = "AddCourse"
 	DeleteCourseHandlerName         = "DeleteCourse"
 	GetCourseHandlerName            = "GetCourse"
+	GetCourseMaterialsHandlerName   = "GetCourseMaterials"
 	GetCoursesOverviewHandlerName   = "GetCoursesOverview"
 	IsEnrolledHandlerName           = "IsEnrolled"
 	GetVideoURLHandlerName          = "GetVideoURL"

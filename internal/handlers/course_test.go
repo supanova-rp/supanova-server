@@ -488,3 +488,96 @@ func TestGetCoursesOverview(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockRepo.GetCoursesOverviewCalls()), 1, testhelpers.GetCoursesOverviewHandlerName)
 	})
 }
+
+func TestGetCourseMaterials(t *testing.T) {
+	courseID := testhelpers.Course.ID
+
+	material1 := domain.CourseMaterial{
+		ID:         uuid.New(),
+		Name:       "Material 1",
+		Position:   0,
+		StorageKey: uuid.New(),
+	}
+	material2 := domain.CourseMaterial{
+		ID:         uuid.New(),
+		Name:       "Material 2",
+		Position:   1,
+		StorageKey: uuid.New(),
+	}
+
+	t.Run("returns materials with urls successfully", func(t *testing.T) {
+		mockCourseRepo := &mocks.CourseRepositoryMock{
+			GetCourseMaterialsFunc: func(ctx context.Context, id uuid.UUID) ([]domain.CourseMaterial, error) {
+				return []domain.CourseMaterial{material1, material2}, nil
+			},
+		}
+
+		mockObjectStorage := &mocks.ObjectStorageMock{
+			GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
+				return "https://cdn.example.com/" + key, nil
+			},
+		}
+
+		h := &handlers.Handlers{
+			Course:        mockCourseRepo,
+			ObjectStorage: mockObjectStorage,
+		}
+
+		reqBody := handlers.GetCourseMaterialsParams{
+			CourseID: courseID.String(),
+		}
+
+		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "materials")
+
+		err := h.GetCourseMaterials(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		var actual []domain.CourseMaterialWithURL
+		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+			t.Fatalf("failed to unmarshal response: %v", err)
+		}
+
+		if len(actual) != 2 {
+			t.Fatalf("expected 2 materials, got %d", len(actual))
+		}
+
+		if actual[0].ID != material1.ID || actual[0].Name != material1.Name || actual[0].Position != material1.Position {
+			t.Errorf("unexpected first material: %+v", actual[0])
+		}
+		if actual[0].URL == "" {
+			t.Error("expected non-empty URL for material 1")
+		}
+
+		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseMaterialsCalls()), 1, testhelpers.GetCourseMaterialsHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockObjectStorage.GetCDNURLCalls()), 2, "GetCDNURL")
+	})
+
+	t.Run("forbidden - user not enrolled", func(t *testing.T) {
+		mockCourseRepo := &mocks.CourseRepositoryMock{}
+
+		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
+			IsEnrolledFunc: func(ctx context.Context, params domain.IsEnrolledParams) (bool, error) {
+				return false, nil
+			},
+		}
+
+		h := &handlers.Handlers{
+			Course:    mockCourseRepo,
+			Enrolment: mockEnrolmentRepo,
+		}
+
+		reqBody := handlers.GetCourseMaterialsParams{CourseID: courseID.String()}
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "materials", testhelpers.WithRole(config.UserRole))
+
+		err := h.GetCourseMaterials(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusForbidden, errors.Forbidden("course"))
+		testhelpers.AssertRepoCalls(t, len(mockCourseRepo.GetCourseMaterialsCalls()), 0, testhelpers.GetCourseMaterialsHandlerName)
+	})
+}

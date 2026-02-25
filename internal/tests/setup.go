@@ -67,6 +67,12 @@ func setupTestResources(ctx context.Context) (*TestResources, error) {
 		},
 	}
 
+	mockObjectStorage := &mocks.ObjectStorageMock{
+		GetCDNURLFunc: func(_ context.Context, key string) (string, error) {
+			return fmt.Sprintf("https://cdn.example.com/%s", key), nil
+		},
+	}
+
 	cfg := &config.App{
 		Port:        testPort,
 		DatabaseURL: postgresURL,
@@ -83,8 +89,9 @@ func setupTestResources(ctx context.Context) (*TestResources, error) {
 	// Start the app in a goroutine
 	go func() {
 		err := app.Run(ctx, cfg, app.Dependencies{
-			Store:        st,
-			EmailService: mockEmailService,
+			Store:         st,
+			EmailService:  mockEmailService,
+			ObjectStorage: mockObjectStorage,
 		})
 		if err != nil {
 			slog.Error("app error", slog.Any("error", err))
