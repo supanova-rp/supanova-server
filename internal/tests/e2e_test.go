@@ -63,9 +63,11 @@ func TestCourse(t *testing.T) {
 					Title:      "Video Section",
 					StorageKey: uuid.New().String(),
 					Position:   0,
+					Type:       domain.SectionTypeVideo,
 				}},
 				{Quiz: &handlers.AddQuizSectionParams{
 					Position: 1,
+					Type:     domain.SectionTypeQuiz,
 					Questions: []handlers.AddQuizQuestionParams{
 						{
 							Question: "What is the correct answer?",
@@ -115,6 +117,7 @@ func TestProgress(t *testing.T) {
 					Title:      "Video Section",
 					StorageKey: uuid.New().String(),
 					Position:   0,
+					Type:       domain.SectionTypeVideo,
 				}},
 			},
 		})
