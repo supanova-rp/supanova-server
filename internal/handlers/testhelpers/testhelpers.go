@@ -82,21 +82,21 @@ type setupOptions struct {
 	role   *config.Role
 }
 
-type option func(*setupOptions)
+type EchoTestOption func(*setupOptions)
 
-func WithUserID(id string) option {
+func WithUserID(id string) EchoTestOption {
 	return func(o *setupOptions) {
 		o.userID = &id
 	}
 }
 
-func WithRole(role config.Role) option {
+func WithRole(role config.Role) EchoTestOption {
 	return func(o *setupOptions) {
 		o.role = &role
 	}
 }
 
-func SetupEchoContext(t *testing.T, reqBody interface{}, endpoint string, opts ...option) (echo.Context, *httptest.ResponseRecorder) {
+func SetupEchoContext(t *testing.T, reqBody interface{}, endpoint string, opts ...EchoTestOption) (echo.Context, *httptest.ResponseRecorder) {
 	t.Helper()
 
 	adminRole := config.AdminRole
