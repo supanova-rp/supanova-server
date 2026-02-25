@@ -19,7 +19,7 @@ func Metrics(next echo.HandlerFunc) echo.HandlerFunc {
 		statusText := http.StatusText(status)
 		method := c.Request().Method
 		path := c.Path()
-		
+
 		metrics.HTTPRequestDuration.WithLabelValues(method, path, statusText).Observe(latency)
 		metrics.HTTPRequestsTotal.WithLabelValues(method, path).Inc()
 		if err != nil {
