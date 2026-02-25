@@ -7,7 +7,6 @@ import (
 	"context"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/supanova-rp/supanova-server/internal/domain"
-	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 	"sync"
 )
 
@@ -21,7 +20,7 @@ var _ domain.CourseRepository = &CourseRepositoryMock{}
 //
 //		// make and configure a mocked domain.CourseRepository
 //		mockedCourseRepository := &CourseRepositoryMock{
-//			AddCourseFunc: func(contextMoqParam context.Context, addCourseParams sqlc.AddCourseParams) (*domain.Course, error) {
+//			AddCourseFunc: func(contextMoqParam context.Context, addCourseParams *domain.AddCourseParams) (*domain.Course, error) {
 //				panic("mock out the AddCourse method")
 //			},
 //			GetCourseFunc: func(contextMoqParam context.Context, uUID pgtype.UUID) (*domain.Course, error) {
@@ -38,7 +37,7 @@ var _ domain.CourseRepository = &CourseRepositoryMock{}
 //	}
 type CourseRepositoryMock struct {
 	// AddCourseFunc mocks the AddCourse method.
-	AddCourseFunc func(contextMoqParam context.Context, addCourseParams sqlc.AddCourseParams) (*domain.Course, error)
+	AddCourseFunc func(contextMoqParam context.Context, addCourseParams *domain.AddCourseParams) (*domain.Course, error)
 
 	// GetCourseFunc mocks the GetCourse method.
 	GetCourseFunc func(contextMoqParam context.Context, uUID pgtype.UUID) (*domain.Course, error)
@@ -53,7 +52,7 @@ type CourseRepositoryMock struct {
 			// ContextMoqParam is the contextMoqParam argument value.
 			ContextMoqParam context.Context
 			// AddCourseParams is the addCourseParams argument value.
-			AddCourseParams sqlc.AddCourseParams
+			AddCourseParams *domain.AddCourseParams
 		}
 		// GetCourse holds details about calls to the GetCourse method.
 		GetCourse []struct {
@@ -74,13 +73,13 @@ type CourseRepositoryMock struct {
 }
 
 // AddCourse calls AddCourseFunc.
-func (mock *CourseRepositoryMock) AddCourse(contextMoqParam context.Context, addCourseParams sqlc.AddCourseParams) (*domain.Course, error) {
+func (mock *CourseRepositoryMock) AddCourse(contextMoqParam context.Context, addCourseParams *domain.AddCourseParams) (*domain.Course, error) {
 	if mock.AddCourseFunc == nil {
 		panic("CourseRepositoryMock.AddCourseFunc: method is nil but CourseRepository.AddCourse was just called")
 	}
 	callInfo := struct {
 		ContextMoqParam context.Context
-		AddCourseParams sqlc.AddCourseParams
+		AddCourseParams *domain.AddCourseParams
 	}{
 		ContextMoqParam: contextMoqParam,
 		AddCourseParams: addCourseParams,
@@ -97,11 +96,11 @@ func (mock *CourseRepositoryMock) AddCourse(contextMoqParam context.Context, add
 //	len(mockedCourseRepository.AddCourseCalls())
 func (mock *CourseRepositoryMock) AddCourseCalls() []struct {
 	ContextMoqParam context.Context
-	AddCourseParams sqlc.AddCourseParams
+	AddCourseParams *domain.AddCourseParams
 } {
 	var calls []struct {
 		ContextMoqParam context.Context
-		AddCourseParams sqlc.AddCourseParams
+		AddCourseParams *domain.AddCourseParams
 	}
 	mock.lockAddCourse.RLock()
 	calls = mock.calls.AddCourse

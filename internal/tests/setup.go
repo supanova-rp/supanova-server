@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	testPort                = "3001"
+	testPort                = "3007"
 	appStartTimeout         = 3 * time.Second
 	readyCheckRetryInterval = 250 * time.Millisecond
 )

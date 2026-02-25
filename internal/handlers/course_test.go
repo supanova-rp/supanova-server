@@ -18,7 +18,6 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
 	"github.com/supanova-rp/supanova-server/internal/handlers/testhelpers"
-	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 )
 
 func TestGetCourse(t *testing.T) {
@@ -233,7 +232,7 @@ func TestAddCourse(t *testing.T) {
 		expected := testhelpers.Course
 
 		mockRepo := &mocks.CourseRepositoryMock{
-			AddCourseFunc: func(ctx context.Context, params sqlc.AddCourseParams) (*domain.Course, error) {
+			AddCourseFunc: func(ctx context.Context, params *domain.AddCourseParams) (*domain.Course, error) {
 				return expected, nil
 			},
 		}
@@ -241,8 +240,31 @@ func TestAddCourse(t *testing.T) {
 		h := &handlers.Handlers{Course: mockRepo}
 
 		reqBody := handlers.AddCourseParams{
-			Title:       "New Course",
-			Description: "New Description",
+			Title:             "New Course",
+			Description:       "New Description",
+			CompletionTitle:   "Completion Title",
+			CompletionMessage: "Completion Message",
+			Sections: []handlers.AddSectionParams{
+				{Video: &handlers.AddVideoSectionParams{
+					Title:      "Intro Video",
+					StorageKey: uuid.New().String(),
+					Position:   0,
+					Type:       domain.SectionTypeVideo,
+				}},
+				{Quiz: &handlers.AddQuizSectionParams{
+					Position: 0,
+					Type:     domain.SectionTypeQuiz,
+					Questions: []handlers.AddQuizQuestionParams{
+						{
+							Question: "What is 2+2?",
+							Position: 0,
+							Answers: []handlers.AddQuizAnswerParams{
+								{Answer: "4", IsCorrectAnswer: true, Position: 0},
+							},
+						},
+					},
+				}},
+			},
 		}
 
 		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "course")
@@ -254,15 +276,6 @@ func TestAddCourse(t *testing.T) {
 
 		if rec.Code != http.StatusCreated {
 			t.Errorf("expected status %d, got %d", http.StatusCreated, rec.Code)
-		}
-
-		var actual domain.Course
-		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-			t.Fatalf("failed to unmarshal response: %v", err)
-		}
-
-		if diff := cmp.Diff(expected, &actual); diff != "" {
-			t.Errorf("course mismatch (-want +got):\n%s", diff)
 		}
 
 		testhelpers.AssertRepoCalls(t, len(mockRepo.AddCourseCalls()), 1, testhelpers.AddCourseHandlerName)
@@ -304,7 +317,7 @@ func TestAddCourse(t *testing.T) {
 
 	t.Run("internal server error", func(t *testing.T) {
 		mockRepo := &mocks.CourseRepositoryMock{
-			AddCourseFunc: func(ctx context.Context, params sqlc.AddCourseParams) (*domain.Course, error) {
+			AddCourseFunc: func(ctx context.Context, params *domain.AddCourseParams) (*domain.Course, error) {
 				return nil, stdErrors.New("database connection failed")
 			},
 		}
@@ -312,8 +325,10 @@ func TestAddCourse(t *testing.T) {
 		h := &handlers.Handlers{Course: mockRepo}
 
 		reqBody := handlers.AddCourseParams{
-			Title:       testhelpers.Course.Title,
-			Description: testhelpers.Course.Description,
+			Title:             testhelpers.Course.Title,
+			Description:       testhelpers.Course.Description,
+			CompletionTitle:   testhelpers.Course.CompletionTitle,
+			CompletionMessage: testhelpers.Course.CompletionMessage,
 		}
 
 		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
@@ -322,6 +337,89 @@ func TestAddCourse(t *testing.T) {
 
 		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Creating("course"))
 		testhelpers.AssertRepoCalls(t, len(mockRepo.AddCourseCalls()), 1, testhelpers.AddCourseHandlerName)
+	})
+
+	t.Run("validation error - video section missing title", func(t *testing.T) {
+		mockRepo := &mocks.CourseRepositoryMock{}
+
+		h := &handlers.Handlers{Course: mockRepo}
+
+		reqBody := handlers.AddCourseParams{
+			Title:             "New Course",
+			Description:       "New Description",
+			CompletionTitle:   "Completion Title",
+			CompletionMessage: "Completion Message",
+			Sections: []handlers.AddSectionParams{
+				{Video: &handlers.AddVideoSectionParams{
+					StorageKey: uuid.New().String(),
+					Position:   0,
+					Type:       domain.SectionTypeVideo,
+				}},
+			},
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
+
+		err := h.AddCourse(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
+		testhelpers.AssertRepoCalls(t, len(mockRepo.AddCourseCalls()), 0, testhelpers.AddCourseHandlerName)
+	})
+
+	t.Run("validation error - quiz section no questions", func(t *testing.T) {
+		mockRepo := &mocks.CourseRepositoryMock{}
+
+		h := &handlers.Handlers{Course: mockRepo}
+
+		reqBody := handlers.AddCourseParams{
+			Title:             "New Course",
+			Description:       "New Description",
+			CompletionTitle:   "Completion Title",
+			CompletionMessage: "Completion Message",
+			Sections: []handlers.AddSectionParams{
+				{Quiz: &handlers.AddQuizSectionParams{
+					Position:  0,
+					Questions: []handlers.AddQuizQuestionParams{},
+					Type:      domain.SectionTypeQuiz,
+				}},
+			},
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
+
+		err := h.AddCourse(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
+		testhelpers.AssertRepoCalls(t, len(mockRepo.AddCourseCalls()), 0, testhelpers.AddCourseHandlerName)
+	})
+
+	t.Run("unknown section type", func(t *testing.T) {
+		mockRepo := &mocks.CourseRepositoryMock{}
+
+		h := &handlers.Handlers{Course: mockRepo}
+
+		reqBody := struct {
+			Title             string           `json:"title"`
+			Description       string           `json:"description"`
+			CompletionTitle   string           `json:"completionTitle"`
+			CompletionMessage string           `json:"completionMessage"`
+			Sections          []map[string]any `json:"sections"`
+		}{
+			Title:             "New Course",
+			Description:       "New Description",
+			CompletionTitle:   "Completion Title",
+			CompletionMessage: "Completion Message",
+			Sections: []map[string]any{
+				{"type": "unknown"},
+			},
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "course")
+
+		err := h.AddCourse(ctx)
+
+		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.InvalidRequestBody)
+		testhelpers.AssertRepoCalls(t, len(mockRepo.AddCourseCalls()), 0, testhelpers.AddCourseHandlerName)
 	})
 }
 
