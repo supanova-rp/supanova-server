@@ -96,7 +96,12 @@ func WithRole(role config.Role) EchoTestOption {
 	}
 }
 
-func SetupEchoContext(t *testing.T, reqBody interface{}, endpoint string, opts ...EchoTestOption) (echo.Context, *httptest.ResponseRecorder) {
+func SetupEchoContext(
+	t *testing.T,
+	reqBody interface{},
+	endpoint string,
+	opts ...EchoTestOption,
+) (echo.Context, *httptest.ResponseRecorder) {
 	t.Helper()
 
 	adminRole := config.AdminRole
