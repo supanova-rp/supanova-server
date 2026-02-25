@@ -12,16 +12,24 @@ import (
 )
 
 const addCourse = `-- name: AddCourse :one
-INSERT INTO courses (title, description) VALUES ($1, $2) RETURNING id
+INSERT INTO courses (title, description, completion_title, completion_message)
+VALUES ($1, $2, $3, $4) RETURNING id
 `
 
 type AddCourseParams struct {
-	Title       pgtype.Text
-	Description pgtype.Text
+	Title             pgtype.Text
+	Description       pgtype.Text
+	CompletionTitle   pgtype.Text
+	CompletionMessage pgtype.Text
 }
 
 func (q *Queries) AddCourse(ctx context.Context, arg AddCourseParams) (pgtype.UUID, error) {
-	row := q.db.QueryRow(ctx, addCourse, arg.Title, arg.Description)
+	row := q.db.QueryRow(ctx, addCourse,
+		arg.Title,
+		arg.Description,
+		arg.CompletionTitle,
+		arg.CompletionMessage,
+	)
 	var id pgtype.UUID
 	err := row.Scan(&id)
 	return id, err
@@ -222,4 +230,112 @@ func (q *Queries) GetCoursesOverview(ctx context.Context) ([]GetCoursesOverviewR
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertCourseMaterial = `-- name: InsertCourseMaterial :exec
+INSERT INTO course_materials (id, name, storage_key, position, course_id)
+VALUES ($1, $2, $3, $4, $5)
+`
+
+type InsertCourseMaterialParams struct {
+	ID         pgtype.UUID
+	Name       string
+	StorageKey pgtype.UUID
+	Position   pgtype.Int4
+	CourseID   pgtype.UUID
+}
+
+func (q *Queries) InsertCourseMaterial(ctx context.Context, arg InsertCourseMaterialParams) error {
+	_, err := q.db.Exec(ctx, insertCourseMaterial,
+		arg.ID,
+		arg.Name,
+		arg.StorageKey,
+		arg.Position,
+		arg.CourseID,
+	)
+	return err
+}
+
+const insertQuizAnswer = `-- name: InsertQuizAnswer :exec
+INSERT INTO quizanswers (answer, correct_answer, position, quiz_question_id)
+VALUES ($1, $2, $3, $4)
+`
+
+type InsertQuizAnswerParams struct {
+	Answer         pgtype.Text
+	CorrectAnswer  pgtype.Bool
+	Position       pgtype.Int4
+	QuizQuestionID pgtype.UUID
+}
+
+func (q *Queries) InsertQuizAnswer(ctx context.Context, arg InsertQuizAnswerParams) error {
+	_, err := q.db.Exec(ctx, insertQuizAnswer,
+		arg.Answer,
+		arg.CorrectAnswer,
+		arg.Position,
+		arg.QuizQuestionID,
+	)
+	return err
+}
+
+const insertQuizQuestion = `-- name: InsertQuizQuestion :one
+INSERT INTO quizquestions (question, position, is_multi_answer, quiz_section_id)
+VALUES ($1, $2, $3, $4) RETURNING id
+`
+
+type InsertQuizQuestionParams struct {
+	Question      pgtype.Text
+	Position      pgtype.Int4
+	IsMultiAnswer bool
+	QuizSectionID pgtype.UUID
+}
+
+func (q *Queries) InsertQuizQuestion(ctx context.Context, arg InsertQuizQuestionParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, insertQuizQuestion,
+		arg.Question,
+		arg.Position,
+		arg.IsMultiAnswer,
+		arg.QuizSectionID,
+	)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const insertQuizSection = `-- name: InsertQuizSection :one
+INSERT INTO quizsections (position, course_id) VALUES ($1, $2) RETURNING id
+`
+
+type InsertQuizSectionParams struct {
+	Position pgtype.Int4
+	CourseID pgtype.UUID
+}
+
+func (q *Queries) InsertQuizSection(ctx context.Context, arg InsertQuizSectionParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, insertQuizSection, arg.Position, arg.CourseID)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const insertVideoSection = `-- name: InsertVideoSection :exec
+INSERT INTO videosections (title, storage_key, position, course_id)
+VALUES ($1, $2, $3, $4)
+`
+
+type InsertVideoSectionParams struct {
+	Title      pgtype.Text
+	StorageKey pgtype.UUID
+	Position   pgtype.Int4
+	CourseID   pgtype.UUID
+}
+
+func (q *Queries) InsertVideoSection(ctx context.Context, arg InsertVideoSectionParams) error {
+	_, err := q.db.Exec(ctx, insertVideoSection,
+		arg.Title,
+		arg.StorageKey,
+		arg.Position,
+		arg.CourseID,
+	)
+	return err
 }
