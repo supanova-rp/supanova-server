@@ -40,6 +40,7 @@ func RegisterMediaRoutes(private *echo.Group, h *handlers.Handlers) {
 
 	// admin routes
 	private.POST("/get-video-upload-url", h.GetVideoUploadURL)
+	private.POST("/get-material-upload-url", h.GetMaterialUploadURL)
 }
 
 func RegisterEnrolmentRoutes(private *echo.Group, h *handlers.Handlers) {

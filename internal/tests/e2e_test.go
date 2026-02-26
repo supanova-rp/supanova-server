@@ -140,7 +140,7 @@ func TestMaterials(t *testing.T) {
 
 		materials := getMaterials(t, testResources.AppURL, created.ID)
 
-		expectedURL := fmt.Sprintf("https://cdn.example.com/%s/materials/%s", created.ID.String(), storageKey.String())
+		expectedURL := fmt.Sprintf("https://cdn.example.com/%s/materials/%s.pdf", created.ID.String(), storageKey.String())
 		expected := []domain.CourseMaterialWithURL{
 			{
 				ID:       materialID,

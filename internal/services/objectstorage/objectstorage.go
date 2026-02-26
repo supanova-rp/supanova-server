@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	URLExpiry = time.Hour * 6
-	CDNExpiry = time.Hour * 2
+	URLExpiry = time.Hour * 12
+	CDNExpiry = time.Hour * 12
 )
 
 type Store struct {
