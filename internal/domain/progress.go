@@ -14,6 +14,7 @@ type ProgressRepository interface {
 	GetAllProgress(context.Context) ([]*FullProgress, error)
 	HasCompletedCourse(context.Context, HasCompletedCourseParams) (bool, error)
 	SetCourseCompleted(context.Context, SetCourseCompletedParams) error
+	ResetProgress(context.Context, ResetProgressParams) error
 }
 
 type GetProgressParams struct {
@@ -33,6 +34,11 @@ type HasCompletedCourseParams struct {
 }
 
 type SetCourseCompletedParams struct {
+	UserID   string
+	CourseID uuid.UUID
+}
+
+type ResetProgressParams struct {
 	UserID   string
 	CourseID uuid.UUID
 }

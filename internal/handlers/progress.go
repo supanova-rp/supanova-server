@@ -183,6 +183,39 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 	return e.NoContent(http.StatusNoContent)
 }
 
+type ResetProgressParams struct {
+	CourseID string `json:"courseId" validate:"required"`
+}
+
+func (h *Handlers) ResetProgress(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	userID, ok := getUserID(ctx)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+	}
+
+	var params ResetProgressParams
+	if err := bindAndValidate(e, &params); err != nil {
+		return err
+	}
+
+	courseID, err := uuid.Parse(params.CourseID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+	}
+
+	err = h.Progress.ResetProgress(ctx, domain.ResetProgressParams{
+		UserID:   userID,
+		CourseID: courseID,
+	})
+	if err != nil {
+		return internalError(ctx, errors.Updating(progressResource), err, slog.String("course_id", params.CourseID))
+	}
+
+	return e.NoContent(http.StatusNoContent)
+}
+
 func (h *Handlers) GetAllProgress(e echo.Context) error {
 	ctx := e.Request().Context()
 

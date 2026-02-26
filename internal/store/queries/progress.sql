@@ -24,6 +24,13 @@ DO UPDATE SET completed_course = TRUE;
 -- name: GetCompletedSectionIDsByUserID :many
 SELECT completed_section_ids FROM userprogress WHERE user_id = $1;
 
+-- name: ResetProgress :exec
+UPDATE userprogress
+SET completed_section_ids = ARRAY[]::uuid[],
+    completed_intro = FALSE,
+    completed_course = FALSE
+WHERE user_id = $1 AND course_id = $2;
+
 -- name: GetAllProgress :many
 SELECT
   COALESCE(uc.user_id, up.user_id) AS user_id,

@@ -61,6 +61,17 @@ func (s *Store) HasCompletedCourse(ctx context.Context, args domain.HasCompleted
 	return completed.Bool, err
 }
 
+func (s *Store) ResetProgress(ctx context.Context, args domain.ResetProgressParams) error {
+	sqlcArgs := sqlc.ResetProgressParams{
+		UserID:   args.UserID,
+		CourseID: utils.PGUUIDFromUUID(args.CourseID),
+	}
+
+	return ExecCommand(ctx, func() error {
+		return s.Queries.ResetProgress(ctx, sqlcArgs)
+	})
+}
+
 func (s *Store) SetCourseCompleted(ctx context.Context, args domain.SetCourseCompletedParams) error {
 	sqlcArgs := sqlc.SetCourseCompletedParams{
 		UserID:   args.UserID,

@@ -188,5 +188,18 @@ func TestProgress(t *testing.T) {
 		if diff := cmp.Diff(expected, actual); diff != "" {
 			t.Errorf("progress mismatch (-want +got):\n%s", diff)
 		}
+
+		resetProgress(t, testResources.AppURL, created.ID)
+
+		afterReset := getProgress(t, testResources.AppURL, created.ID)
+
+		expectedAfterReset := &domain.Progress{
+			CompletedSectionIDs: nil,
+			CompletedIntro:      false,
+		}
+
+		if diff := cmp.Diff(expectedAfterReset, afterReset); diff != "" {
+			t.Errorf("progress after reset mismatch (-want +got):\n%s", diff)
+		}
 	})
 }

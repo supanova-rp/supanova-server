@@ -108,6 +108,18 @@ func getMaterials(t *testing.T, baseURL string, courseID uuid.UUID) []domain.Cou
 	return *parseJSONResponse[[]domain.CourseMaterialWithURL](t, resp)
 }
 
+func resetProgress(t *testing.T, baseURL string, courseID uuid.UUID) {
+	t.Helper()
+
+	resp := makePOSTRequest(t, baseURL, "reset-progress", &handlers.ResetProgressParams{
+		CourseID: courseID.String(),
+	})
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("reset progress failed, expected status 204, got %d", resp.StatusCode)
+	}
+}
+
 func enrolUserInCourse(t *testing.T, baseURL string, courseID uuid.UUID) {
 	t.Helper()
 

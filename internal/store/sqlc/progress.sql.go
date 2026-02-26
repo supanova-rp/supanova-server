@@ -132,6 +132,24 @@ func (q *Queries) HasCompletedCourse(ctx context.Context, arg HasCompletedCourse
 	return completed_course, err
 }
 
+const resetProgress = `-- name: ResetProgress :exec
+UPDATE userprogress
+SET completed_section_ids = ARRAY[]::uuid[],
+    completed_intro = FALSE,
+    completed_course = FALSE
+WHERE user_id = $1 AND course_id = $2
+`
+
+type ResetProgressParams struct {
+	UserID   string
+	CourseID pgtype.UUID
+}
+
+func (q *Queries) ResetProgress(ctx context.Context, arg ResetProgressParams) error {
+	_, err := q.db.Exec(ctx, resetProgress, arg.UserID, arg.CourseID)
+	return err
+}
+
 const setCourseCompleted = `-- name: SetCourseCompleted :exec
 INSERT INTO userprogress (user_id, course_id, completed_section_ids, completed_course)
 VALUES ($1, $2, ARRAY[]::uuid[], TRUE)

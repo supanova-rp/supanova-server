@@ -13,9 +13,9 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/handlers/testhelpers"
 )
 
-func TestUpdateCourseEnrolment(t *testing.T) {
+func TestUpdateCourseEnrolment_HappyPath(t *testing.T) {
 	t.Run("enrols user successfully when IsEnrolled is false", func(t *testing.T) {
-		courseID := testhelpers.Course.ID
+		courseID := testhelpers.Course.ID.String()
 
 		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
 			EnrolInCourseFunc: func(ctx context.Context, params domain.EnrolInCourseParams) error {
@@ -23,17 +23,14 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 			},
 		}
 
-		h := &handlers.Handlers{
-			Enrolment: mockEnrolmentRepo,
-		}
+		h := &handlers.Handlers{Enrolment: mockEnrolmentRepo}
 
-		reqBody := handlers.UpdateCourseEnrolmentParams{
-			CourseID:   courseID.String(),
+		req := handlers.UpdateCourseEnrolmentParams{
+			CourseID:   courseID,
 			IsEnrolled: false,
 		}
 
-		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "enrolment")
-
+		ctx, rec := testhelpers.SetupEchoContext(t, req, "enrolment")
 		err := h.UpdateCourseEnrolment(ctx)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
@@ -48,7 +45,7 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 	})
 
 	t.Run("disenrols user successfully when IsEnrolled is true", func(t *testing.T) {
-		courseID := testhelpers.Course.ID
+		courseID := testhelpers.Course.ID.String()
 
 		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
 			DisenrolInCourseFunc: func(ctx context.Context, params domain.DisenrolInCourseParams) error {
@@ -56,17 +53,14 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 			},
 		}
 
-		h := &handlers.Handlers{
-			Enrolment: mockEnrolmentRepo,
-		}
+		h := &handlers.Handlers{Enrolment: mockEnrolmentRepo}
 
-		reqBody := handlers.UpdateCourseEnrolmentParams{
-			CourseID:   courseID.String(),
+		req := handlers.UpdateCourseEnrolmentParams{
+			CourseID:   courseID,
 			IsEnrolled: true,
 		}
 
-		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "enrolment")
-
+		ctx, rec := testhelpers.SetupEchoContext(t, req, "enrolment")
 		err := h.UpdateCourseEnrolment(ctx)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
@@ -79,70 +73,69 @@ func TestUpdateCourseEnrolment(t *testing.T) {
 		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.DisenrolInCourseCalls()), 1, testhelpers.DisenrolUserInCourseHandlerName)
 		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.EnrolInCourseCalls()), 0, testhelpers.EnrolUserInCourseHandlerName)
 	})
+}
 
-	t.Run("validation error - missing course_id", func(t *testing.T) {
-		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{}
+func TestUpdateCourseEnrolment_UnhappyPath(t *testing.T) {
+	type testCase struct {
+		name           string
+		reqBody        handlers.UpdateCourseEnrolmentParams
+		setup          func() *handlers.Handlers
+		wantStatus     int
+		expectedErrMsg string
+	}
 
-		h := &handlers.Handlers{
-			Enrolment: mockEnrolmentRepo,
-		}
+	courseID := testhelpers.Course.ID.String()
 
-		reqBody := handlers.UpdateCourseEnrolmentParams{
-			IsEnrolled: false,
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "enrolment")
-
-		err := h.UpdateCourseEnrolment(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
-		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.EnrolInCourseCalls()), 0, testhelpers.EnrolUserInCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.DisenrolInCourseCalls()), 0, testhelpers.DisenrolUserInCourseHandlerName)
-	})
-
-	t.Run("validation error - invalid uuid format", func(t *testing.T) {
-		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{}
-
-		h := &handlers.Handlers{
-			Enrolment: mockEnrolmentRepo,
-		}
-
-		reqBody := handlers.UpdateCourseEnrolmentParams{
-			CourseID:   "invalid-uuid",
-			IsEnrolled: false,
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "enrolment")
-
-		err := h.UpdateCourseEnrolment(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.InvalidUUID)
-		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.EnrolInCourseCalls()), 0, testhelpers.EnrolUserInCourseHandlerName)
-		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.DisenrolInCourseCalls()), 0, testhelpers.DisenrolUserInCourseHandlerName)
-	})
-
-	t.Run("internal server error", func(t *testing.T) {
-		courseID := testhelpers.Course.ID
-
-		mockEnrolmentRepo := &mocks.EnrolmentRepositoryMock{
-			EnrolInCourseFunc: func(ctx context.Context, params domain.EnrolInCourseParams) error {
-				return stdErrors.New("database connection failed")
+	tests := []testCase{
+		{
+			name: "validation error - missing course id",
+			reqBody: handlers.UpdateCourseEnrolmentParams{
+				IsEnrolled: false,
 			},
-		}
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Enrolment: &mocks.EnrolmentRepositoryMock{}}
+			},
+		},
+		{
+			name: "validation error - invalid uuid format",
+			reqBody: handlers.UpdateCourseEnrolmentParams{
+				CourseID:   "invalid-uuid",
+				IsEnrolled: false,
+			},
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.InvalidUUID,
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Enrolment: &mocks.EnrolmentRepositoryMock{}}
+			},
+		},
+		{
+			name: "internal server error",
+			reqBody: handlers.UpdateCourseEnrolmentParams{
+				CourseID:   courseID,
+				IsEnrolled: false,
+			},
+			wantStatus:     http.StatusInternalServerError,
+			expectedErrMsg: errors.Creating("enrolment"),
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{
+					Enrolment: &mocks.EnrolmentRepositoryMock{
+						EnrolInCourseFunc: func(ctx context.Context, params domain.EnrolInCourseParams) error {
+							return stdErrors.New("db error")
+						},
+					},
+				}
+			},
+		},
+	}
 
-		h := &handlers.Handlers{
-			Enrolment: mockEnrolmentRepo,
-		}
-
-		reqBody := handlers.UpdateCourseEnrolmentParams{
-			CourseID:   courseID.String(),
-			IsEnrolled: false,
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "enrolment")
-
-		err := h.UpdateCourseEnrolment(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Creating("enrolment"))
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := tt.setup()
+			ctx, _ := testhelpers.SetupEchoContext(t, tt.reqBody, "enrolment")
+			err := h.UpdateCourseEnrolment(ctx)
+			testhelpers.AssertHTTPError(t, err, tt.wantStatus, tt.expectedErrMsg)
+		})
+	}
 }
