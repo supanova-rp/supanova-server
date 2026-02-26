@@ -7,3 +7,7 @@ type VideoURL struct {
 type VideoUploadURL struct {
 	UploadURL string `json:"uploadUrl"`
 }
+
+type CourseMaterialUploadURL struct {
+	UploadURL string `json:"uploadUrl"`
+}

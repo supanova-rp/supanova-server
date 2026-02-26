@@ -28,6 +28,7 @@ const (
 	IsEnrolledHandlerName           = "IsEnrolled"
 	GetVideoURLHandlerName          = "GetVideoURL"
 	GetVideoUploadURLHandlerName    = "GetVideoUploadURL"
+	GetMaterialUploadURLHandlerName = "GetMaterialUploadURL"
 	UpdateCourseEnrolmentHandler    = "UpdateCourseEnrolment"
 	EnrolUserInCourseHandlerName    = "EnrolInCourse"
 	DisenrolUserInCourseHandlerName = "DisenrolInCourse"
