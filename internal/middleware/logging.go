@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -33,6 +34,11 @@ func Logging(next echo.HandlerFunc) echo.HandlerFunc {
 		err := next(c)
 
 		latency := time.Since(start)
+
+		// Ignore 404s
+		if c.Response().Status == http.StatusNotFound {
+			return err
+		}
 
 		attrs := []any{
 			slog.String("method", req.Method),
