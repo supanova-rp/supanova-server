@@ -28,6 +28,9 @@ var _ domain.ProgressRepository = &ProgressRepositoryMock{}
 //			HasCompletedCourseFunc: func(contextMoqParam context.Context, hasCompletedCourseParams domain.HasCompletedCourseParams) (bool, error) {
 //				panic("mock out the HasCompletedCourse method")
 //			},
+//			ResetProgressFunc: func(contextMoqParam context.Context, resetProgressParams domain.ResetProgressParams) error {
+//				panic("mock out the ResetProgress method")
+//			},
 //			SetCourseCompletedFunc: func(contextMoqParam context.Context, setCourseCompletedParams domain.SetCourseCompletedParams) error {
 //				panic("mock out the SetCourseCompleted method")
 //			},
@@ -49,6 +52,9 @@ type ProgressRepositoryMock struct {
 
 	// HasCompletedCourseFunc mocks the HasCompletedCourse method.
 	HasCompletedCourseFunc func(contextMoqParam context.Context, hasCompletedCourseParams domain.HasCompletedCourseParams) (bool, error)
+
+	// ResetProgressFunc mocks the ResetProgress method.
+	ResetProgressFunc func(contextMoqParam context.Context, resetProgressParams domain.ResetProgressParams) error
 
 	// SetCourseCompletedFunc mocks the SetCourseCompleted method.
 	SetCourseCompletedFunc func(contextMoqParam context.Context, setCourseCompletedParams domain.SetCourseCompletedParams) error
@@ -77,6 +83,13 @@ type ProgressRepositoryMock struct {
 			// HasCompletedCourseParams is the hasCompletedCourseParams argument value.
 			HasCompletedCourseParams domain.HasCompletedCourseParams
 		}
+		// ResetProgress holds details about calls to the ResetProgress method.
+		ResetProgress []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// ResetProgressParams is the resetProgressParams argument value.
+			ResetProgressParams domain.ResetProgressParams
+		}
 		// SetCourseCompleted holds details about calls to the SetCourseCompleted method.
 		SetCourseCompleted []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
@@ -95,6 +108,7 @@ type ProgressRepositoryMock struct {
 	lockGetAllProgress     sync.RWMutex
 	lockGetProgress        sync.RWMutex
 	lockHasCompletedCourse sync.RWMutex
+	lockResetProgress      sync.RWMutex
 	lockSetCourseCompleted sync.RWMutex
 	lockUpdateProgress     sync.RWMutex
 }
@@ -200,6 +214,42 @@ func (mock *ProgressRepositoryMock) HasCompletedCourseCalls() []struct {
 	mock.lockHasCompletedCourse.RLock()
 	calls = mock.calls.HasCompletedCourse
 	mock.lockHasCompletedCourse.RUnlock()
+	return calls
+}
+
+// ResetProgress calls ResetProgressFunc.
+func (mock *ProgressRepositoryMock) ResetProgress(contextMoqParam context.Context, resetProgressParams domain.ResetProgressParams) error {
+	if mock.ResetProgressFunc == nil {
+		panic("ProgressRepositoryMock.ResetProgressFunc: method is nil but ProgressRepository.ResetProgress was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam     context.Context
+		ResetProgressParams domain.ResetProgressParams
+	}{
+		ContextMoqParam:     contextMoqParam,
+		ResetProgressParams: resetProgressParams,
+	}
+	mock.lockResetProgress.Lock()
+	mock.calls.ResetProgress = append(mock.calls.ResetProgress, callInfo)
+	mock.lockResetProgress.Unlock()
+	return mock.ResetProgressFunc(contextMoqParam, resetProgressParams)
+}
+
+// ResetProgressCalls gets all the calls that were made to ResetProgress.
+// Check the length with:
+//
+//	len(mockedProgressRepository.ResetProgressCalls())
+func (mock *ProgressRepositoryMock) ResetProgressCalls() []struct {
+	ContextMoqParam     context.Context
+	ResetProgressParams domain.ResetProgressParams
+} {
+	var calls []struct {
+		ContextMoqParam     context.Context
+		ResetProgressParams domain.ResetProgressParams
+	}
+	mock.lockResetProgress.RLock()
+	calls = mock.calls.ResetProgress
+	mock.lockResetProgress.RUnlock()
 	return calls
 }
 

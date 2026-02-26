@@ -23,6 +23,7 @@ func RegisterProgressRoutes(private *echo.Group, h *handlers.Handlers) {
 
 	// admin routes
 	private.POST("/admin/get-all-progress", h.GetAllProgress)
+	private.POST("/reset-progress", h.ResetProgress)
 }
 
 func RegisterQuizRoutes(private *echo.Group, h *handlers.Handlers) {
