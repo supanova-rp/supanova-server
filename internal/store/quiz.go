@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/supanova-rp/supanova-server/internal/domain"
+	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 	"github.com/supanova-rp/supanova-server/internal/utils"
 )
@@ -223,6 +224,18 @@ func (s *Store) ResetQuizProgress(ctx context.Context, userID string, quizID uui
 	})
 }
 
+func (s *Store) SetQuizState(ctx context.Context, params domain.SetQuizStateParams) error {
+	sqlcParams := sqlc.SetQuizStateParams{
+		UserID:    params.UserID,
+		QuizID:    utils.PGUUIDFromUUID(params.QuizID),
+		QuizState: params.QuizState,
+	}
+
+	return ExecCommand(ctx, func() error {
+		return s.Queries.SetQuizState(ctx, sqlcParams)
+	})
+}
+
 func (s *Store) UpsertQuizState(ctx context.Context, params domain.UpsertQuizStateParams) error {
 	sqlcParams := sqlc.UpsertQuizStateParams{
 		UserID:      params.UserID,
@@ -270,6 +283,27 @@ func (s *Store) GetCurrentQuizAnswersByUserID(ctx context.Context, userID string
 	}
 
 	return result, nil
+}
+
+func (s *Store) GetQuizState(ctx context.Context, userID string, quizID uuid.UUID) (*domain.QuizState, error) {
+	row, err := ExecQuery(ctx, func() (sqlc.GetQuizStateRow, error) {
+		return s.Queries.GetQuizState(ctx, sqlc.GetQuizStateParams{
+			UserID: userID,
+			QuizID: utils.PGUUIDFromUUID(quizID),
+		})
+	})
+	if err != nil {
+		if errors.IsNotFoundErr(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &domain.QuizState{
+		QuizID:   quizID,
+		State:    row.QuizAnswers,
+		Attempts: row.Attempts,
+	}, nil
 }
 
 func (s *Store) getCompletedSectionIDs(ctx context.Context, userID string) ([]uuid.UUID, error) {

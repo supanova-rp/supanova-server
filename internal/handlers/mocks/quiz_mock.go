@@ -26,11 +26,17 @@ var _ domain.QuizRepository = &QuizRepositoryMock{}
 //			GetQuizAttemptsByUserIDFunc: func(contextMoqParam context.Context, s string) ([]*domain.QuizAttempts, error) {
 //				panic("mock out the GetQuizAttemptsByUserID method")
 //			},
+//			GetQuizStateFunc: func(ctx context.Context, userID string, quizID uuid.UUID) (*domain.QuizState, error) {
+//				panic("mock out the GetQuizState method")
+//			},
 //			ResetQuizProgressFunc: func(ctx context.Context, userID string, quizID uuid.UUID) error {
 //				panic("mock out the ResetQuizProgress method")
 //			},
 //			SaveQuizAttemptFunc: func(contextMoqParam context.Context, saveQuizAttemptParams domain.SaveQuizAttemptParams) error {
 //				panic("mock out the SaveQuizAttempt method")
+//			},
+//			SetQuizStateFunc: func(contextMoqParam context.Context, setQuizStateParams domain.SetQuizStateParams) error {
+//				panic("mock out the SetQuizState method")
 //			},
 //			UpsertQuizStateFunc: func(contextMoqParam context.Context, upsertQuizStateParams domain.UpsertQuizStateParams) error {
 //				panic("mock out the UpsertQuizState method")
@@ -48,11 +54,17 @@ type QuizRepositoryMock struct {
 	// GetQuizAttemptsByUserIDFunc mocks the GetQuizAttemptsByUserID method.
 	GetQuizAttemptsByUserIDFunc func(contextMoqParam context.Context, s string) ([]*domain.QuizAttempts, error)
 
+	// GetQuizStateFunc mocks the GetQuizState method.
+	GetQuizStateFunc func(ctx context.Context, userID string, quizID uuid.UUID) (*domain.QuizState, error)
+
 	// ResetQuizProgressFunc mocks the ResetQuizProgress method.
 	ResetQuizProgressFunc func(ctx context.Context, userID string, quizID uuid.UUID) error
 
 	// SaveQuizAttemptFunc mocks the SaveQuizAttempt method.
 	SaveQuizAttemptFunc func(contextMoqParam context.Context, saveQuizAttemptParams domain.SaveQuizAttemptParams) error
+
+	// SetQuizStateFunc mocks the SetQuizState method.
+	SetQuizStateFunc func(contextMoqParam context.Context, setQuizStateParams domain.SetQuizStateParams) error
 
 	// UpsertQuizStateFunc mocks the UpsertQuizState method.
 	UpsertQuizStateFunc func(contextMoqParam context.Context, upsertQuizStateParams domain.UpsertQuizStateParams) error
@@ -71,6 +83,15 @@ type QuizRepositoryMock struct {
 			// S is the s argument value.
 			S string
 		}
+		// GetQuizState holds details about calls to the GetQuizState method.
+		GetQuizState []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// UserID is the userID argument value.
+			UserID string
+			// QuizID is the quizID argument value.
+			QuizID uuid.UUID
+		}
 		// ResetQuizProgress holds details about calls to the ResetQuizProgress method.
 		ResetQuizProgress []struct {
 			// Ctx is the ctx argument value.
@@ -87,6 +108,13 @@ type QuizRepositoryMock struct {
 			// SaveQuizAttemptParams is the saveQuizAttemptParams argument value.
 			SaveQuizAttemptParams domain.SaveQuizAttemptParams
 		}
+		// SetQuizState holds details about calls to the SetQuizState method.
+		SetQuizState []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// SetQuizStateParams is the setQuizStateParams argument value.
+			SetQuizStateParams domain.SetQuizStateParams
+		}
 		// UpsertQuizState holds details about calls to the UpsertQuizState method.
 		UpsertQuizState []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
@@ -97,8 +125,10 @@ type QuizRepositoryMock struct {
 	}
 	lockGetAllQuizSections      sync.RWMutex
 	lockGetQuizAttemptsByUserID sync.RWMutex
+	lockGetQuizState            sync.RWMutex
 	lockResetQuizProgress       sync.RWMutex
 	lockSaveQuizAttempt         sync.RWMutex
+	lockSetQuizState            sync.RWMutex
 	lockUpsertQuizState         sync.RWMutex
 }
 
@@ -167,6 +197,46 @@ func (mock *QuizRepositoryMock) GetQuizAttemptsByUserIDCalls() []struct {
 	mock.lockGetQuizAttemptsByUserID.RLock()
 	calls = mock.calls.GetQuizAttemptsByUserID
 	mock.lockGetQuizAttemptsByUserID.RUnlock()
+	return calls
+}
+
+// GetQuizState calls GetQuizStateFunc.
+func (mock *QuizRepositoryMock) GetQuizState(ctx context.Context, userID string, quizID uuid.UUID) (*domain.QuizState, error) {
+	if mock.GetQuizStateFunc == nil {
+		panic("QuizRepositoryMock.GetQuizStateFunc: method is nil but QuizRepository.GetQuizState was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		UserID string
+		QuizID uuid.UUID
+	}{
+		Ctx:    ctx,
+		UserID: userID,
+		QuizID: quizID,
+	}
+	mock.lockGetQuizState.Lock()
+	mock.calls.GetQuizState = append(mock.calls.GetQuizState, callInfo)
+	mock.lockGetQuizState.Unlock()
+	return mock.GetQuizStateFunc(ctx, userID, quizID)
+}
+
+// GetQuizStateCalls gets all the calls that were made to GetQuizState.
+// Check the length with:
+//
+//	len(mockedQuizRepository.GetQuizStateCalls())
+func (mock *QuizRepositoryMock) GetQuizStateCalls() []struct {
+	Ctx    context.Context
+	UserID string
+	QuizID uuid.UUID
+} {
+	var calls []struct {
+		Ctx    context.Context
+		UserID string
+		QuizID uuid.UUID
+	}
+	mock.lockGetQuizState.RLock()
+	calls = mock.calls.GetQuizState
+	mock.lockGetQuizState.RUnlock()
 	return calls
 }
 
@@ -243,6 +313,42 @@ func (mock *QuizRepositoryMock) SaveQuizAttemptCalls() []struct {
 	mock.lockSaveQuizAttempt.RLock()
 	calls = mock.calls.SaveQuizAttempt
 	mock.lockSaveQuizAttempt.RUnlock()
+	return calls
+}
+
+// SetQuizState calls SetQuizStateFunc.
+func (mock *QuizRepositoryMock) SetQuizState(contextMoqParam context.Context, setQuizStateParams domain.SetQuizStateParams) error {
+	if mock.SetQuizStateFunc == nil {
+		panic("QuizRepositoryMock.SetQuizStateFunc: method is nil but QuizRepository.SetQuizState was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam    context.Context
+		SetQuizStateParams domain.SetQuizStateParams
+	}{
+		ContextMoqParam:    contextMoqParam,
+		SetQuizStateParams: setQuizStateParams,
+	}
+	mock.lockSetQuizState.Lock()
+	mock.calls.SetQuizState = append(mock.calls.SetQuizState, callInfo)
+	mock.lockSetQuizState.Unlock()
+	return mock.SetQuizStateFunc(contextMoqParam, setQuizStateParams)
+}
+
+// SetQuizStateCalls gets all the calls that were made to SetQuizState.
+// Check the length with:
+//
+//	len(mockedQuizRepository.SetQuizStateCalls())
+func (mock *QuizRepositoryMock) SetQuizStateCalls() []struct {
+	ContextMoqParam    context.Context
+	SetQuizStateParams domain.SetQuizStateParams
+} {
+	var calls []struct {
+		ContextMoqParam    context.Context
+		SetQuizStateParams domain.SetQuizStateParams
+	}
+	mock.lockSetQuizState.RLock()
+	calls = mock.calls.SetQuizState
+	mock.lockSetQuizState.RUnlock()
 	return calls
 }
 

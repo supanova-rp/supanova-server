@@ -18,359 +18,294 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/handlers/testhelpers"
 )
 
-func TestGetVideoURL(t *testing.T) {
-	t.Run("returns video URL successfully", func(t *testing.T) {
-		expected := &domain.VideoURL{URL: "https://mycdnurl.com"}
+func TestGetVideoURL_HappyPath(t *testing.T) {
+	expected := &domain.VideoURL{URL: "https://mycdnurl.com"}
 
-		objectStorageMock := &mocks.ObjectStorageMock{
-			GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
-				return expected.URL, nil
-			},
-		}
+	objectStorageMock := &mocks.ObjectStorageMock{
+		GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
+			return expected.URL, nil
+		},
+	}
 
-		h := &handlers.Handlers{
-			ObjectStorage: objectStorageMock,
-		}
+	h := &handlers.Handlers{ObjectStorage: objectStorageMock}
 
-		reqBody := handlers.VideoURLParams{
-			CourseID:   testhelpers.VideoURLParams.CourseID,
-			StorageKey: testhelpers.VideoURLParams.StorageKey,
-		}
+	reqBody := handlers.VideoURLParams{
+		CourseID:   testhelpers.VideoURLParams.CourseID,
+		StorageKey: testhelpers.VideoURLParams.StorageKey,
+	}
 
-		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "video-url")
+	ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "video-url")
+	if err := h.GetVideoURL(ctx); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 
-		err := h.GetVideoURL(ctx)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
 
-		if rec.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
-		}
+	var actual domain.VideoURL
+	if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
 
-		var actual domain.VideoURL
-		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-			t.Fatalf("failed to unmarshal response: %v", err)
-		}
+	if diff := cmp.Diff(expected, &actual); diff != "" {
+		t.Errorf("url mismatch (-want +got):\n%s", diff)
+	}
 
-		if diff := cmp.Diff(expected, &actual); diff != "" {
-			t.Errorf("url mismatch (-want +got):\n%s", diff)
-		}
-
-		testhelpers.AssertRepoCalls(t, len(objectStorageMock.GetCDNURLCalls()), 1, testhelpers.GetVideoURLHandlerName)
-	})
-
-	t.Run("validation error - missing courseId", func(t *testing.T) {
-		objectStorageMock := &mocks.ObjectStorageMock{}
-
-		h := &handlers.Handlers{
-			ObjectStorage: objectStorageMock,
-		}
-
-		reqBody := handlers.VideoURLParams{
-			StorageKey: testhelpers.VideoURLParams.StorageKey,
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url")
-
-		err := h.GetVideoURL(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
-		testhelpers.AssertRepoCalls(t, len(objectStorageMock.GetCDNURLCalls()), 0, testhelpers.GetVideoURLHandlerName)
-	})
-
-	t.Run("validation error - missing storageKey", func(t *testing.T) {
-		objectStorageMock := &mocks.ObjectStorageMock{}
-
-		h := &handlers.Handlers{
-			ObjectStorage: objectStorageMock,
-		}
-
-		reqBody := handlers.VideoURLParams{
-			CourseID: testhelpers.VideoURLParams.CourseID,
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url")
-
-		err := h.GetVideoURL(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
-		testhelpers.AssertRepoCalls(t, len(objectStorageMock.GetCDNURLCalls()), 0, testhelpers.GetVideoURLHandlerName)
-	})
-
-	t.Run("internal server error", func(t *testing.T) {
-		objectStorageMock := &mocks.ObjectStorageMock{
-			GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
-				return "", stdErrors.New("crypto/rsa: message too long for RSA key size")
-			},
-		}
-
-		h := &handlers.Handlers{
-			ObjectStorage: objectStorageMock,
-		}
-
-		reqBody := handlers.VideoURLParams{
-			CourseID:   testhelpers.VideoURLParams.CourseID,
-			StorageKey: testhelpers.VideoURLParams.StorageKey,
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "video-url")
-
-		err := h.GetVideoURL(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("video url"))
-		testhelpers.AssertRepoCalls(t, len(objectStorageMock.GetCDNURLCalls()), 1, testhelpers.GetVideoURLHandlerName)
-	})
+	testhelpers.AssertRepoCalls(t, len(objectStorageMock.GetCDNURLCalls()), 1, testhelpers.GetVideoURLHandlerName)
 }
 
-func TestGetMaterialUploadURL(t *testing.T) {
-	t.Run("returns material upload URL successfully", func(t *testing.T) {
-		expected := &domain.VideoUploadURL{UploadURL: "https://s3uploadurl.com"}
+func TestGetVideoURL_UnhappyPath(t *testing.T) {
+	type testCase struct {
+		name           string
+		reqBody        handlers.VideoURLParams
+		setup          func() *handlers.Handlers
+		wantStatus     int
+		expectedErrMsg string
+	}
 
-		objectStorageMock := &mocks.ObjectStorageMock{
-			GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
-				return expected.UploadURL, nil
+	tests := []testCase{
+		{
+			name: "validation error - missing courseId",
+			reqBody: handlers.VideoURLParams{
+				StorageKey: testhelpers.VideoURLParams.StorageKey,
 			},
-		}
-
-		h := &handlers.Handlers{
-			ObjectStorage: objectStorageMock,
-		}
-
-		reqBody := handlers.VideoURLParams{
-			CourseID:   testhelpers.VideoURLParams.CourseID,
-			StorageKey: testhelpers.VideoURLParams.StorageKey,
-		}
-
-		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "get-material-upload-url")
-
-		err := h.GetMaterialUploadURL(ctx)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-
-		if rec.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
-		}
-
-		var actual domain.VideoUploadURL
-		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-			t.Fatalf("failed to unmarshal response: %v", err)
-		}
-
-		if diff := cmp.Diff(expected, &actual); diff != "" {
-			t.Errorf("url mismatch (-want +got):\n%s", diff)
-		}
-
-		testhelpers.AssertRepoCalls(
-			t,
-			len(objectStorageMock.GenerateUploadURLCalls()),
-			1,
-			testhelpers.GetMaterialUploadURLHandlerName,
-		)
-	})
-
-	t.Run("validation error - missing courseId", func(t *testing.T) {
-		objectStorageMock := &mocks.ObjectStorageMock{}
-
-		h := &handlers.Handlers{
-			ObjectStorage: objectStorageMock,
-		}
-
-		reqBody := handlers.VideoURLParams{
-			StorageKey: testhelpers.VideoURLParams.StorageKey,
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-material-upload-url")
-
-		err := h.GetMaterialUploadURL(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
-		testhelpers.AssertRepoCalls(
-			t,
-			len(objectStorageMock.GenerateUploadURLCalls()),
-			0,
-			testhelpers.GetMaterialUploadURLHandlerName,
-		)
-	})
-
-	t.Run("validation error - missing storageKey", func(t *testing.T) {
-		objectStorageMock := &mocks.ObjectStorageMock{}
-
-		h := &handlers.Handlers{
-			ObjectStorage: objectStorageMock,
-		}
-
-		reqBody := handlers.VideoURLParams{
-			CourseID: testhelpers.VideoURLParams.CourseID,
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-material-upload-url")
-
-		err := h.GetMaterialUploadURL(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
-		testhelpers.AssertRepoCalls(
-			t,
-			len(objectStorageMock.GenerateUploadURLCalls()),
-			0,
-			testhelpers.GetMaterialUploadURLHandlerName,
-		)
-	})
-
-	t.Run("internal server error", func(t *testing.T) {
-		objectStorageMock := &mocks.ObjectStorageMock{
-			GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
-				return "", stdErrors.New("InvalidBucketName: The specified bucket is not valid.")
+			setup:          func() *handlers.Handlers { return &handlers.Handlers{ObjectStorage: &mocks.ObjectStorageMock{}} },
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+		},
+		{
+			name: "validation error - missing storageKey",
+			reqBody: handlers.VideoURLParams{
+				CourseID: testhelpers.VideoURLParams.CourseID,
 			},
-		}
+			setup:          func() *handlers.Handlers { return &handlers.Handlers{ObjectStorage: &mocks.ObjectStorageMock{}} },
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+		},
+		{
+			name: "internal server error",
+			reqBody: handlers.VideoURLParams{
+				CourseID:   testhelpers.VideoURLParams.CourseID,
+				StorageKey: testhelpers.VideoURLParams.StorageKey,
+			},
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{
+					ObjectStorage: &mocks.ObjectStorageMock{
+						GetCDNURLFunc: func(ctx context.Context, key string) (string, error) {
+							return "", stdErrors.New("cdn error")
+						},
+					},
+				}
+			},
+			wantStatus:     http.StatusInternalServerError,
+			expectedErrMsg: errors.Getting("video url"),
+		},
+	}
 
-		h := &handlers.Handlers{
-			ObjectStorage: objectStorageMock,
-		}
-
-		reqBody := handlers.VideoURLParams{
-			CourseID:   testhelpers.VideoURLParams.CourseID,
-			StorageKey: testhelpers.VideoURLParams.StorageKey,
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-material-upload-url")
-
-		err := h.GetMaterialUploadURL(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("upload url"))
-		testhelpers.AssertRepoCalls(
-			t,
-			len(objectStorageMock.GenerateUploadURLCalls()),
-			1,
-			testhelpers.GetMaterialUploadURLHandlerName,
-		)
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := tt.setup()
+			ctx, _ := testhelpers.SetupEchoContext(t, tt.reqBody, "video-url")
+			err := h.GetVideoURL(ctx)
+			testhelpers.AssertHTTPError(t, err, tt.wantStatus, tt.expectedErrMsg)
+		})
+	}
 }
 
-func TestGetVideoUploadURL(t *testing.T) {
-	t.Run("returns video upload URL successfully", func(t *testing.T) {
-		expected := &domain.VideoUploadURL{UploadURL: "https://s3uploadurl.com"}
+func TestGetVideoUploadURL_HappyPath(t *testing.T) {
+	expected := &domain.VideoUploadURL{UploadURL: "https://s3uploadurl.com"}
 
-		objectStorageMock := &mocks.ObjectStorageMock{
-			GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
-				return expected.UploadURL, nil
+	objectStorageMock := &mocks.ObjectStorageMock{
+		GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
+			return expected.UploadURL, nil
+		},
+	}
+
+	h := &handlers.Handlers{ObjectStorage: objectStorageMock}
+
+	reqBody := handlers.VideoURLParams{
+		CourseID:   testhelpers.VideoURLParams.CourseID,
+		StorageKey: testhelpers.VideoURLParams.StorageKey,
+	}
+
+	ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url")
+	if err := h.GetVideoUploadURL(ctx); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	var actual domain.VideoUploadURL
+	if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if diff := cmp.Diff(expected, &actual); diff != "" {
+		t.Errorf("url mismatch (-want +got):\n%s", diff)
+	}
+
+	testhelpers.AssertRepoCalls(
+		t,
+		len(objectStorageMock.GenerateUploadURLCalls()),
+		1,
+		testhelpers.GetVideoUploadURLHandlerName,
+	)
+}
+
+func TestGetVideoUploadURL_UnhappyPath(t *testing.T) {
+	type testCase struct {
+		name           string
+		reqBody        handlers.VideoURLParams
+		setup          func() *handlers.Handlers
+		wantStatus     int
+		expectedErrMsg string
+	}
+
+	tests := []testCase{
+		{
+			name: "validation error - missing courseId",
+			reqBody: handlers.VideoURLParams{
+				StorageKey: testhelpers.VideoURLParams.StorageKey,
 			},
-		}
-
-		h := &handlers.Handlers{
-			ObjectStorage: objectStorageMock,
-		}
-
-		reqBody := handlers.VideoURLParams{
-			CourseID:   testhelpers.VideoURLParams.CourseID,
-			StorageKey: testhelpers.VideoURLParams.StorageKey,
-		}
-
-		ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url")
-
-		err := h.GetVideoUploadURL(ctx)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-
-		if rec.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
-		}
-
-		var actual domain.VideoUploadURL
-		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-			t.Fatalf("failed to unmarshal response: %v", err)
-		}
-
-		if diff := cmp.Diff(expected, &actual); diff != "" {
-			t.Errorf("url mismatch (-want +got):\n%s", diff)
-		}
-
-		testhelpers.AssertRepoCalls(
-			t,
-			len(objectStorageMock.GenerateUploadURLCalls()),
-			1,
-			testhelpers.GetVideoUploadURLHandlerName,
-		)
-	})
-
-	t.Run("validation error - missing courseId", func(t *testing.T) {
-		objectStorageMock := &mocks.ObjectStorageMock{}
-
-		h := &handlers.Handlers{
-			ObjectStorage: objectStorageMock,
-		}
-
-		reqBody := handlers.VideoURLParams{
-			StorageKey: testhelpers.VideoURLParams.StorageKey,
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url")
-
-		err := h.GetVideoUploadURL(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
-		testhelpers.AssertRepoCalls(
-			t,
-			len(objectStorageMock.GenerateUploadURLCalls()),
-			0,
-			testhelpers.GetVideoUploadURLHandlerName,
-		)
-	})
-
-	t.Run("validation error - missing storageKey", func(t *testing.T) {
-		objectStorageMock := &mocks.ObjectStorageMock{}
-
-		h := &handlers.Handlers{
-			ObjectStorage: objectStorageMock,
-		}
-
-		reqBody := handlers.VideoURLParams{
-			CourseID: testhelpers.VideoURLParams.CourseID,
-		}
-
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url")
-
-		err := h.GetVideoUploadURL(ctx)
-
-		testhelpers.AssertHTTPError(t, err, http.StatusBadRequest, errors.Validation)
-		testhelpers.AssertRepoCalls(
-			t,
-			len(objectStorageMock.GenerateUploadURLCalls()),
-			0,
-			testhelpers.GetVideoUploadURLHandlerName,
-		)
-	})
-
-	t.Run("internal server error", func(t *testing.T) {
-		objectStorageMock := &mocks.ObjectStorageMock{
-			GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
-				return "", stdErrors.New("InvalidBucketName: The specified bucket is not valid.")
+			setup:          func() *handlers.Handlers { return &handlers.Handlers{ObjectStorage: &mocks.ObjectStorageMock{}} },
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+		},
+		{
+			name: "validation error - missing storageKey",
+			reqBody: handlers.VideoURLParams{
+				CourseID: testhelpers.VideoURLParams.CourseID,
 			},
-		}
+			setup:          func() *handlers.Handlers { return &handlers.Handlers{ObjectStorage: &mocks.ObjectStorageMock{}} },
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+		},
+		{
+			name: "internal server error",
+			reqBody: handlers.VideoURLParams{
+				CourseID:   testhelpers.VideoURLParams.CourseID,
+				StorageKey: testhelpers.VideoURLParams.StorageKey,
+			},
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{
+					ObjectStorage: &mocks.ObjectStorageMock{
+						GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
+							return "", stdErrors.New("bucket error")
+						},
+					},
+				}
+			},
+			wantStatus:     http.StatusInternalServerError,
+			expectedErrMsg: errors.Getting("upload url"),
+		},
+	}
 
-		h := &handlers.Handlers{
-			ObjectStorage: objectStorageMock,
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := tt.setup()
+			ctx, _ := testhelpers.SetupEchoContext(t, tt.reqBody, "get-video-upload-url")
+			err := h.GetVideoUploadURL(ctx)
+			testhelpers.AssertHTTPError(t, err, tt.wantStatus, tt.expectedErrMsg)
+		})
+	}
+}
 
-		reqBody := handlers.VideoURLParams{
-			CourseID:   testhelpers.VideoURLParams.CourseID,
-			StorageKey: testhelpers.VideoURLParams.StorageKey,
-		}
+func TestGetMaterialUploadURL_HappyPath(t *testing.T) {
+	expected := &domain.VideoUploadURL{UploadURL: "https://s3uploadurl.com"}
 
-		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "get-video-upload-url")
+	objectStorageMock := &mocks.ObjectStorageMock{
+		GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
+			return expected.UploadURL, nil
+		},
+	}
 
-		err := h.GetVideoUploadURL(ctx)
+	h := &handlers.Handlers{ObjectStorage: objectStorageMock}
 
-		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("upload url"))
-		testhelpers.AssertRepoCalls(
-			t,
-			len(objectStorageMock.GenerateUploadURLCalls()),
-			1,
-			testhelpers.GetVideoUploadURLHandlerName,
-		)
-	})
+	reqBody := handlers.VideoURLParams{
+		CourseID:   testhelpers.VideoURLParams.CourseID,
+		StorageKey: testhelpers.VideoURLParams.StorageKey,
+	}
+
+	ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "get-material-upload-url")
+	if err := h.GetMaterialUploadURL(ctx); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	var actual domain.VideoUploadURL
+	if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if diff := cmp.Diff(expected, &actual); diff != "" {
+		t.Errorf("url mismatch (-want +got):\n%s", diff)
+	}
+
+	testhelpers.AssertRepoCalls(t, len(objectStorageMock.GenerateUploadURLCalls()), 1, testhelpers.GetMaterialUploadURLHandlerName)
+}
+
+func TestGetMaterialUploadURL_UnhappyPath(t *testing.T) {
+	type testCase struct {
+		name           string
+		reqBody        handlers.VideoURLParams
+		setup          func() *handlers.Handlers
+		wantStatus     int
+		expectedErrMsg string
+	}
+
+	tests := []testCase{
+		{
+			name: "validation error - missing courseId",
+			reqBody: handlers.VideoURLParams{
+				StorageKey: testhelpers.VideoURLParams.StorageKey,
+			},
+			setup:          func() *handlers.Handlers { return &handlers.Handlers{ObjectStorage: &mocks.ObjectStorageMock{}} },
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+		},
+		{
+			name: "validation error - missing storageKey",
+			reqBody: handlers.VideoURLParams{
+				CourseID: testhelpers.VideoURLParams.CourseID,
+			},
+			setup:          func() *handlers.Handlers { return &handlers.Handlers{ObjectStorage: &mocks.ObjectStorageMock{}} },
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+		},
+		{
+			name: "internal server error",
+			reqBody: handlers.VideoURLParams{
+				CourseID:   testhelpers.VideoURLParams.CourseID,
+				StorageKey: testhelpers.VideoURLParams.StorageKey,
+			},
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{
+					ObjectStorage: &mocks.ObjectStorageMock{
+						GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
+							return "", stdErrors.New("bucket error")
+						},
+					},
+				}
+			},
+			wantStatus:     http.StatusInternalServerError,
+			expectedErrMsg: errors.Getting("upload url"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := tt.setup()
+			ctx, _ := testhelpers.SetupEchoContext(t, tt.reqBody, "get-material-upload-url")
+			err := h.GetMaterialUploadURL(ctx)
+			testhelpers.AssertHTTPError(t, err, tt.wantStatus, tt.expectedErrMsg)
+		})
+	}
 }
 
 func TestGetCourseMaterials_HappyPath(t *testing.T) {
