@@ -182,7 +182,7 @@ func (q *Queries) GetQuizAttemptsByUserID(ctx context.Context, userID string) ([
 }
 
 const getQuizState = `-- name: GetQuizState :one
-SELECT quiz_answers, attempts FROM user_quiz_state WHERE user_id = $1 AND quiz_id = $2
+SELECT quiz_state, attempts FROM user_quiz_state WHERE user_id = $1 AND quiz_id = $2
 `
 
 type GetQuizStateParams struct {
@@ -191,14 +191,14 @@ type GetQuizStateParams struct {
 }
 
 type GetQuizStateRow struct {
-	QuizAnswers []byte
-	Attempts    int32
+	QuizState []byte
+	Attempts  int32
 }
 
 func (q *Queries) GetQuizState(ctx context.Context, arg GetQuizStateParams) (GetQuizStateRow, error) {
 	row := q.db.QueryRow(ctx, getQuizState, arg.UserID, arg.QuizID)
 	var i GetQuizStateRow
-	err := row.Scan(&i.QuizAnswers, &i.Attempts)
+	err := row.Scan(&i.QuizState, &i.Attempts)
 	return i, err
 }
 
