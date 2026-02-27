@@ -76,7 +76,7 @@ ON CONFLICT (user_id, quiz_id)
 DO UPDATE SET quiz_answers = EXCLUDED.quiz_answers;
 
 -- name: GetQuizState :one
-SELECT quiz_answers, attempts FROM user_quiz_state WHERE user_id = $1 AND quiz_id = $2;
+SELECT quiz_state, attempts FROM user_quiz_state WHERE user_id = $1 AND quiz_id = $2;
 
 -- name: SetQuizState :exec
 INSERT INTO user_quiz_state (user_id, quiz_id, quiz_state)

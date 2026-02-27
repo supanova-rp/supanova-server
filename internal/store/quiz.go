@@ -301,7 +301,7 @@ func (s *Store) GetQuizState(ctx context.Context, userID string, quizID uuid.UUI
 
 	return &domain.QuizState{
 		QuizID:   quizID,
-		State:    row.QuizAnswers,
+		State:    row.QuizState,
 		Attempts: row.Attempts,
 	}, nil
 }
