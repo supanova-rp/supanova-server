@@ -181,6 +181,27 @@ func (q *Queries) GetQuizAttemptsByUserID(ctx context.Context, userID string) ([
 	return items, nil
 }
 
+const getQuizState = `-- name: GetQuizState :one
+SELECT quiz_answers, attempts FROM user_quiz_state WHERE user_id = $1 AND quiz_id = $2
+`
+
+type GetQuizStateParams struct {
+	UserID string
+	QuizID pgtype.UUID
+}
+
+type GetQuizStateRow struct {
+	QuizAnswers []byte
+	Attempts    int32
+}
+
+func (q *Queries) GetQuizState(ctx context.Context, arg GetQuizStateParams) (GetQuizStateRow, error) {
+	row := q.db.QueryRow(ctx, getQuizState, arg.UserID, arg.QuizID)
+	var i GetQuizStateRow
+	err := row.Scan(&i.QuizAnswers, &i.Attempts)
+	return i, err
+}
+
 const incrementAttempts = `-- name: IncrementAttempts :exec
 INSERT INTO user_quiz_state (user_id, quiz_id, attempts)
 VALUES (
@@ -220,6 +241,24 @@ type SaveQuizAttemptParams struct {
 
 func (q *Queries) SaveQuizAttempt(ctx context.Context, arg SaveQuizAttemptParams) error {
 	_, err := q.db.Exec(ctx, saveQuizAttempt, arg.UserID, arg.QuizID, arg.Answers)
+	return err
+}
+
+const setQuizState = `-- name: SetQuizState :exec
+INSERT INTO user_quiz_state (user_id, quiz_id, quiz_state)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (user_id, quiz_id)
+     DO UPDATE SET quiz_state = EXCLUDED.quiz_state
+`
+
+type SetQuizStateParams struct {
+	UserID    string
+	QuizID    pgtype.UUID
+	QuizState []byte
+}
+
+func (q *Queries) SetQuizState(ctx context.Context, arg SetQuizStateParams) error {
+	_, err := q.db.Exec(ctx, setQuizState, arg.UserID, arg.QuizID, arg.QuizState)
 	return err
 }
 

@@ -31,6 +31,13 @@ func RegisterQuizRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/quiz/save-state", h.SaveQuizState)
 	private.POST("/quiz/get-all-sections", h.GetAllQuizSections)
 
+	// -----------------------------------------------------
+	// to be deprecated and replaced with /quiz/get-attempt and /quiz/save-attempt
+	// once FE is no longer using them
+	private.POST("/get-quiz-state", h.GetQuizState)
+	private.POST("/set-quiz-state", h.SetQuizState)
+	// -----------------------------------------------------
+
 	// admin routes
 	private.POST("/admin/quiz/get-attempts", h.GetQuizAttemptsByUserID)
 	private.POST("/admin/quiz/reset-progress", h.ResetQuizProgress)

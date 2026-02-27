@@ -68,6 +68,41 @@ type SaveQuizStateParams struct {
 	Answers []QuizStateAnswers `json:"answers" validate:"required,dive"`
 }
 
+type SetQuizStateParams struct {
+	QuizID string          `json:"quizID" validate:"required"`
+	State  json.RawMessage `json:"state" validate:"required"`
+}
+
+func (h *Handlers) SetQuizState(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	userID, ok := getUserID(ctx)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+	}
+
+	var params SetQuizStateParams
+	if err := bindAndValidate(e, &params); err != nil {
+		return err
+	}
+
+	quizID, err := uuid.Parse(params.QuizID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+	}
+
+	err = h.Quiz.SetQuizState(ctx, domain.SetQuizStateParams{
+		UserID:    userID,
+		QuizID:    quizID,
+		QuizState: params.State,
+	})
+	if err != nil {
+		return internalError(ctx, errors.Creating(quizStateResource), err, slog.String("quiz_id", params.QuizID))
+	}
+
+	return e.NoContent(http.StatusNoContent)
+}
+
 func (h *Handlers) SaveQuizState(e echo.Context) error {
 	ctx := e.Request().Context()
 
@@ -142,6 +177,40 @@ func (h *Handlers) ResetQuizProgress(e echo.Context) error {
 	}
 
 	return e.NoContent(http.StatusNoContent)
+}
+
+type GetQuizStateParams struct {
+	QuizID string `json:"quizID" validate:"required"`
+}
+
+func (h *Handlers) GetQuizState(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	userID, ok := getUserID(ctx)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+	}
+
+	var params GetQuizStateParams
+	if err := bindAndValidate(e, &params); err != nil {
+		return err
+	}
+
+	quizID, err := uuid.Parse(params.QuizID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+	}
+
+	state, err := h.Quiz.GetQuizState(ctx, userID, quizID)
+	if err != nil {
+		return internalError(ctx, errors.Getting(quizStateResource), err, slog.String("quiz_id", params.QuizID))
+	}
+
+	if state == nil {
+		return e.JSON(http.StatusOK, map[string]any{})
+	}
+
+	return e.JSON(http.StatusOK, state)
 }
 
 type GetQuizAttemptsParams struct {
