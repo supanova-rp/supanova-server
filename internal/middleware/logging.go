@@ -7,9 +7,12 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
+
+	"github.com/supanova-rp/supanova-server/internal/config"
 )
 
 func Logging(next echo.HandlerFunc) echo.HandlerFunc {
@@ -35,8 +38,8 @@ func Logging(next echo.HandlerFunc) echo.HandlerFunc {
 
 		latency := time.Since(start)
 
-		// Ignore 404s
-		if c.Response().Status == http.StatusNotFound {
+		// Ignore 404s for paths outside the API prefix (e.g. favicon.ico)
+		if c.Response().Status == http.StatusNotFound && !strings.HasPrefix(req.URL.Path, "/"+config.APIVersion) {
 			return err
 		}
 

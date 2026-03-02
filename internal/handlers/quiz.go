@@ -96,7 +96,7 @@ func (h *Handlers) SetQuizState(e echo.Context) error {
 	// so we have to unmarshal the string into actual raw json, e.g. [[0, 3], [7]]
 	// Usually would fix this on the client side but this endpoint should be deprecated at some point
 	// in favour of /quiz/save-state
-	var quizStateRaw json.RawMessage = params.State
+	quizStateRaw := params.State
 	var asString string
 	if err := json.Unmarshal(quizStateRaw, &asString); err == nil {
 		quizStateRaw = json.RawMessage(asString)
