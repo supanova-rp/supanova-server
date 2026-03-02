@@ -69,8 +69,9 @@ type SaveQuizStateParams struct {
 }
 
 type SetQuizStateParams struct {
-	QuizID string          `json:"quizID" validate:"required"`
-	State  json.RawMessage `json:"state" validate:"required"`
+	// TODO: change to quizID in future for consistency once FE is updated
+	QuizID string          `json:"quizId" validate:"required"`
+	State  json.RawMessage `json:"quizState" validate:"required"`
 }
 
 func (h *Handlers) SetQuizState(e echo.Context) error {
@@ -91,10 +92,26 @@ func (h *Handlers) SetQuizState(e echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
 	}
 
+	// Client sends state as a JSON string, e.g. "[[0, 3], [7]]"
+	// so we have to unmarshal the string into actual raw json, e.g. [[0, 3], [7]]
+	// Usually would fix this on the client side but this endpoint should be deprecated at some point
+	// in favour of /quiz/save-state
+	var quizStateRaw json.RawMessage = params.State
+	var asString string
+	if err := json.Unmarshal(quizStateRaw, &asString); err == nil {
+		quizStateRaw = json.RawMessage(asString)
+	}
+
+	// Validate the shape of the quizState
+	var quizState [][]int
+	if err := json.Unmarshal(quizStateRaw, &quizState); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid quiz state shape")
+	}
+
 	err = h.Quiz.SetQuizState(ctx, domain.SetQuizStateParams{
 		UserID:    userID,
 		QuizID:    quizID,
-		QuizState: params.State,
+		QuizState: quizStateRaw,
 	})
 	if err != nil {
 		return internalError(ctx, errors.Creating(quizStateResource), err, slog.String("quiz_id", params.QuizID))
@@ -180,7 +197,8 @@ func (h *Handlers) ResetQuizProgress(e echo.Context) error {
 }
 
 type GetQuizStateParams struct {
-	QuizID string `json:"quizID" validate:"required"`
+	// TODO: change to quizID in future for consistency once FE is updated
+	QuizID string `json:"quizId" validate:"required"`
 }
 
 func (h *Handlers) GetQuizState(e echo.Context) error {
