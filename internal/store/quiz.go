@@ -299,9 +299,14 @@ func (s *Store) GetQuizState(ctx context.Context, userID string, quizID uuid.UUI
 		return nil, err
 	}
 
+	var state [][]int
+	if err := json.Unmarshal(row.QuizState, &state); err != nil || state == nil {
+		state = [][]int{}
+	}
+
 	return &domain.QuizState{
 		QuizID:   quizID,
-		State:    row.QuizState,
+		State:    state,
 		Attempts: row.Attempts,
 	}, nil
 }
