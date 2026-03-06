@@ -78,5 +78,12 @@ VALUES ($1, $2, $3, $4) RETURNING id;
 INSERT INTO quizanswers (answer, correct_answer, position, quiz_question_id)
 VALUES ($1, $2, $3, $4);
 
+-- name: GetAssignedCourseTitles :many
+SELECT c.id, c.title, c.description
+FROM courses c
+INNER JOIN usercourses uc ON uc.course_id = c.id
+WHERE uc.user_id = $1
+ORDER BY c.title;
+
 -- name: DeleteCourse :exec
 DELETE FROM courses WHERE id = $1;

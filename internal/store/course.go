@@ -148,6 +148,23 @@ func (s *Store) GetCoursesOverview(ctx context.Context) ([]domain.CourseOverview
 	return utils.Map(rows, courseOverviewFrom), nil
 }
 
+func (s *Store) GetAssignedCourseTitles(ctx context.Context, userID string) ([]domain.CourseOverview, error) {
+	rows, err := ExecQuery(ctx, func() ([]sqlc.GetAssignedCourseTitlesRow, error) {
+		return s.Queries.GetAssignedCourseTitles(ctx, utils.PGTextFrom(userID))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return utils.Map(rows, func(row sqlc.GetAssignedCourseTitlesRow) domain.CourseOverview {
+		return domain.CourseOverview{
+			ID:          utils.UUIDFrom(row.ID),
+			Title:       row.Title.String,
+			Description: row.Description.String,
+		}
+	}), nil
+}
+
 func (s *Store) GetCourseMaterials(ctx context.Context, courseID uuid.UUID) ([]domain.CourseMaterial, error) {
 	rows, err := ExecQuery(ctx, func() ([]sqlc.GetCourseMaterialsRow, error) {
 		return s.Queries.GetCourseMaterials(ctx, utils.PGUUIDFromUUID(courseID))

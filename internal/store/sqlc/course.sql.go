@@ -44,6 +44,40 @@ func (q *Queries) DeleteCourse(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const getAssignedCourseTitles = `-- name: GetAssignedCourseTitles :many
+SELECT c.id, c.title, c.description
+FROM courses c
+INNER JOIN usercourses uc ON uc.course_id = c.id
+WHERE uc.user_id = $1
+ORDER BY c.title
+`
+
+type GetAssignedCourseTitlesRow struct {
+	ID          pgtype.UUID
+	Title       pgtype.Text
+	Description pgtype.Text
+}
+
+func (q *Queries) GetAssignedCourseTitles(ctx context.Context, userID pgtype.Text) ([]GetAssignedCourseTitlesRow, error) {
+	rows, err := q.db.Query(ctx, getAssignedCourseTitles, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAssignedCourseTitlesRow
+	for rows.Next() {
+		var i GetAssignedCourseTitlesRow
+		if err := rows.Scan(&i.ID, &i.Title, &i.Description); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getCourse = `-- name: GetCourse :one
 SELECT
   id,

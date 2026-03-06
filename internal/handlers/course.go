@@ -242,3 +242,19 @@ func (h *Handlers) GetCoursesOverview(e echo.Context) error {
 
 	return e.JSON(http.StatusOK, overviews)
 }
+
+func (h *Handlers) GetAssignedCourseTitles(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	userID, ok := getUserID(ctx)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+	}
+
+	overviews, err := h.Course.GetAssignedCourseTitles(ctx, userID)
+	if err != nil {
+		return internalError(ctx, errors.Getting(courseOverviewResource), err)
+	}
+
+	return e.JSON(http.StatusOK, overviews)
+}
