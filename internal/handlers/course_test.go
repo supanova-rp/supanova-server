@@ -453,6 +453,130 @@ func TestGetCoursesOverview_HappyPath(t *testing.T) {
 	})
 }
 
+func TestGetAssignedCourseTitles_HappyPath(t *testing.T) {
+	t.Run("returns assigned course titles successfully", func(t *testing.T) {
+		expected := []domain.CourseOverview{
+			{
+				ID:          testhelpers.Course.ID,
+				Title:       testhelpers.Course.Title,
+				Description: testhelpers.Course.Description,
+			},
+			{
+				ID:          uuid.New(),
+				Title:       "Course 2",
+				Description: "Description 2",
+			},
+		}
+
+		mockRepo := &mocks.CourseRepositoryMock{
+			GetAssignedCourseTitlesFunc: func(ctx context.Context, userID string) ([]domain.CourseOverview, error) {
+				return expected, nil
+			},
+		}
+
+		h := &handlers.Handlers{Course: mockRepo}
+
+		ctx, rec := testhelpers.SetupEchoContext(t, struct{}{}, "assigned-course-titles")
+
+		err := h.GetAssignedCourseTitles(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		var actual []domain.CourseOverview
+		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+			t.Fatalf("failed to unmarshal response: %v", err)
+		}
+
+		if diff := cmp.Diff(expected, actual); diff != "" {
+			t.Errorf("course overviews mismatch (-want +got):\n%s", diff)
+		}
+
+		testhelpers.AssertRepoCalls(t, len(mockRepo.GetAssignedCourseTitlesCalls()), 1, testhelpers.GetAssignedCourseTitlesHandlerName)
+	})
+
+	t.Run("returns empty slice when no courses assigned", func(t *testing.T) {
+		mockRepo := &mocks.CourseRepositoryMock{
+			GetAssignedCourseTitlesFunc: func(ctx context.Context, userID string) ([]domain.CourseOverview, error) {
+				return []domain.CourseOverview{}, nil
+			},
+		}
+
+		h := &handlers.Handlers{Course: mockRepo}
+
+		ctx, rec := testhelpers.SetupEchoContext(t, struct{}{}, "assigned-course-titles")
+
+		err := h.GetAssignedCourseTitles(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		var actual []domain.CourseOverview
+		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+			t.Fatalf("failed to unmarshal response: %v", err)
+		}
+
+		if len(actual) != 0 {
+			t.Errorf("expected empty slice, got %v", actual)
+		}
+
+		testhelpers.AssertRepoCalls(t, len(mockRepo.GetAssignedCourseTitlesCalls()), 1, testhelpers.GetAssignedCourseTitlesHandlerName)
+	})
+}
+
+func TestGetAssignedCourseTitles_UnhappyPath(t *testing.T) {
+	type testCase struct {
+		name           string
+		opts           []testhelpers.EchoTestOption
+		setup          func() *handlers.Handlers
+		wantStatus     int
+		expectedErrMsg string
+	}
+
+	tests := []testCase{
+		{
+			name:           "user not in context",
+			opts:           []testhelpers.EchoTestOption{testhelpers.WithUserID("")},
+			wantStatus:     http.StatusInternalServerError,
+			expectedErrMsg: errors.NotFoundInCtx("user"),
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Course: &mocks.CourseRepositoryMock{}}
+			},
+		},
+		{
+			name:           "internal server error",
+			wantStatus:     http.StatusInternalServerError,
+			expectedErrMsg: errors.Getting("assigned course titles"),
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{
+					Course: &mocks.CourseRepositoryMock{
+						GetAssignedCourseTitlesFunc: func(ctx context.Context, userID string) ([]domain.CourseOverview, error) {
+							return nil, stdErrors.New("database connection failed")
+						},
+					},
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := tt.setup()
+			ctx, _ := testhelpers.SetupEchoContext(t, struct{}{}, "assigned-course-titles", tt.opts...)
+			err := h.GetAssignedCourseTitles(ctx)
+			testhelpers.AssertHTTPError(t, err, tt.wantStatus, tt.expectedErrMsg)
+		})
+	}
+}
+
 func TestGetCoursesOverview_UnhappyPath(t *testing.T) {
 	type testCase struct {
 		name           string
