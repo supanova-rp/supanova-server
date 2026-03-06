@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	courseResource         = "course"
-	courseOverviewResource = "course overview"
+	courseResource               = "course"
+	courseOverviewResource       = "course overview"
 	assignedCourseTitlesResource = "assigned course titles"
 )
 
