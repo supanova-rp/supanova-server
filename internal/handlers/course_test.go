@@ -554,7 +554,7 @@ func TestGetAssignedCourseTitles_UnhappyPath(t *testing.T) {
 		{
 			name:           "internal server error",
 			wantStatus:     http.StatusInternalServerError,
-			expectedErrMsg: errors.Getting("assigned course info"),
+			expectedErrMsg: errors.Getting("assigned course titles"),
 			setup: func() *handlers.Handlers {
 				return &handlers.Handlers{
 					Course: &mocks.CourseRepositoryMock{
