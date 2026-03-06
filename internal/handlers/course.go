@@ -17,6 +17,7 @@ import (
 const (
 	courseResource         = "course"
 	courseOverviewResource = "course overview"
+	assignedCourseResource = "assigned course info"
 )
 
 type GetCourseParams struct {
@@ -253,7 +254,7 @@ func (h *Handlers) GetAssignedCourseTitles(e echo.Context) error {
 
 	overviews, err := h.Course.GetAssignedCourseTitles(ctx, userID)
 	if err != nil {
-		return internalError(ctx, errors.Getting(courseOverviewResource), err)
+		return internalError(ctx, errors.Getting(assignedCourseResource), err)
 	}
 
 	return e.JSON(http.StatusOK, overviews)
