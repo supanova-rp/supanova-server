@@ -9,6 +9,8 @@ import (
 func RegisterCourseRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/course", h.GetCourse)
 	private.POST("/materials", h.GetCourseMaterials)
+	// TODO: To be deprecated and replaced with single /course-titles or /courses/overview endpoint 
+	// that handles getting either assigned course details or all (depending on if user is admin or not)
 	private.POST("/assigned-course-titles", h.GetAssignedCourseTitles)
 
 	// admin routes
