@@ -17,6 +17,7 @@ type QuizRepository interface {
 	GetAllQuizSections(context.Context) ([]*QuizSection, error)
 	ResetQuizProgress(ctx context.Context, userID string, quizID uuid.UUID) error
 	GetQuizState(ctx context.Context, userID string, quizID uuid.UUID) (*QuizState, error)
+	GetQuizQuestions(ctx context.Context, sectionIDs []uuid.UUID) ([]*QuizQuestionResult, error)
 }
 
 type SaveQuizAttemptParams struct {
@@ -53,4 +54,13 @@ type QuizState struct {
 	QuizID   uuid.UUID `json:"quizId"`
 	State    [][]int   `json:"quizState"`
 	Attempts int32     `json:"attempts"`
+}
+
+type QuizQuestionResult struct {
+	ID            uuid.UUID    `json:"id"`
+	Question      string       `json:"question"`
+	Position      int          `json:"position"`
+	IsMultiAnswer bool         `json:"isMultiAnswer"`
+	QuizSectionID uuid.UUID    `json:"quizSectionId"`
+	Answers       []QuizAnswer `json:"answers"`
 }

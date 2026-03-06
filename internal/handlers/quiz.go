@@ -15,6 +15,7 @@ import (
 const (
 	quizStateResource   = "quiz state"
 	quizAttemptResource = "quiz attempt"
+	quizQuestionsResource = "quiz questions"
 )
 
 type QuizStateAnswers struct {
@@ -229,6 +230,39 @@ func (h *Handlers) GetQuizState(e echo.Context) error {
 	}
 
 	return e.JSON(http.StatusOK, state)
+}
+
+type GetQuizQuestionsParams struct {
+	QuizSectionIDs []string `json:"quizSectionIds" validate:"required"`
+}
+
+func (h *Handlers) GetQuizQuestions(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	var params GetQuizQuestionsParams
+	if err := bindAndValidate(e, &params); err != nil {
+		return err
+	}
+
+	if len(params.QuizSectionIDs) == 0 {
+		return e.JSON(http.StatusOK, []domain.QuizQuestionResult{})
+	}
+
+	sectionIDs := make([]uuid.UUID, 0, len(params.QuizSectionIDs))
+	for _, id := range params.QuizSectionIDs {
+		parsed, err := uuid.Parse(id)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		}
+		sectionIDs = append(sectionIDs, parsed)
+	}
+
+	questions, err := h.Quiz.GetQuizQuestions(ctx, sectionIDs)
+	if err != nil {
+		return internalError(ctx, errors.Getting(quizQuestionsResource), err)
+	}
+
+	return e.JSON(http.StatusOK, questions)
 }
 
 type GetQuizAttemptsParams struct {

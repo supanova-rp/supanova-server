@@ -33,6 +33,7 @@ func RegisterQuizRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/quiz/save-attempt", h.SaveQuizAttempt)
 	private.POST("/quiz/save-state", h.SaveQuizState)
 	private.POST("/quiz/get-all-sections", h.GetAllQuizSections)
+	private.POST("/quiz-questions", h.GetQuizQuestions)
 
 	// -----------------------------------------------------
 	// to be deprecated and replaced with /quiz/get-attempt and /quiz/save-attempt
