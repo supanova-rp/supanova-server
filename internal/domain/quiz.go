@@ -50,7 +50,7 @@ type QuizAttempt struct {
 }
 
 type QuizState struct {
-	QuizID   uuid.UUID       `json:"quizId"`
-	State    json.RawMessage `json:"quizState"`
-	Attempts int32           `json:"attempts"`
+	QuizID   uuid.UUID `json:"quizId"`
+	State    [][]int   `json:"quizState"`
+	Attempts int32     `json:"attempts"`
 }
