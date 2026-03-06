@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	quizStateResource   = "quiz state"
-	quizAttemptResource = "quiz attempt"
+	quizStateResource     = "quiz state"
+	quizAttemptResource   = "quiz attempt"
 	quizQuestionsResource = "quiz questions"
 )
 
