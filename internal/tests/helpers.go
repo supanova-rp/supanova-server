@@ -128,7 +128,7 @@ func enrolUserInCourse(t *testing.T, baseURL string, courseID uuid.UUID) {
 		IsEnrolled: false,
 	})
 	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("enrol failed, expected status 200, got %d", resp.StatusCode)
 	}
 }

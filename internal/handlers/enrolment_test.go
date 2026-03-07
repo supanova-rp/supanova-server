@@ -36,8 +36,8 @@ func TestUpdateCourseEnrolment_HappyPath(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		if rec.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+		if rec.Code != http.StatusNoContent {
+			t.Errorf("expected status %d, got %d", http.StatusNoContent, rec.Code)
 		}
 
 		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.EnrolInCourseCalls()), 1, testhelpers.EnrolUserInCourseHandlerName)
@@ -66,8 +66,8 @@ func TestUpdateCourseEnrolment_HappyPath(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		if rec.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+		if rec.Code != http.StatusNoContent {
+			t.Errorf("expected status %d, got %d", http.StatusNoContent, rec.Code)
 		}
 
 		testhelpers.AssertRepoCalls(t, len(mockEnrolmentRepo.DisenrolInCourseCalls()), 1, testhelpers.DisenrolUserInCourseHandlerName)
