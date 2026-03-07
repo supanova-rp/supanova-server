@@ -26,6 +26,7 @@ func TestUpdateCourseEnrolment_HappyPath(t *testing.T) {
 		h := &handlers.Handlers{Enrolment: mockEnrolmentRepo}
 
 		req := handlers.UpdateCourseEnrolmentParams{
+			UserID:     testhelpers.TestUserID,
 			CourseID:   courseID,
 			IsEnrolled: false,
 		}
@@ -56,6 +57,7 @@ func TestUpdateCourseEnrolment_HappyPath(t *testing.T) {
 		h := &handlers.Handlers{Enrolment: mockEnrolmentRepo}
 
 		req := handlers.UpdateCourseEnrolmentParams{
+			UserID:     testhelpers.TestUserID,
 			CourseID:   courseID,
 			IsEnrolled: true,
 		}
@@ -90,6 +92,7 @@ func TestUpdateCourseEnrolment_UnhappyPath(t *testing.T) {
 		{
 			name: "validation error - missing course id",
 			reqBody: handlers.UpdateCourseEnrolmentParams{
+				UserID:     testhelpers.TestUserID,
 				IsEnrolled: false,
 			},
 			wantStatus:     http.StatusBadRequest,
@@ -101,6 +104,7 @@ func TestUpdateCourseEnrolment_UnhappyPath(t *testing.T) {
 		{
 			name: "validation error - invalid uuid format",
 			reqBody: handlers.UpdateCourseEnrolmentParams{
+				UserID:     testhelpers.TestUserID,
 				CourseID:   "invalid-uuid",
 				IsEnrolled: false,
 			},
@@ -113,6 +117,7 @@ func TestUpdateCourseEnrolment_UnhappyPath(t *testing.T) {
 		{
 			name: "internal server error",
 			reqBody: handlers.UpdateCourseEnrolmentParams{
+				UserID:     testhelpers.TestUserID,
 				CourseID:   courseID,
 				IsEnrolled: false,
 			},

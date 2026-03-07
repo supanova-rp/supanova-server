@@ -124,6 +124,7 @@ func enrolUserInCourse(t *testing.T, baseURL string, courseID uuid.UUID) {
 	t.Helper()
 
 	resp := makePOSTRequest(t, baseURL, "update-users-to-courses", &handlers.UpdateCourseEnrolmentParams{
+		UserID:     TestUserID,
 		CourseID:   courseID.String(),
 		IsEnrolled: false,
 	})
