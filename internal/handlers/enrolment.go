@@ -40,7 +40,13 @@ func (h *Handlers) UpdateCourseEnrolment(e echo.Context) error {
 			CourseID: courseID,
 		})
 		if err != nil {
-			return internalError(ctx, errors.Deleting(enrolmentResource), err, slog.String("course_id", params.CourseID), slog.String("user_id", params.UserID))
+			return internalError(
+				ctx,
+				errors.Deleting(enrolmentResource),
+				err,
+				slog.String("course_id", params.CourseID),
+				slog.String("user_id", params.UserID),
+			)
 		}
 	} else {
 		err := h.Enrolment.EnrolInCourse(ctx, domain.EnrolInCourseParams{
@@ -48,7 +54,13 @@ func (h *Handlers) UpdateCourseEnrolment(e echo.Context) error {
 			CourseID: courseID,
 		})
 		if err != nil {
-			return internalError(ctx, errors.Creating(enrolmentResource), err, slog.String("course_id", params.CourseID), slog.String("user_id", params.UserID))
+			return internalError(
+				ctx,
+				errors.Creating(enrolmentResource),
+				err,
+				slog.String("course_id", params.CourseID),
+				slog.String("user_id", params.UserID),
+			)
 		}
 	}
 
