@@ -56,7 +56,7 @@ func (h *Handlers) UpdateCourseEnrolment(e echo.Context) error {
 		}
 	}
 
-	return e.NoContent(http.StatusOK)
+	return e.NoContent(http.StatusNoContent)
 }
 
 func (h *Handlers) isEnrolled(ctx context.Context, courseID uuid.UUID) (bool, error) {
