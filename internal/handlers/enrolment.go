@@ -16,6 +16,7 @@ import (
 const enrolmentResource = "enrolment"
 
 type UpdateCourseEnrolmentParams struct {
+	UserID     string `json:"user_id" validate:"required"`
 	CourseID   string `json:"course_id" validate:"required"`
 	IsEnrolled bool   `json:"isAssigned"`
 }
@@ -28,11 +29,6 @@ func (h *Handlers) UpdateCourseEnrolment(e echo.Context) error {
 		return err
 	}
 
-	userID, ok := getUserID(ctx)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
-	}
-
 	courseID, err := uuid.Parse(params.CourseID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
@@ -40,19 +36,19 @@ func (h *Handlers) UpdateCourseEnrolment(e echo.Context) error {
 
 	if params.IsEnrolled {
 		err := h.Enrolment.DisenrolInCourse(ctx, domain.DisenrolInCourseParams{
-			UserID:   userID,
+			UserID:   params.UserID,
 			CourseID: courseID,
 		})
 		if err != nil {
-			return internalError(ctx, errors.Deleting(enrolmentResource), err, slog.String("course_id", params.CourseID))
+			return internalError(ctx, errors.Deleting(enrolmentResource), err, slog.String("course_id", params.CourseID), slog.String("user_id", params.UserID))
 		}
 	} else {
 		err := h.Enrolment.EnrolInCourse(ctx, domain.EnrolInCourseParams{
-			UserID:   userID,
+			UserID:   params.UserID,
 			CourseID: courseID,
 		})
 		if err != nil {
-			return internalError(ctx, errors.Creating(enrolmentResource), err, slog.String("course_id", params.CourseID))
+			return internalError(ctx, errors.Creating(enrolmentResource), err, slog.String("course_id", params.CourseID), slog.String("user_id", params.UserID))
 		}
 	}
 
