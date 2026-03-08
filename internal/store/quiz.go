@@ -312,7 +312,7 @@ func (s *Store) GetQuizState(ctx context.Context, userID string, quizID uuid.UUI
 	}, nil
 }
 
-func (s *Store) GetQuizQuestions(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionResult, error) {
+func (s *Store) GetQuizQuestions(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionLegacy, error) {
 	pgSectionIDs := utils.Map(sectionIDs, utils.PGUUIDFromUUID)
 
 	rows, err := ExecQuery(ctx, func() ([]sqlc.GetQuizQuestionsBySectionIDsRow, error) {
@@ -322,12 +322,12 @@ func (s *Store) GetQuizQuestions(ctx context.Context, sectionIDs []uuid.UUID) ([
 		return nil, err
 	}
 
-	return utils.MapToWithError(rows, func(row sqlc.GetQuizQuestionsBySectionIDsRow) (*domain.QuizQuestionResult, error) {
-		return quizQuestionResultFrom(&row)
+	return utils.MapToWithError(rows, func(row sqlc.GetQuizQuestionsBySectionIDsRow) (*domain.QuizQuestionLegacy, error) {
+		return QuizQuestionLegacyFrom(&row)
 	})
 }
 
-func quizQuestionResultFrom(row *sqlc.GetQuizQuestionsBySectionIDsRow) (*domain.QuizQuestionResult, error) {
+func QuizQuestionLegacyFrom(row *sqlc.GetQuizQuestionsBySectionIDsRow) (*domain.QuizQuestionLegacy, error) {
 	var sqlcAnswers []SqlcQuizAnswer
 	if row.Answers == nil {
 		return nil, stdErrors.New("no quiz answers")
@@ -342,7 +342,7 @@ func quizQuestionResultFrom(row *sqlc.GetQuizQuestionsBySectionIDsRow) (*domain.
 		return nil, err
 	}
 
-	return &domain.QuizQuestionResult{
+	return &domain.QuizQuestionLegacy{
 		ID:            utils.UUIDFrom(row.ID),
 		Question:      row.Question.String,
 		Position:      int(row.Position.Int32),

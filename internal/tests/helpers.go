@@ -43,7 +43,7 @@ func getCourse(t *testing.T, baseURL string, id uuid.UUID) *domain.Course {
 	return parseJSONResponse[domain.Course](t, resp)
 }
 
-func getQuizQuestions(t *testing.T, baseURL string, quizSectionIDs []uuid.UUID) *[]domain.QuizQuestionResult {
+func getQuizQuestions(t *testing.T, baseURL string, quizSectionIDs []uuid.UUID) *[]domain.QuizQuestionLegacy {
 	t.Helper()
 
 	resp := makePOSTRequest(t, baseURL, "quiz-questions", map[string][]uuid.UUID{
@@ -55,7 +55,7 @@ func getQuizQuestions(t *testing.T, baseURL string, quizSectionIDs []uuid.UUID) 
 		t.Fatalf("expected status 200, got %d", resp.StatusCode)
 	}
 
-	return parseJSONResponse[[]domain.QuizQuestionResult](t, resp)
+	return parseJSONResponse[[]domain.QuizQuestionLegacy](t, resp)
 }
 
 func deleteCourse(t *testing.T, baseURL string, id uuid.UUID) {

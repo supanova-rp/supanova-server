@@ -5,9 +5,10 @@ package mocks
 
 import (
 	"context"
+	"sync"
+
 	"github.com/google/uuid"
 	"github.com/supanova-rp/supanova-server/internal/domain"
-	"sync"
 )
 
 // Ensure, that QuizRepositoryMock does implement domain.QuizRepository.
@@ -26,7 +27,7 @@ var _ domain.QuizRepository = &QuizRepositoryMock{}
 //			GetQuizAttemptsByUserIDFunc: func(contextMoqParam context.Context, s string) ([]*domain.QuizAttempts, error) {
 //				panic("mock out the GetQuizAttemptsByUserID method")
 //			},
-//			GetQuizQuestionsFunc: func(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionResult, error) {
+//			GetQuizQuestionsFunc: func(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionLegacy, error) {
 //				panic("mock out the GetQuizQuestions method")
 //			},
 //			GetQuizStateFunc: func(ctx context.Context, userID string, quizID uuid.UUID) (*domain.QuizState, error) {
@@ -58,7 +59,7 @@ type QuizRepositoryMock struct {
 	GetQuizAttemptsByUserIDFunc func(contextMoqParam context.Context, s string) ([]*domain.QuizAttempts, error)
 
 	// GetQuizQuestionsFunc mocks the GetQuizQuestions method.
-	GetQuizQuestionsFunc func(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionResult, error)
+	GetQuizQuestionsFunc func(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionLegacy, error)
 
 	// GetQuizStateFunc mocks the GetQuizState method.
 	GetQuizStateFunc func(ctx context.Context, userID string, quizID uuid.UUID) (*domain.QuizState, error)
@@ -215,7 +216,7 @@ func (mock *QuizRepositoryMock) GetQuizAttemptsByUserIDCalls() []struct {
 }
 
 // GetQuizQuestions calls GetQuizQuestionsFunc.
-func (mock *QuizRepositoryMock) GetQuizQuestions(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionResult, error) {
+func (mock *QuizRepositoryMock) GetQuizQuestions(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionLegacy, error) {
 	if mock.GetQuizQuestionsFunc == nil {
 		panic("QuizRepositoryMock.GetQuizQuestionsFunc: method is nil but QuizRepository.GetQuizQuestions was just called")
 	}

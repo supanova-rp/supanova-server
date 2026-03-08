@@ -246,8 +246,8 @@ func TestQuiz(t *testing.T) {
 							},
 						},
 						{
-							Question: "Who did it?",
-							Position: 1,
+							Question:      "Who did it?",
+							Position:      1,
 							IsMultiAnswer: true,
 							Answers: []handlers.AddQuizAnswerParams{
 								{Answer: "Me", IsCorrectAnswer: true, Position: 0},
@@ -262,7 +262,7 @@ func TestQuiz(t *testing.T) {
 
 		enrolUserInCourse(t, testResources.AppURL, created.ID)
 
-		expected := []domain.QuizQuestionResult{
+		expected := []domain.QuizQuestionLegacy{
 			{
 				Question:      "What is the correct answer?",
 				Position:      0,
@@ -302,7 +302,7 @@ func TestQuiz(t *testing.T) {
 
 		// ignore ID, QuizSectionID and Answer->ID
 		if diff := cmp.Diff(expected, *actual,
-			cmpopts.IgnoreFields(domain.QuizQuestionResult{}, "ID", "QuizSectionID"),
+			cmpopts.IgnoreFields(domain.QuizQuestionLegacy{}, "ID", "QuizSectionID"),
 			cmpopts.IgnoreFields(domain.QuizAnswer{}, "ID"),
 		); diff != "" {
 			t.Errorf("quiz questions mismatch (-want +got):\n%s", diff)

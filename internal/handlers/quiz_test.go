@@ -25,7 +25,7 @@ func TestGetQuizQuestions_HappyPath(t *testing.T) {
 	answerID := uuid.New()
 
 	t.Run("returns questions with answers successfully", func(t *testing.T) {
-		expected := []*domain.QuizQuestionResult{
+		expected := []*domain.QuizQuestionLegacy{
 			{
 				ID:            questionID,
 				Question:      "What is 2+2?",
@@ -44,7 +44,7 @@ func TestGetQuizQuestions_HappyPath(t *testing.T) {
 		}
 
 		mockRepo := &mocks.QuizRepositoryMock{
-			GetQuizQuestionsFunc: func(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionResult, error) {
+			GetQuizQuestionsFunc: func(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionLegacy, error) {
 				return expected, nil
 			},
 		}
@@ -66,7 +66,7 @@ func TestGetQuizQuestions_HappyPath(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
 		}
 
-		var actual []*domain.QuizQuestionResult
+		var actual []*domain.QuizQuestionLegacy
 		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
@@ -98,7 +98,7 @@ func TestGetQuizQuestions_HappyPath(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
 		}
 
-		var actual []*domain.QuizQuestionResult
+		var actual []*domain.QuizQuestionLegacy
 		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
@@ -153,7 +153,7 @@ func TestGetQuizQuestions_UnhappyPath(t *testing.T) {
 			setup: func() *handlers.Handlers {
 				return &handlers.Handlers{
 					Quiz: &mocks.QuizRepositoryMock{
-						GetQuizQuestionsFunc: func(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionResult, error) {
+						GetQuizQuestionsFunc: func(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionLegacy, error) {
 							return nil, stdErrors.New("db error")
 						},
 					},

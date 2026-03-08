@@ -245,7 +245,7 @@ func (h *Handlers) GetQuizQuestions(e echo.Context) error {
 	}
 
 	if len(params.QuizSectionIDs) == 0 {
-		return e.JSON(http.StatusOK, []domain.QuizQuestionResult{})
+		return e.JSON(http.StatusOK, []domain.QuizQuestionLegacy{})
 	}
 
 	sectionIDs := make([]uuid.UUID, 0, len(params.QuizSectionIDs))

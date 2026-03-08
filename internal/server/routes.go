@@ -33,6 +33,8 @@ func RegisterQuizRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/quiz/save-attempt", h.SaveQuizAttempt)
 	private.POST("/quiz/save-state", h.SaveQuizState)
 	private.POST("/quiz/get-all-sections", h.GetAllQuizSections)
+	// TODO: To be deprecated and replaced with combination of /course and /courses/overview endpoint
+	// (for edit courses admin panel)
 	private.POST("/quiz-questions", h.GetQuizQuestions)
 
 	// -----------------------------------------------------
