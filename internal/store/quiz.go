@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	stdErrors "errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -308,6 +309,46 @@ func (s *Store) GetQuizState(ctx context.Context, userID string, quizID uuid.UUI
 		QuizID:   quizID,
 		State:    state,
 		Attempts: row.Attempts,
+	}, nil
+}
+
+func (s *Store) GetQuizQuestions(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionLegacy, error) {
+	pgSectionIDs := utils.Map(sectionIDs, utils.PGUUIDFromUUID)
+
+	rows, err := ExecQuery(ctx, func() ([]sqlc.GetQuizQuestionsBySectionIDsRow, error) {
+		return s.Queries.GetQuizQuestionsBySectionIDs(ctx, pgSectionIDs)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return utils.MapToWithError(rows, func(row sqlc.GetQuizQuestionsBySectionIDsRow) (*domain.QuizQuestionLegacy, error) {
+		return QuizQuestionLegacyFrom(&row)
+	})
+}
+
+func QuizQuestionLegacyFrom(row *sqlc.GetQuizQuestionsBySectionIDsRow) (*domain.QuizQuestionLegacy, error) {
+	var sqlcAnswers []SqlcQuizAnswer
+	if row.Answers == nil {
+		return nil, stdErrors.New("no quiz answers")
+	}
+
+	if err := json.Unmarshal(row.Answers, &sqlcAnswers); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal answers: %w", err)
+	}
+
+	answers, err := utils.MapToWithError(sqlcAnswers, quizAnswerFrom)
+	if err != nil {
+		return nil, err
+	}
+
+	return &domain.QuizQuestionLegacy{
+		ID:            utils.UUIDFrom(row.ID),
+		Question:      row.Question.String,
+		Position:      int(row.Position.Int32),
+		IsMultiAnswer: row.IsMultiAnswer,
+		QuizSectionID: utils.UUIDFrom(row.QuizSectionID),
+		Answers:       answers,
 	}, nil
 }
 

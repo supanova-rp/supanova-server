@@ -83,3 +83,22 @@ INSERT INTO user_quiz_state (user_id, quiz_id, quiz_state)
      VALUES ($1, $2, $3)
      ON CONFLICT (user_id, quiz_id)
      DO UPDATE SET quiz_state = EXCLUDED.quiz_state;
+
+-- name: GetQuizQuestionsBySectionIDs :many
+SELECT
+  qq.*,
+  (
+    SELECT json_agg(
+      json_build_object(
+        'id', qa.id,
+        'answer', qa.answer,
+        'correct_answer', qa.correct_answer,
+        'position', qa.position
+      ) ORDER BY qa.position
+    )
+    FROM quizanswers qa
+    WHERE qa.quiz_question_id = qq.id
+  ) AS answers
+FROM quizquestions qq
+WHERE qq.quiz_section_id = ANY($1::uuid[])
+ORDER BY qq.position;

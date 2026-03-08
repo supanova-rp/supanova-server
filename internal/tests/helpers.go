@@ -43,6 +43,21 @@ func getCourse(t *testing.T, baseURL string, id uuid.UUID) *domain.Course {
 	return parseJSONResponse[domain.Course](t, resp)
 }
 
+func getQuizQuestions(t *testing.T, baseURL string, quizSectionIDs []uuid.UUID) *[]domain.QuizQuestionLegacy {
+	t.Helper()
+
+	resp := makePOSTRequest(t, baseURL, "quiz-questions", map[string][]uuid.UUID{
+		"quizSectionIds": quizSectionIDs,
+	})
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", resp.StatusCode)
+	}
+
+	return parseJSONResponse[[]domain.QuizQuestionLegacy](t, resp)
+}
+
 func deleteCourse(t *testing.T, baseURL string, id uuid.UUID) {
 	t.Helper()
 

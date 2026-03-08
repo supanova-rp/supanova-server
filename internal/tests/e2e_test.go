@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 
@@ -59,26 +60,30 @@ func TestCourse(t *testing.T) {
 				},
 			},
 			Sections: []handlers.AddSectionParams{
-				{Video: &handlers.AddVideoSectionParams{
-					Title:      "Video Section",
-					StorageKey: uuid.New().String(),
-					Position:   0,
-					Type:       domain.SectionTypeVideo,
-				}},
-				{Quiz: &handlers.AddQuizSectionParams{
-					Position: 1,
-					Type:     domain.SectionTypeQuiz,
-					Questions: []handlers.AddQuizQuestionParams{
-						{
-							Question: "What is the correct answer?",
-							Position: 0,
-							Answers: []handlers.AddQuizAnswerParams{
-								{Answer: "Correct", IsCorrectAnswer: true, Position: 0},
-								{Answer: "Wrong", IsCorrectAnswer: false, Position: 1},
+				{
+					Video: &handlers.AddVideoSectionParams{
+						Title:      "Video Section",
+						StorageKey: uuid.New().String(),
+						Position:   0,
+						Type:       domain.SectionTypeVideo,
+					},
+				},
+				{
+					Quiz: &handlers.AddQuizSectionParams{
+						Position: 1,
+						Type:     domain.SectionTypeQuiz,
+						Questions: []handlers.AddQuizQuestionParams{
+							{
+								Question: "What is the correct answer?",
+								Position: 0,
+								Answers: []handlers.AddQuizAnswerParams{
+									{Answer: "Correct", IsCorrectAnswer: true, Position: 0},
+									{Answer: "Wrong", IsCorrectAnswer: false, Position: 1},
+								},
 							},
 						},
 					},
-				}},
+				},
 			},
 		})
 
@@ -200,6 +205,107 @@ func TestProgress(t *testing.T) {
 
 		if diff := cmp.Diff(expectedAfterReset, afterReset); diff != "" {
 			t.Errorf("progress after reset mismatch (-want +got):\n%s", diff)
+		}
+	})
+}
+
+func TestQuiz(t *testing.T) {
+	t.Run("quiz questions - happy path", func(t *testing.T) {
+		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
+			Title:             courseTitle,
+			Description:       courseDescription,
+			CompletionTitle:   courseCompletionTitle,
+			CompletionMessage: courseCompletionMessage,
+			Sections: []handlers.AddSectionParams{
+				{Quiz: &handlers.AddQuizSectionParams{
+					Position: 1,
+					Type:     domain.SectionTypeQuiz,
+					Questions: []handlers.AddQuizQuestionParams{
+						{
+							Question: "What is the correct answer?",
+							Position: 0,
+							Answers: []handlers.AddQuizAnswerParams{
+								{Answer: "Correct", IsCorrectAnswer: true, Position: 0},
+								{Answer: "Wrong", IsCorrectAnswer: false, Position: 1},
+							},
+						},
+					},
+				},
+				},
+				{Quiz: &handlers.AddQuizSectionParams{
+					Position: 2,
+					Type:     domain.SectionTypeQuiz,
+					Questions: []handlers.AddQuizQuestionParams{
+						{
+							Question: "Is this the correct answer?",
+							Position: 0,
+							Answers: []handlers.AddQuizAnswerParams{
+								{Answer: "Yes", IsCorrectAnswer: true, Position: 0},
+								{Answer: "No", IsCorrectAnswer: false, Position: 1},
+								{Answer: "Maybe", IsCorrectAnswer: false, Position: 2},
+							},
+						},
+						{
+							Question:      "Who did it?",
+							Position:      1,
+							IsMultiAnswer: true,
+							Answers: []handlers.AddQuizAnswerParams{
+								{Answer: "Me", IsCorrectAnswer: true, Position: 0},
+								{Answer: "You", IsCorrectAnswer: false, Position: 1},
+								{Answer: "No one", IsCorrectAnswer: true, Position: 2},
+							},
+						},
+					},
+				}},
+			},
+		})
+
+		enrolUserInCourse(t, testResources.AppURL, created.ID)
+
+		expected := []domain.QuizQuestionLegacy{
+			{
+				Question:      "What is the correct answer?",
+				Position:      0,
+				IsMultiAnswer: false,
+				Answers: []domain.QuizAnswer{
+					{Answer: "Correct", IsCorrectAnswer: true, Position: 0},
+					{Answer: "Wrong", IsCorrectAnswer: false, Position: 1},
+				},
+			},
+			{
+				Question:      "Is this the correct answer?",
+				Position:      0,
+				IsMultiAnswer: false,
+				Answers: []domain.QuizAnswer{
+					{Answer: "Yes", IsCorrectAnswer: true, Position: 0},
+					{Answer: "No", IsCorrectAnswer: false, Position: 1},
+					{Answer: "Maybe", IsCorrectAnswer: false, Position: 2},
+				},
+			},
+			{
+				Question:      "Who did it?",
+				Position:      1,
+				IsMultiAnswer: true,
+				Answers: []domain.QuizAnswer{
+					{Answer: "Me", IsCorrectAnswer: true, Position: 0},
+					{Answer: "You", IsCorrectAnswer: false, Position: 1},
+					{Answer: "No one", IsCorrectAnswer: true, Position: 2},
+				},
+			},
+		}
+
+		quizSectionIDs := []uuid.UUID{}
+		for _, section := range created.Sections {
+			quizSectionIDs = append(quizSectionIDs, section.GetID())
+		}
+		actual := getQuizQuestions(t, testResources.AppURL, quizSectionIDs)
+
+		// ignore ID, QuizSectionID and Answer->ID
+		if diff := cmp.Diff(expected, *actual,
+			cmpopts.IgnoreFields(domain.QuizQuestionLegacy{}, "ID", "QuizSectionID"),
+			cmpopts.IgnoreFields(domain.QuizAnswer{}, "ID"),
+		); diff != "" {
+			t.Errorf("quiz questions mismatch (-want +got):\n%s", diff)
 		}
 	})
 }
