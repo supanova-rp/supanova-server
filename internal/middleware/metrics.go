@@ -1,32 +1,31 @@
 package middleware
 
 import (
-	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/services/metrics"
 )
 
 func Metrics(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		apiPrefix := "/" + config.APIVersion
+		reqPath := c.Request().URL.Path
+
+		// ignore anything without the apiPrefix, also ignore the /health endpoint
+		if !strings.HasPrefix(reqPath, apiPrefix) || reqPath == apiPrefix+"/health" {
+			return next(c)
+		}
+
 		start := time.Now()
 		err := next(c)
 		latency := time.Since(start).Seconds() // prometheus measures latency in seconds
 
-		status := c.Response().Status
-		// echo writes response after middleware, so c.Response().Status defaults to 200; read from error instead
-		if err != nil {
-			var httpErr *echo.HTTPError
-			if errors.As(err, &httpErr) {
-				status = httpErr.Code
-			} else {
-				status = http.StatusInternalServerError
-			}
-		}
-
+		status := responseStatus(c, err)
 		statusText := http.StatusText(status)
 		method := c.Request().Method
 		path := c.Path()
