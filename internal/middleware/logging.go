@@ -38,14 +38,17 @@ func Logging(next echo.HandlerFunc) echo.HandlerFunc {
 
 		latency := time.Since(start)
 
+		status := responseStatus(c, err)
+
 		// Ignore 404s for paths outside the API prefix (e.g. favicon.ico)
-		if c.Response().Status == http.StatusNotFound && !strings.HasPrefix(req.URL.Path, "/"+config.APIVersion) {
+		if status == http.StatusNotFound && !strings.HasPrefix(req.URL.Path, "/"+config.APIVersion) {
 			return err
 		}
 
 		attrs := []any{
 			slog.String("method", req.Method),
 			slog.String("path", req.URL.Path),
+			slog.Int("status", status),
 			slog.String("params", allParams),
 			slog.Int64("latency_ms", latency.Milliseconds()),
 			slog.String("ip", c.RealIP()),
