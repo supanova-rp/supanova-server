@@ -17,8 +17,6 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/handlers/testhelpers"
 )
 
-const getQuizQuestionsHandlerName = "GetQuizQuestions"
-
 func TestGetQuizQuestions_HappyPath(t *testing.T) {
 	sectionID := uuid.New()
 	questionID := uuid.New()
@@ -75,7 +73,7 @@ func TestGetQuizQuestions_HappyPath(t *testing.T) {
 			t.Errorf("quiz questions mismatch (-want +got):\n%s", diff)
 		}
 
-		testhelpers.AssertRepoCalls(t, len(mockRepo.GetQuizQuestionsCalls()), 1, getQuizQuestionsHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockRepo.GetQuizQuestionsCalls()), 1, testhelpers.GetQuizQuestionsHandlerName)
 	})
 
 	t.Run("returns empty slice when quizSectionIds is empty", func(t *testing.T) {
@@ -107,7 +105,7 @@ func TestGetQuizQuestions_HappyPath(t *testing.T) {
 			t.Errorf("expected empty slice, got %v", actual)
 		}
 
-		testhelpers.AssertRepoCalls(t, len(mockRepo.GetQuizQuestionsCalls()), 0, getQuizQuestionsHandlerName)
+		testhelpers.AssertRepoCalls(t, len(mockRepo.GetQuizQuestionsCalls()), 0, testhelpers.GetQuizQuestionsHandlerName)
 	})
 }
 

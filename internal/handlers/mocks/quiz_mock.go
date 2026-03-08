@@ -5,10 +5,9 @@ package mocks
 
 import (
 	"context"
-	"sync"
-
 	"github.com/google/uuid"
 	"github.com/supanova-rp/supanova-server/internal/domain"
+	"sync"
 )
 
 // Ensure, that QuizRepositoryMock does implement domain.QuizRepository.
