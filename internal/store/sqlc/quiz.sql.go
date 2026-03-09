@@ -181,6 +181,66 @@ func (q *Queries) GetQuizAttemptsByUserID(ctx context.Context, userID string) ([
 	return items, nil
 }
 
+const getQuizQuestionsBySectionIDs = `-- name: GetQuizQuestionsBySectionIDs :many
+SELECT
+  qq.id,
+  qq.question,
+  qq.position,
+  qq.quiz_section_id,
+  qq.is_multi_answer,
+  (
+    SELECT json_agg(
+      json_build_object(
+        'id', qa.id,
+        'answer', qa.answer,
+        'correct_answer', qa.correct_answer,
+        'position', qa.position
+      ) ORDER BY qa.position
+    )
+    FROM quizanswers qa
+    WHERE qa.quiz_question_id = qq.id
+  ) AS answers
+FROM quizquestions qq
+WHERE qq.quiz_section_id = ANY($1::uuid[])
+ORDER BY qq.position
+`
+
+type GetQuizQuestionsBySectionIDsRow struct {
+	ID            pgtype.UUID
+	Question      pgtype.Text
+	Position      pgtype.Int4
+	QuizSectionID pgtype.UUID
+	IsMultiAnswer bool
+	Answers       []byte
+}
+
+func (q *Queries) GetQuizQuestionsBySectionIDs(ctx context.Context, dollar_1 []pgtype.UUID) ([]GetQuizQuestionsBySectionIDsRow, error) {
+	rows, err := q.db.Query(ctx, getQuizQuestionsBySectionIDs, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetQuizQuestionsBySectionIDsRow
+	for rows.Next() {
+		var i GetQuizQuestionsBySectionIDsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Question,
+			&i.Position,
+			&i.QuizSectionID,
+			&i.IsMultiAnswer,
+			&i.Answers,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getQuizState = `-- name: GetQuizState :one
 SELECT quiz_state, attempts FROM user_quiz_state WHERE user_id = $1 AND quiz_id = $2
 `

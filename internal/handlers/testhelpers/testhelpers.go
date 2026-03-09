@@ -42,6 +42,7 @@ const (
 	GetUserHandlerName                 = "GetUser"
 	SendEmailHandlerName               = "SendEmail"
 	GetTemplateNamesHandlerName        = "GetEmailTemplateNames"
+	GetQuizQuestionsHandlerName        = "GetQuizQuestions"
 
 	TestUserID = "test-user-id"
 )
