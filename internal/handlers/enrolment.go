@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -31,7 +30,7 @@ func (h *Handlers) UpdateCourseEnrolment(e echo.Context) error {
 
 	courseID, err := uuid.Parse(params.CourseID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	if params.IsEnrolled {
@@ -40,13 +39,7 @@ func (h *Handlers) UpdateCourseEnrolment(e echo.Context) error {
 			CourseID: courseID,
 		})
 		if err != nil {
-			return internalError(
-				ctx,
-				errors.Deleting(enrolmentResource),
-				err,
-				slog.String("course_id", params.CourseID),
-				slog.String("user_id", params.UserID),
-			)
+			return httpError(http.StatusInternalServerError, errors.Deleting(enrolmentResource), err)
 		}
 	} else {
 		err := h.Enrolment.EnrolInCourse(ctx, domain.EnrolInCourseParams{
@@ -54,13 +47,7 @@ func (h *Handlers) UpdateCourseEnrolment(e echo.Context) error {
 			CourseID: courseID,
 		})
 		if err != nil {
-			return internalError(
-				ctx,
-				errors.Creating(enrolmentResource),
-				err,
-				slog.String("course_id", params.CourseID),
-				slog.String("user_id", params.UserID),
-			)
+			return httpError(http.StatusInternalServerError, errors.Creating(enrolmentResource), err)
 		}
 	}
 

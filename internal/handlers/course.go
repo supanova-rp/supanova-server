@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -34,24 +33,24 @@ func (h *Handlers) GetCourse(e echo.Context) error {
 
 	courseID, err := utils.PGUUIDFromString(params.ID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	course, err := h.Course.GetCourse(ctx, courseID)
 	if err != nil {
 		if errors.IsNotFoundErr(err) {
-			return echo.NewHTTPError(http.StatusNotFound, errors.NotFound(courseResource))
+			return httpError(http.StatusNotFound, errors.NotFound(courseResource), err)
 		}
 
-		return internalError(ctx, errors.Getting(courseResource), err, slog.String("course_id", params.ID))
+		return httpError(http.StatusInternalServerError, errors.Getting(courseResource), err)
 	}
 
 	enrolled, err := h.isEnrolled(ctx, utils.UUIDFrom(courseID))
 	if err != nil {
-		return internalError(ctx, errors.Getting(courseResource), err, slog.String("course_id", params.ID))
+		return httpError(http.StatusInternalServerError, errors.Getting(courseResource), err)
 	}
 	if !enrolled {
-		return echo.NewHTTPError(http.StatusForbidden, errors.Forbidden(courseResource))
+		return httpError(http.StatusForbidden, errors.Forbidden(courseResource), nil)
 	}
 
 	return e.JSON(http.StatusOK, course)
@@ -148,7 +147,7 @@ func (h *Handlers) AddCourse(e echo.Context) error {
 
 	course, err := h.Course.AddCourse(ctx, addCourseParamsFrom(&req))
 	if err != nil {
-		return internalError(ctx, errors.Creating(courseResource), err)
+		return httpError(http.StatusInternalServerError, errors.Creating(courseResource), err)
 	}
 
 	return e.JSON(http.StatusCreated, course)
@@ -223,11 +222,11 @@ func (h *Handlers) DeleteCourse(e echo.Context) error {
 
 	courseID, err := uuid.Parse(params.CourseID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	if err := h.Course.DeleteCourse(ctx, courseID); err != nil {
-		return internalError(ctx, errors.Deleting(courseResource), err, slog.String("course_id", params.CourseID))
+		return httpError(http.StatusInternalServerError, errors.Deleting(courseResource), err)
 	}
 
 	return e.JSON(http.StatusOK, params.CourseID)
@@ -238,7 +237,7 @@ func (h *Handlers) GetCoursesOverview(e echo.Context) error {
 
 	overviews, err := h.Course.GetCoursesOverview(ctx)
 	if err != nil {
-		return internalError(ctx, errors.Getting(courseOverviewResource), err)
+		return httpError(http.StatusInternalServerError, errors.Getting(courseOverviewResource), err)
 	}
 
 	return e.JSON(http.StatusOK, overviews)
@@ -249,12 +248,12 @@ func (h *Handlers) GetAssignedCourseTitles(e echo.Context) error {
 
 	userID, ok := getUserID(ctx)
 	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+		return httpError(http.StatusInternalServerError, errors.NotFoundInCtx("user"), nil)
 	}
 
 	overviews, err := h.Course.GetAssignedCourseTitles(ctx, userID)
 	if err != nil {
-		return internalError(ctx, errors.Getting(assignedCourseTitlesResource), err)
+		return httpError(http.StatusInternalServerError, errors.Getting(assignedCourseTitlesResource), err)
 	}
 
 	return e.JSON(http.StatusOK, overviews)

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -30,12 +29,7 @@ func (h *Handlers) GetVideoUploadURL(e echo.Context) error {
 	videoKey := getVideoKey(params)
 	URL, err := h.ObjectStorage.GenerateUploadURL(ctx, videoKey, nil)
 	if err != nil {
-		return internalError(
-			ctx,
-			errors.Getting("upload url"),
-			err,
-			slog.String("course_id", params.CourseID), slog.String("storage_key", params.StorageKey),
-		)
+		return httpError(http.StatusInternalServerError, errors.Getting("upload url"), err)
 	}
 
 	return e.JSON(http.StatusOK, &domain.VideoUploadURL{
@@ -54,12 +48,7 @@ func (h *Handlers) GetVideoURL(e echo.Context) error {
 	videoKey := getVideoKey(params)
 	URL, err := h.ObjectStorage.GetCDNURL(ctx, videoKey)
 	if err != nil {
-		return internalError(
-			ctx,
-			errors.Getting("video url"),
-			err,
-			slog.String("course_id", params.CourseID), slog.String("storage_key", params.StorageKey),
-		)
+		return httpError(http.StatusInternalServerError, errors.Getting("video url"), err)
 	}
 
 	return e.JSON(http.StatusOK, &domain.VideoURL{
@@ -81,20 +70,20 @@ func (h *Handlers) GetCourseMaterials(e echo.Context) error {
 
 	courseID, err := uuid.Parse(params.CourseID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	enrolled, err := h.isEnrolled(ctx, courseID)
 	if err != nil {
-		return internalError(ctx, errors.Getting(courseMaterialsResource), err, slog.String("course_id", params.CourseID))
+		return httpError(http.StatusInternalServerError, errors.Getting(courseMaterialsResource), err)
 	}
 	if !enrolled {
-		return echo.NewHTTPError(http.StatusForbidden, errors.Forbidden(courseMaterialsResource))
+		return httpError(http.StatusForbidden, errors.Forbidden(courseMaterialsResource), nil)
 	}
 
 	materials, err := h.Course.GetCourseMaterials(ctx, courseID)
 	if err != nil {
-		return internalError(ctx, errors.Getting(courseMaterialsResource), err, slog.String("course_id", params.CourseID))
+		return httpError(http.StatusInternalServerError, errors.Getting(courseMaterialsResource), err)
 	}
 
 	materialsWithURL := make([]domain.CourseMaterialWithURL, 0, len(materials))
@@ -102,7 +91,7 @@ func (h *Handlers) GetCourseMaterials(e echo.Context) error {
 		key := getMaterialKey(params.CourseID, m.StorageKey.String())
 		url, err := h.ObjectStorage.GetCDNURL(ctx, key)
 		if err != nil {
-			return internalError(ctx, errors.Getting(courseMaterialsResource), err, slog.String("course_id", params.CourseID))
+			return httpError(http.StatusInternalServerError, errors.Getting(courseMaterialsResource), err)
 		}
 
 		materialsWithURL = append(materialsWithURL, domain.CourseMaterialWithURL{
@@ -128,12 +117,7 @@ func (h *Handlers) GetMaterialUploadURL(e echo.Context) error {
 	contentType := "application/pdf"
 	URL, err := h.ObjectStorage.GenerateUploadURL(ctx, materialKey, &contentType)
 	if err != nil {
-		return internalError(
-			ctx,
-			errors.Getting("upload url"),
-			err,
-			slog.String("course_id", params.CourseID), slog.String("storage_key", params.StorageKey),
-		)
+		return httpError(http.StatusInternalServerError, errors.Getting("upload url"), err)
 	}
 
 	return e.JSON(http.StatusOK, &domain.CourseMaterialUploadURL{
