@@ -183,7 +183,11 @@ func (q *Queries) GetQuizAttemptsByUserID(ctx context.Context, userID string) ([
 
 const getQuizQuestionsBySectionIDs = `-- name: GetQuizQuestionsBySectionIDs :many
 SELECT
-  qq.id, qq.question, qq.position, qq.quiz_section_id, qq.is_multi_answer,
+  qq.id,
+  qq.question,
+  qq.position,
+  qq.quiz_section_id,
+  qq.is_multi_answer,
   (
     SELECT json_agg(
       json_build_object(

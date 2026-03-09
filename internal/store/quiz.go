@@ -323,11 +323,11 @@ func (s *Store) GetQuizQuestions(ctx context.Context, sectionIDs []uuid.UUID) ([
 	}
 
 	return utils.MapToWithError(rows, func(row sqlc.GetQuizQuestionsBySectionIDsRow) (*domain.QuizQuestionLegacy, error) {
-		return QuizQuestionLegacyFrom(&row)
+		return quizQuestionLegacyFrom(&row)
 	})
 }
 
-func QuizQuestionLegacyFrom(row *sqlc.GetQuizQuestionsBySectionIDsRow) (*domain.QuizQuestionLegacy, error) {
+func quizQuestionLegacyFrom(row *sqlc.GetQuizQuestionsBySectionIDsRow) (*domain.QuizQuestionLegacy, error) {
 	var sqlcAnswers []SqlcQuizAnswer
 	if row.Answers == nil {
 		return nil, stdErrors.New("no quiz answers")
