@@ -251,14 +251,14 @@ func (h *Handlers) GetQuizQuestions(e echo.Context) error {
 	for _, id := range params.QuizSectionIDs {
 		parsed, err := uuid.Parse(id)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+			return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 		}
 		sectionIDs = append(sectionIDs, parsed)
 	}
 
 	questions, err := h.Quiz.GetQuizQuestions(ctx, sectionIDs)
 	if err != nil {
-		return internalError(ctx, errors.Getting(quizQuestionsResource), err)
+		return httpError(http.StatusInternalServerError, errors.Getting(quizQuestionsResource), err)
 	}
 
 	return e.JSON(http.StatusOK, questions)
