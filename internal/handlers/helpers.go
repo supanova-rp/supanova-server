@@ -34,26 +34,17 @@ func getUserRole(ctx context.Context) (config.Role, bool) {
 
 func bindAndValidate(c echo.Context, params any) error {
 	if err := c.Bind(params); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidRequestBody)
+		return httpError(http.StatusBadRequest, errors.InvalidRequestBody, err)
 	}
 
 	if err := c.Validate(params); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.Validation)
+		return httpError(http.StatusBadRequest, errors.Validation, err)
 	}
 
 	return nil
 }
 
-func internalError(ctx context.Context, message string, err error, attrs ...slog.Attr) error {
-	logAttrs := []any{slog.Any("error", err)}
-	for _, attr := range attrs {
-		logAttrs = append(logAttrs, attr)
-	}
-
-	if userID, ok := getUserID(ctx); ok {
-		logAttrs = append(logAttrs, slog.String("user_id", userID))
-	}
-
-	slog.ErrorContext(ctx, message, logAttrs...)
-	return echo.NewHTTPError(http.StatusInternalServerError, message)
+func httpError(code int, message string, err error) *echo.HTTPError {
+	// Call SetInternal to ensure the internal error doesn't get lost so it can be logged
+	return echo.NewHTTPError(code, message).SetInternal(err)
 }

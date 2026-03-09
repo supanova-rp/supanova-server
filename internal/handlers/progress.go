@@ -37,7 +37,7 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 
 	userID, ok := getUserID(ctx)
 	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+		return httpError(http.StatusInternalServerError, errors.NotFoundInCtx("user"), nil)
 	}
 
 	var params GetProgressParams
@@ -47,7 +47,7 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 
 	courseID, err := uuid.Parse(params.CourseID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	progress, err := h.Progress.GetProgress(e.Request().Context(), domain.GetProgressParams{
@@ -63,7 +63,7 @@ func (h *Handlers) GetProgress(e echo.Context) error {
 			})
 		}
 
-		return internalError(ctx, errors.Getting(progressResource), err, slog.String("course_id", params.CourseID))
+		return httpError(http.StatusInternalServerError, errors.Getting(progressResource), err)
 	}
 
 	return e.JSON(http.StatusOK, progress)
@@ -74,7 +74,7 @@ func (h *Handlers) UpdateProgress(e echo.Context) error {
 
 	userID, ok := getUserID(ctx)
 	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+		return httpError(http.StatusInternalServerError, errors.NotFoundInCtx("user"), nil)
 	}
 
 	var params UpdateProgressParams
@@ -84,12 +84,12 @@ func (h *Handlers) UpdateProgress(e echo.Context) error {
 
 	courseID, err := uuid.Parse(params.CourseID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	sectionID, err := uuid.Parse(params.SectionID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	err = h.Progress.UpdateProgress(ctx, domain.UpdateProgressParams{
@@ -98,9 +98,7 @@ func (h *Handlers) UpdateProgress(e echo.Context) error {
 		SectionID: sectionID,
 	})
 	if err != nil {
-		return internalError(ctx, errors.Updating(progressResource), err,
-			slog.String("course_id", params.CourseID),
-			slog.String("section_id", params.SectionID))
+		return httpError(http.StatusInternalServerError, errors.Updating(progressResource), err)
 	}
 
 	return e.NoContent(http.StatusNoContent)
@@ -111,7 +109,7 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 
 	userID, ok := getUserID(ctx)
 	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+		return httpError(http.StatusInternalServerError, errors.NotFoundInCtx("user"), nil)
 	}
 
 	var params SetCourseCompletedParams
@@ -121,7 +119,7 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 
 	courseID, err := uuid.Parse(params.CourseID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	prevCompleted, err := h.Progress.HasCompletedCourse(ctx, domain.HasCompletedCourseParams{
@@ -129,8 +127,7 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 		CourseID: courseID,
 	})
 	if err != nil {
-		return internalError(ctx, errors.Updating(progressResource), err,
-			slog.String("course_id", params.CourseID))
+		return httpError(http.StatusInternalServerError, errors.Updating(progressResource), err)
 	}
 
 	if prevCompleted {
@@ -142,14 +139,12 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 		CourseID: courseID,
 	})
 	if err != nil {
-		return internalError(ctx, errors.Updating(progressResource), err,
-			slog.String("course_id", params.CourseID))
+		return httpError(http.StatusInternalServerError, errors.Updating(progressResource), err)
 	}
 
 	user, err := h.User.GetUser(ctx, userID)
 	if err != nil {
-		return internalError(ctx, errors.Updating(progressResource), err,
-			slog.String("course_id", params.CourseID))
+		return httpError(http.StatusInternalServerError, errors.Updating(progressResource), err)
 	}
 
 	emailParams := &email.CourseCompletionParams{
@@ -192,7 +187,7 @@ func (h *Handlers) ResetProgress(e echo.Context) error {
 
 	userID, ok := getUserID(ctx)
 	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+		return httpError(http.StatusInternalServerError, errors.NotFoundInCtx("user"), nil)
 	}
 
 	var params ResetProgressParams
@@ -202,7 +197,7 @@ func (h *Handlers) ResetProgress(e echo.Context) error {
 
 	courseID, err := uuid.Parse(params.CourseID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	err = h.Progress.ResetProgress(ctx, domain.ResetProgressParams{
@@ -210,7 +205,7 @@ func (h *Handlers) ResetProgress(e echo.Context) error {
 		CourseID: courseID,
 	})
 	if err != nil {
-		return internalError(ctx, errors.Updating(progressResource), err, slog.String("course_id", params.CourseID))
+		return httpError(http.StatusInternalServerError, errors.Updating(progressResource), err)
 	}
 
 	return e.NoContent(http.StatusNoContent)
@@ -222,10 +217,10 @@ func (h *Handlers) GetAllProgress(e echo.Context) error {
 	progress, err := h.Progress.GetAllProgress(ctx)
 	if err != nil {
 		if errors.IsNotFoundErr(err) {
-			return echo.NewHTTPError(http.StatusNotFound, errors.NotFound(progressResource))
+			return httpError(http.StatusNotFound, errors.NotFound(progressResource), err)
 		}
 
-		return internalError(ctx, errors.Getting(progressResource), err)
+		return httpError(http.StatusInternalServerError, errors.Getting(progressResource), err)
 	}
 
 	return e.JSON(http.StatusOK, progress)

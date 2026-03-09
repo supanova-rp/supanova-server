@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log/slog"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -34,7 +33,7 @@ func (h *Handlers) SaveQuizAttempt(e echo.Context) error {
 
 	userID, ok := getUserID(ctx)
 	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+		return httpError(http.StatusInternalServerError, errors.NotFoundInCtx("user"), nil)
 	}
 
 	var params SaveQuizAttemptParams
@@ -44,12 +43,12 @@ func (h *Handlers) SaveQuizAttempt(e echo.Context) error {
 
 	quizID, err := uuid.Parse(params.QuizID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	answers, err := json.Marshal(params.Answers)
 	if err != nil {
-		return internalError(ctx, errors.Creating(quizAttemptResource), err, slog.String("quiz_id", params.QuizID))
+		return httpError(http.StatusInternalServerError, errors.Creating(quizAttemptResource), err)
 	}
 
 	err = h.Quiz.SaveQuizAttempt(ctx, domain.SaveQuizAttemptParams{
@@ -58,7 +57,7 @@ func (h *Handlers) SaveQuizAttempt(e echo.Context) error {
 		Answers: answers,
 	})
 	if err != nil {
-		return internalError(ctx, errors.Creating(quizAttemptResource), err, slog.String("quiz_id", params.QuizID))
+		return httpError(http.StatusInternalServerError, errors.Creating(quizAttemptResource), err)
 	}
 
 	return e.NoContent(http.StatusNoContent)
@@ -80,7 +79,7 @@ func (h *Handlers) SetQuizState(e echo.Context) error {
 
 	userID, ok := getUserID(ctx)
 	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+		return httpError(http.StatusInternalServerError, errors.NotFoundInCtx("user"), nil)
 	}
 
 	var params SetQuizStateParams
@@ -90,7 +89,7 @@ func (h *Handlers) SetQuizState(e echo.Context) error {
 
 	quizID, err := uuid.Parse(params.QuizID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	// Client sends state as a JSON string, e.g. "[[0, 3], [7]]"
@@ -106,7 +105,7 @@ func (h *Handlers) SetQuizState(e echo.Context) error {
 	// Validate the shape of the quizState
 	var quizState [][]int
 	if err := json.Unmarshal(quizStateRaw, &quizState); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid quiz state shape")
+		return httpError(http.StatusBadRequest, "invalid quiz state shape", err)
 	}
 
 	err = h.Quiz.SetQuizState(ctx, domain.SetQuizStateParams{
@@ -115,7 +114,7 @@ func (h *Handlers) SetQuizState(e echo.Context) error {
 		QuizState: quizStateRaw,
 	})
 	if err != nil {
-		return internalError(ctx, errors.Creating(quizStateResource), err, slog.String("quiz_id", params.QuizID))
+		return httpError(http.StatusInternalServerError, errors.Creating(quizStateResource), err)
 	}
 
 	return e.NoContent(http.StatusNoContent)
@@ -126,7 +125,7 @@ func (h *Handlers) SaveQuizState(e echo.Context) error {
 
 	userID, ok := getUserID(ctx)
 	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+		return httpError(http.StatusInternalServerError, errors.NotFoundInCtx("user"), nil)
 	}
 
 	var params SaveQuizStateParams
@@ -136,12 +135,12 @@ func (h *Handlers) SaveQuizState(e echo.Context) error {
 
 	quizID, err := uuid.Parse(params.QuizID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	quizAnswers, err := json.Marshal(params.Answers)
 	if err != nil {
-		return internalError(ctx, errors.Creating(quizStateResource), err, slog.String("quiz_id", params.QuizID))
+		return httpError(http.StatusInternalServerError, errors.Creating(quizStateResource), err)
 	}
 
 	err = h.Quiz.UpsertQuizState(ctx, domain.UpsertQuizStateParams{
@@ -150,7 +149,7 @@ func (h *Handlers) SaveQuizState(e echo.Context) error {
 		QuizAnswers: quizAnswers,
 	})
 	if err != nil {
-		return internalError(ctx, errors.Creating(quizStateResource), err, slog.String("quiz_id", params.QuizID))
+		return httpError(http.StatusInternalServerError, errors.Creating(quizStateResource), err)
 	}
 
 	return e.NoContent(http.StatusNoContent)
@@ -161,7 +160,7 @@ func (h *Handlers) GetAllQuizSections(e echo.Context) error {
 
 	sections, err := h.Quiz.GetAllQuizSections(ctx)
 	if err != nil {
-		return internalError(ctx, errors.Getting("quiz sections"), err)
+		return httpError(http.StatusInternalServerError, errors.Getting("quiz sections"), err)
 	}
 
 	return e.JSON(http.StatusOK, sections)
@@ -176,7 +175,7 @@ func (h *Handlers) ResetQuizProgress(e echo.Context) error {
 
 	userID, ok := getUserID(ctx)
 	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+		return httpError(http.StatusInternalServerError, errors.NotFoundInCtx("user"), nil)
 	}
 
 	var params ResetQuizProgressParams
@@ -186,12 +185,12 @@ func (h *Handlers) ResetQuizProgress(e echo.Context) error {
 
 	quizID, err := uuid.Parse(params.QuizID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	err = h.Quiz.ResetQuizProgress(ctx, userID, quizID)
 	if err != nil {
-		return internalError(ctx, errors.Deleting(quizStateResource), err, slog.String("quiz_id", params.QuizID))
+		return httpError(http.StatusInternalServerError, errors.Deleting(quizStateResource), err)
 	}
 
 	return e.NoContent(http.StatusNoContent)
@@ -207,7 +206,7 @@ func (h *Handlers) GetQuizState(e echo.Context) error {
 
 	userID, ok := getUserID(ctx)
 	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.NotFoundInCtx("user"))
+		return httpError(http.StatusInternalServerError, errors.NotFoundInCtx("user"), nil)
 	}
 
 	var params GetQuizStateParams
@@ -217,12 +216,12 @@ func (h *Handlers) GetQuizState(e echo.Context) error {
 
 	quizID, err := uuid.Parse(params.QuizID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 	}
 
 	state, err := h.Quiz.GetQuizState(ctx, userID, quizID)
 	if err != nil {
-		return internalError(ctx, errors.Getting(quizStateResource), err, slog.String("quiz_id", params.QuizID))
+		return httpError(http.StatusInternalServerError, errors.Getting(quizStateResource), err)
 	}
 
 	if state == nil {
@@ -252,14 +251,14 @@ func (h *Handlers) GetQuizQuestions(e echo.Context) error {
 	for _, id := range params.QuizSectionIDs {
 		parsed, err := uuid.Parse(id)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, errors.InvalidUUID)
+			return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
 		}
 		sectionIDs = append(sectionIDs, parsed)
 	}
 
 	questions, err := h.Quiz.GetQuizQuestions(ctx, sectionIDs)
 	if err != nil {
-		return internalError(ctx, errors.Getting(quizQuestionsResource), err)
+		return httpError(http.StatusInternalServerError, errors.Getting(quizQuestionsResource), err)
 	}
 
 	return e.JSON(http.StatusOK, questions)
@@ -279,7 +278,7 @@ func (h *Handlers) GetQuizAttemptsByUserID(e echo.Context) error {
 
 	attempts, err := h.Quiz.GetQuizAttemptsByUserID(ctx, params.UserID)
 	if err != nil {
-		return internalError(ctx, errors.Getting(quizAttemptResource), err)
+		return httpError(http.StatusInternalServerError, errors.Getting(quizAttemptResource), err)
 	}
 
 	return e.JSON(http.StatusOK, attempts)
