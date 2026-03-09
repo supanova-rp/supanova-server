@@ -86,7 +86,11 @@ INSERT INTO user_quiz_state (user_id, quiz_id, quiz_state)
 
 -- name: GetQuizQuestionsBySectionIDs :many
 SELECT
-  qq.*,
+  qq.id,
+  qq.question,
+  qq.position,
+  qq.quiz_section_id,
+  qq.is_multi_answer,
   (
     SELECT json_agg(
       json_build_object(
