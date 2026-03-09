@@ -26,6 +26,9 @@ var _ domain.QuizRepository = &QuizRepositoryMock{}
 //			GetQuizAttemptsByUserIDFunc: func(contextMoqParam context.Context, s string) ([]*domain.QuizAttempts, error) {
 //				panic("mock out the GetQuizAttemptsByUserID method")
 //			},
+//			GetQuizQuestionsFunc: func(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionLegacy, error) {
+//				panic("mock out the GetQuizQuestions method")
+//			},
 //			GetQuizStateFunc: func(ctx context.Context, userID string, quizID uuid.UUID) (*domain.QuizState, error) {
 //				panic("mock out the GetQuizState method")
 //			},
@@ -53,6 +56,9 @@ type QuizRepositoryMock struct {
 
 	// GetQuizAttemptsByUserIDFunc mocks the GetQuizAttemptsByUserID method.
 	GetQuizAttemptsByUserIDFunc func(contextMoqParam context.Context, s string) ([]*domain.QuizAttempts, error)
+
+	// GetQuizQuestionsFunc mocks the GetQuizQuestions method.
+	GetQuizQuestionsFunc func(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionLegacy, error)
 
 	// GetQuizStateFunc mocks the GetQuizState method.
 	GetQuizStateFunc func(ctx context.Context, userID string, quizID uuid.UUID) (*domain.QuizState, error)
@@ -82,6 +88,13 @@ type QuizRepositoryMock struct {
 			ContextMoqParam context.Context
 			// S is the s argument value.
 			S string
+		}
+		// GetQuizQuestions holds details about calls to the GetQuizQuestions method.
+		GetQuizQuestions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// SectionIDs is the sectionIDs argument value.
+			SectionIDs []uuid.UUID
 		}
 		// GetQuizState holds details about calls to the GetQuizState method.
 		GetQuizState []struct {
@@ -125,6 +138,7 @@ type QuizRepositoryMock struct {
 	}
 	lockGetAllQuizSections      sync.RWMutex
 	lockGetQuizAttemptsByUserID sync.RWMutex
+	lockGetQuizQuestions        sync.RWMutex
 	lockGetQuizState            sync.RWMutex
 	lockResetQuizProgress       sync.RWMutex
 	lockSaveQuizAttempt         sync.RWMutex
@@ -197,6 +211,42 @@ func (mock *QuizRepositoryMock) GetQuizAttemptsByUserIDCalls() []struct {
 	mock.lockGetQuizAttemptsByUserID.RLock()
 	calls = mock.calls.GetQuizAttemptsByUserID
 	mock.lockGetQuizAttemptsByUserID.RUnlock()
+	return calls
+}
+
+// GetQuizQuestions calls GetQuizQuestionsFunc.
+func (mock *QuizRepositoryMock) GetQuizQuestions(ctx context.Context, sectionIDs []uuid.UUID) ([]*domain.QuizQuestionLegacy, error) {
+	if mock.GetQuizQuestionsFunc == nil {
+		panic("QuizRepositoryMock.GetQuizQuestionsFunc: method is nil but QuizRepository.GetQuizQuestions was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		SectionIDs []uuid.UUID
+	}{
+		Ctx:        ctx,
+		SectionIDs: sectionIDs,
+	}
+	mock.lockGetQuizQuestions.Lock()
+	mock.calls.GetQuizQuestions = append(mock.calls.GetQuizQuestions, callInfo)
+	mock.lockGetQuizQuestions.Unlock()
+	return mock.GetQuizQuestionsFunc(ctx, sectionIDs)
+}
+
+// GetQuizQuestionsCalls gets all the calls that were made to GetQuizQuestions.
+// Check the length with:
+//
+//	len(mockedQuizRepository.GetQuizQuestionsCalls())
+func (mock *QuizRepositoryMock) GetQuizQuestionsCalls() []struct {
+	Ctx        context.Context
+	SectionIDs []uuid.UUID
+} {
+	var calls []struct {
+		Ctx        context.Context
+		SectionIDs []uuid.UUID
+	}
+	mock.lockGetQuizQuestions.RLock()
+	calls = mock.calls.GetQuizQuestions
+	mock.lockGetQuizQuestions.RUnlock()
 	return calls
 }
 
