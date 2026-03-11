@@ -156,11 +156,12 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 
 	go func() {
 		emailName := h.EmailService.GetEmailNames().CourseCompletion
+		templateName := h.EmailService.GetTemplateNames().CourseCompletion
 
 		err = h.EmailService.Send(
 			context.WithoutCancel(ctx),
 			emailParams,
-			h.EmailService.GetTemplateNames().CourseCompletion,
+			templateName,
 			emailName,
 		)
 		if err != nil {
@@ -169,6 +170,16 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 				"failed to send email",
 				slog.Any("error", err),
 				slog.String("email_name", emailName),
+				slog.String("template_name", templateName),
+				slog.String("course_id", params.CourseID),
+				slog.String("user_id", userID),
+			)
+		} else {
+			slog.InfoContext(
+				ctx,
+				"course completion email sent",
+				slog.String("email_name", emailName),
+				slog.String("template_name", templateName),
 				slog.String("course_id", params.CourseID),
 				slog.String("user_id", userID),
 			)
