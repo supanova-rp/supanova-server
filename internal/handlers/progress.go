@@ -172,6 +172,14 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 				slog.String("course_id", params.CourseID),
 				slog.String("user_id", userID),
 			)
+		} else {
+			slog.InfoContext(
+				ctx,
+				"course completion email sent",
+				slog.String("email_name", emailName),
+				slog.String("course_id", params.CourseID),
+				slog.String("user_id", userID),
+			)
 		}
 	}()
 
