@@ -87,3 +87,38 @@ ORDER BY c.title;
 
 -- name: DeleteCourse :exec
 DELETE FROM courses WHERE id = $1;
+
+-- name: GetAllCourses :many
+SELECT
+  c.id,
+  c.title,
+  c.description,
+  c.completion_title,
+  c.completion_message,
+  (
+    SELECT json_agg(json_build_object(
+      'id', v.id,
+      'title', v.title,
+      'storage_key', v.storage_key,
+      'position', v.position
+    ) ORDER BY v.position)
+    FROM videosections v WHERE v.course_id = c.id
+  ) AS video_sections,
+  (
+    SELECT json_agg(json_build_object(
+      'id', q.id,
+      'position', q.position
+    ) ORDER BY q.position)
+    FROM quizsections q WHERE q.course_id = c.id
+  ) AS quiz_sections,
+  (
+    SELECT json_agg(json_build_object(
+      'id', m.id,
+      'name', m.name,
+      'storage_key', m.storage_key,
+      'position', m.position
+    ) ORDER BY m.position)
+    FROM course_materials m WHERE m.course_id = c.id
+  ) AS materials
+FROM courses c
+ORDER BY c.title;

@@ -13,6 +13,7 @@ import (
 
 type CourseRepository interface {
 	GetCourse(context.Context, pgtype.UUID) (*Course, error)
+	GetAllCourses(context.Context) ([]*Course, error)
 	GetCoursesOverview(context.Context) ([]CourseOverview, error)
 	GetAssignedCourseTitles(context.Context, string) ([]CourseOverview, error)
 	AddCourse(context.Context, *AddCourseParams) (*Course, error)

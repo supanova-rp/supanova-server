@@ -44,6 +44,82 @@ func (q *Queries) DeleteCourse(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const getAllCourses = `-- name: GetAllCourses :many
+SELECT
+  c.id,
+  c.title,
+  c.description,
+  c.completion_title,
+  c.completion_message,
+  (
+    SELECT json_agg(json_build_object(
+      'id', v.id,
+      'title', v.title,
+      'storage_key', v.storage_key,
+      'position', v.position
+    ) ORDER BY v.position)
+    FROM videosections v WHERE v.course_id = c.id
+  ) AS video_sections,
+  (
+    SELECT json_agg(json_build_object(
+      'id', q.id,
+      'position', q.position
+    ) ORDER BY q.position)
+    FROM quizsections q WHERE q.course_id = c.id
+  ) AS quiz_sections,
+  (
+    SELECT json_agg(json_build_object(
+      'id', m.id,
+      'name', m.name,
+      'storage_key', m.storage_key,
+      'position', m.position
+    ) ORDER BY m.position)
+    FROM course_materials m WHERE m.course_id = c.id
+  ) AS materials
+FROM courses c
+ORDER BY c.title
+`
+
+type GetAllCoursesRow struct {
+	ID                pgtype.UUID
+	Title             pgtype.Text
+	Description       pgtype.Text
+	CompletionTitle   pgtype.Text
+	CompletionMessage pgtype.Text
+	VideoSections     []byte
+	QuizSections      []byte
+	Materials         []byte
+}
+
+func (q *Queries) GetAllCourses(ctx context.Context) ([]GetAllCoursesRow, error) {
+	rows, err := q.db.Query(ctx, getAllCourses)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllCoursesRow
+	for rows.Next() {
+		var i GetAllCoursesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Description,
+			&i.CompletionTitle,
+			&i.CompletionMessage,
+			&i.VideoSections,
+			&i.QuizSections,
+			&i.Materials,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAssignedCourseTitles = `-- name: GetAssignedCourseTitles :many
 SELECT c.id, c.title, c.description
 FROM courses c
