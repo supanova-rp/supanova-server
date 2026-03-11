@@ -229,6 +229,15 @@ func TestCourses(t *testing.T) {
 				{Quiz: &handlers.AddQuizSectionParams{
 					Position: 1,
 					Type:     domain.SectionTypeQuiz,
+					Questions: []handlers.AddQuizQuestionParams{
+						{
+							Question: "What is the correct answer?",
+							Position: 0,
+							Answers: []handlers.AddQuizAnswerParams{
+								{Answer: "Correct", IsCorrectAnswer: true, Position: 0},
+							},
+						},
+					},
 				}},
 			},
 		})
