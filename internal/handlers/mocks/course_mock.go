@@ -27,6 +27,9 @@ var _ domain.CourseRepository = &CourseRepositoryMock{}
 //			DeleteCourseFunc: func(contextMoqParam context.Context, uUID uuid.UUID) error {
 //				panic("mock out the DeleteCourse method")
 //			},
+//			GetAllCoursesFunc: func(contextMoqParam context.Context) ([]*domain.Course, error) {
+//				panic("mock out the GetAllCourses method")
+//			},
 //			GetAssignedCourseTitlesFunc: func(contextMoqParam context.Context, s string) ([]domain.CourseOverview, error) {
 //				panic("mock out the GetAssignedCourseTitles method")
 //			},
@@ -51,6 +54,9 @@ type CourseRepositoryMock struct {
 
 	// DeleteCourseFunc mocks the DeleteCourse method.
 	DeleteCourseFunc func(contextMoqParam context.Context, uUID uuid.UUID) error
+
+	// GetAllCoursesFunc mocks the GetAllCourses method.
+	GetAllCoursesFunc func(contextMoqParam context.Context) ([]*domain.Course, error)
 
 	// GetAssignedCourseTitlesFunc mocks the GetAssignedCourseTitles method.
 	GetAssignedCourseTitlesFunc func(contextMoqParam context.Context, s string) ([]domain.CourseOverview, error)
@@ -79,6 +85,11 @@ type CourseRepositoryMock struct {
 			ContextMoqParam context.Context
 			// UUID is the uUID argument value.
 			UUID uuid.UUID
+		}
+		// GetAllCourses holds details about calls to the GetAllCourses method.
+		GetAllCourses []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
 		}
 		// GetAssignedCourseTitles holds details about calls to the GetAssignedCourseTitles method.
 		GetAssignedCourseTitles []struct {
@@ -109,6 +120,7 @@ type CourseRepositoryMock struct {
 	}
 	lockAddCourse               sync.RWMutex
 	lockDeleteCourse            sync.RWMutex
+	lockGetAllCourses           sync.RWMutex
 	lockGetAssignedCourseTitles sync.RWMutex
 	lockGetCourse               sync.RWMutex
 	lockGetCourseMaterials      sync.RWMutex
@@ -184,6 +196,38 @@ func (mock *CourseRepositoryMock) DeleteCourseCalls() []struct {
 	mock.lockDeleteCourse.RLock()
 	calls = mock.calls.DeleteCourse
 	mock.lockDeleteCourse.RUnlock()
+	return calls
+}
+
+// GetAllCourses calls GetAllCoursesFunc.
+func (mock *CourseRepositoryMock) GetAllCourses(contextMoqParam context.Context) ([]*domain.Course, error) {
+	if mock.GetAllCoursesFunc == nil {
+		panic("CourseRepositoryMock.GetAllCoursesFunc: method is nil but CourseRepository.GetAllCourses was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam context.Context
+	}{
+		ContextMoqParam: contextMoqParam,
+	}
+	mock.lockGetAllCourses.Lock()
+	mock.calls.GetAllCourses = append(mock.calls.GetAllCourses, callInfo)
+	mock.lockGetAllCourses.Unlock()
+	return mock.GetAllCoursesFunc(contextMoqParam)
+}
+
+// GetAllCoursesCalls gets all the calls that were made to GetAllCourses.
+// Check the length with:
+//
+//	len(mockedCourseRepository.GetAllCoursesCalls())
+func (mock *CourseRepositoryMock) GetAllCoursesCalls() []struct {
+	ContextMoqParam context.Context
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+	}
+	mock.lockGetAllCourses.RLock()
+	calls = mock.calls.GetAllCourses
+	mock.lockGetAllCourses.RUnlock()
 	return calls
 }
 
