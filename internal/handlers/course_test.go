@@ -612,6 +612,7 @@ func TestGetCoursesOverview_UnhappyPath(t *testing.T) {
 	}
 }
 
+// TODO: Remove all GetCourses tests once edit course dashboard reuses /courses/overview endpoint
 func TestGetCourses_HappyPath(t *testing.T) {
 	t.Run("returns courses with sections and materials successfully", func(t *testing.T) {
 		videoSectionID := uuid.New()
@@ -620,7 +621,7 @@ func TestGetCourses_HappyPath(t *testing.T) {
 		storageKey := uuid.New()
 		materialStorageKey := uuid.New()
 
-		expected := []*domain.Course{
+		expected := []*domain.AllCourseLegacy{
 			{
 				ID:                testhelpers.Course.ID,
 				Title:             testhelpers.Course.Title,
@@ -635,7 +636,7 @@ func TestGetCourses_HappyPath(t *testing.T) {
 						StorageKey: storageKey,
 						Type:       domain.SectionTypeVideo,
 					},
-					&domain.QuizSection{
+					&domain.QuizSectionLegacy{
 						ID:       quizSectionID,
 						Position: 1,
 						Type:     domain.SectionTypeQuiz,
@@ -662,7 +663,7 @@ func TestGetCourses_HappyPath(t *testing.T) {
 		}
 
 		mockRepo := &mocks.CourseRepositoryMock{
-			GetAllCoursesFunc: func(ctx context.Context) ([]*domain.Course, error) {
+			GetAllCoursesFunc: func(ctx context.Context) ([]*domain.AllCourseLegacy, error) {
 				return expected, nil
 			},
 		}
@@ -680,7 +681,7 @@ func TestGetCourses_HappyPath(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
 		}
 
-		var actual []*domain.Course
+		var actual []*domain.AllCourseLegacy
 		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
@@ -694,8 +695,8 @@ func TestGetCourses_HappyPath(t *testing.T) {
 
 	t.Run("returns empty slice when no courses exist", func(t *testing.T) {
 		mockRepo := &mocks.CourseRepositoryMock{
-			GetAllCoursesFunc: func(ctx context.Context) ([]*domain.Course, error) {
-				return []*domain.Course{}, nil
+			GetAllCoursesFunc: func(ctx context.Context) ([]*domain.AllCourseLegacy, error) {
+				return []*domain.AllCourseLegacy{}, nil
 			},
 		}
 
@@ -712,7 +713,7 @@ func TestGetCourses_HappyPath(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
 		}
 
-		var actual []*domain.Course
+		var actual []*domain.AllCourseLegacy
 		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
@@ -728,7 +729,7 @@ func TestGetCourses_HappyPath(t *testing.T) {
 func TestGetCourses_UnhappyPath(t *testing.T) {
 	t.Run("internal server error", func(t *testing.T) {
 		mockRepo := &mocks.CourseRepositoryMock{
-			GetAllCoursesFunc: func(ctx context.Context) ([]*domain.Course, error) {
+			GetAllCoursesFunc: func(ctx context.Context) ([]*domain.AllCourseLegacy, error) {
 				return nil, stdErrors.New("db error")
 			},
 		}

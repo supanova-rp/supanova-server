@@ -27,7 +27,7 @@ var _ domain.CourseRepository = &CourseRepositoryMock{}
 //			DeleteCourseFunc: func(contextMoqParam context.Context, uUID uuid.UUID) error {
 //				panic("mock out the DeleteCourse method")
 //			},
-//			GetAllCoursesFunc: func(contextMoqParam context.Context) ([]*domain.Course, error) {
+//			GetAllCoursesFunc: func(contextMoqParam context.Context) ([]*domain.AllCourseLegacy, error) {
 //				panic("mock out the GetAllCourses method")
 //			},
 //			GetAssignedCourseTitlesFunc: func(contextMoqParam context.Context, s string) ([]domain.CourseOverview, error) {
@@ -56,7 +56,7 @@ type CourseRepositoryMock struct {
 	DeleteCourseFunc func(contextMoqParam context.Context, uUID uuid.UUID) error
 
 	// GetAllCoursesFunc mocks the GetAllCourses method.
-	GetAllCoursesFunc func(contextMoqParam context.Context) ([]*domain.Course, error)
+	GetAllCoursesFunc func(contextMoqParam context.Context) ([]*domain.AllCourseLegacy, error)
 
 	// GetAssignedCourseTitlesFunc mocks the GetAssignedCourseTitles method.
 	GetAssignedCourseTitlesFunc func(contextMoqParam context.Context, s string) ([]domain.CourseOverview, error)
@@ -200,7 +200,7 @@ func (mock *CourseRepositoryMock) DeleteCourseCalls() []struct {
 }
 
 // GetAllCourses calls GetAllCoursesFunc.
-func (mock *CourseRepositoryMock) GetAllCourses(contextMoqParam context.Context) ([]*domain.Course, error) {
+func (mock *CourseRepositoryMock) GetAllCourses(contextMoqParam context.Context) ([]*domain.AllCourseLegacy, error) {
 	if mock.GetAllCoursesFunc == nil {
 		panic("CourseRepositoryMock.GetAllCoursesFunc: method is nil but CourseRepository.GetAllCourses was just called")
 	}

@@ -29,7 +29,7 @@ const (
 	courseCompletionMessage = "Well done on completing the course"
 )
 
-func getCourses(t *testing.T, baseURL string) []*domain.Course {
+func getCourses(t *testing.T, baseURL string) []*domain.AllCourseLegacy {
 	t.Helper()
 
 	resp := makePOSTRequest(t, baseURL, "courses", nil)
@@ -38,7 +38,7 @@ func getCourses(t *testing.T, baseURL string) []*domain.Course {
 		t.Fatalf("expected status 200, got %d", resp.StatusCode)
 	}
 
-	return *parseJSONResponse[[]*domain.Course](t, resp)
+	return *parseJSONResponse[[]*domain.AllCourseLegacy](t, resp)
 }
 
 func getCourse(t *testing.T, baseURL string, id uuid.UUID) *domain.Course {

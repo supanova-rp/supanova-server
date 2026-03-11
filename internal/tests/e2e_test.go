@@ -209,6 +209,7 @@ func TestProgress(t *testing.T) {
 	})
 }
 
+// TODO: Remove once edit course dashboard reuses /courses/overview endpoint
 func TestCourses(t *testing.T) {
 	t.Run("courses - returns courses with sections and materials", func(t *testing.T) {
 		createdA := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
@@ -259,7 +260,7 @@ func TestCourses(t *testing.T) {
 
 		courses := getCourses(t, testResources.AppURL)
 
-		findCourse := func(id uuid.UUID) *domain.Course {
+		findCourse := func(id uuid.UUID) *domain.AllCourseLegacy {
 			for _, c := range courses {
 				if c.ID == id {
 					return c
@@ -278,7 +279,7 @@ func TestCourses(t *testing.T) {
 			t.Fatalf("course B %s not found in courses response", createdB.ID)
 		}
 
-		expectedA := &domain.Course{
+		expectedA := &domain.AllCourseLegacy{
 			ID:                createdA.ID,
 			Title:             createdA.Title,
 			Description:       createdA.Description,
@@ -286,7 +287,7 @@ func TestCourses(t *testing.T) {
 			CompletionMessage: createdA.CompletionMessage,
 			Sections: []domain.CourseSection{
 				createdA.Sections[0],
-				&domain.QuizSection{
+				&domain.QuizSectionLegacy{
 					ID:       createdA.Sections[1].GetID(),
 					Position: createdA.Sections[1].GetPosition(),
 					Type:     domain.SectionTypeQuiz,
@@ -295,7 +296,7 @@ func TestCourses(t *testing.T) {
 			Materials: createdA.Materials,
 		}
 
-		expectedB := &domain.Course{
+		expectedB := &domain.AllCourseLegacy{
 			ID:                createdB.ID,
 			Title:             createdB.Title,
 			Description:       createdB.Description,

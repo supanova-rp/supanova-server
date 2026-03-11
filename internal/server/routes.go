@@ -8,6 +8,8 @@ import (
 
 func RegisterCourseRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/course", h.GetCourse)
+	// TODO: To be deprecated and replaced with /courses/overview endpoint on admin edit course dashboard and single
+	// /course endpoint when editing course
 	private.POST("/courses", h.GetCourses)
 	private.POST("/materials", h.GetCourseMaterials)
 	// TODO: To be deprecated and replaced with single /course-titles or /courses/overview endpoint

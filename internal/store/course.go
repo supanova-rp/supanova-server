@@ -157,7 +157,8 @@ func (s *Store) AddCourse(ctx context.Context, params *domain.AddCourseParams) (
 	return s.GetCourse(ctx, courseID)
 }
 
-func (s *Store) GetAllCourses(ctx context.Context) ([]*domain.Course, error) {
+// TODO: Remove once edit course dashboard reuses /courses/overview endpoint
+func (s *Store) GetAllCourses(ctx context.Context) ([]*domain.AllCourseLegacy, error) {
 	rows, err := ExecQuery(ctx, func() ([]sqlc.GetAllCoursesRow, error) {
 		return s.Queries.GetAllCourses(ctx)
 	})
@@ -165,12 +166,13 @@ func (s *Store) GetAllCourses(ctx context.Context) ([]*domain.Course, error) {
 		return nil, err
 	}
 
-	return utils.MapToWithError(rows, func(row sqlc.GetAllCoursesRow) (*domain.Course, error) {
+	return utils.MapToWithError(rows, func(row sqlc.GetAllCoursesRow) (*domain.AllCourseLegacy, error) {
 		return allCourseFrom(&row)
 	})
 }
 
-func allCourseFrom(row *sqlc.GetAllCoursesRow) (*domain.Course, error) {
+// TODO: Remove once edit course dashboard reuses /courses/overview endpoint
+func allCourseFrom(row *sqlc.GetAllCoursesRow) (*domain.AllCourseLegacy, error) {
 	var sqlcVideos []sqlcVideoSection
 	if row.VideoSections != nil {
 		if err := json.Unmarshal(row.VideoSections, &sqlcVideos); err != nil {
@@ -215,7 +217,7 @@ func allCourseFrom(row *sqlc.GetAllCoursesRow) (*domain.Course, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse quiz section ID: %w", err)
 		}
-		sections = append(sections, &domain.QuizSection{
+		sections = append(sections, &domain.QuizSectionLegacy{
 			ID:       id,
 			Position: q.Position,
 			Type:     domain.SectionTypeQuiz,
@@ -245,7 +247,7 @@ func allCourseFrom(row *sqlc.GetAllCoursesRow) (*domain.Course, error) {
 		return nil, err
 	}
 
-	return &domain.Course{
+	return &domain.AllCourseLegacy{
 		ID:                utils.UUIDFrom(row.ID),
 		Title:             row.Title.String,
 		Description:       row.Description.String,
