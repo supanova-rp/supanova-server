@@ -319,6 +319,7 @@ func TestCourses(t *testing.T) {
 	})
 }
 
+// TODO: Remove once edit course dashboard reuses /courses/overview endpoint
 func TestQuiz(t *testing.T) {
 	t.Run("quiz questions - happy path", func(t *testing.T) {
 		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
