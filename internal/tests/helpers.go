@@ -29,6 +29,18 @@ const (
 	courseCompletionMessage = "Well done on completing the course"
 )
 
+func getCourses(t *testing.T, baseURL string) []*domain.Course {
+	t.Helper()
+
+	resp := makePOSTRequest(t, baseURL, "courses", nil)
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", resp.StatusCode)
+	}
+
+	return *parseJSONResponse[[]*domain.Course](t, resp)
+}
+
 func getCourse(t *testing.T, baseURL string, id uuid.UUID) *domain.Course {
 	t.Helper()
 

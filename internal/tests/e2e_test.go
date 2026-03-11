@@ -209,6 +209,106 @@ func TestProgress(t *testing.T) {
 	})
 }
 
+func TestCourses(t *testing.T) {
+	t.Run("courses - returns courses with sections and materials", func(t *testing.T) {
+		createdA := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
+			Title:             "Course A",
+			Description:       courseDescription,
+			CompletionTitle:   courseCompletionTitle,
+			CompletionMessage: courseCompletionMessage,
+			Materials: []handlers.AddMaterialParams{
+				{ID: uuid.New().String(), Name: "Study Guide", StorageKey: uuid.New().String(), Position: 0},
+			},
+			Sections: []handlers.AddSectionParams{
+				{Video: &handlers.AddVideoSectionParams{
+					Title:      "Video Section",
+					StorageKey: uuid.New().String(),
+					Position:   0,
+					Type:       domain.SectionTypeVideo,
+				}},
+				{Quiz: &handlers.AddQuizSectionParams{
+					Position: 1,
+					Type:     domain.SectionTypeQuiz,
+				}},
+			},
+		})
+
+		createdB := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
+			Title:             "Course B",
+			Description:       courseDescription,
+			CompletionTitle:   courseCompletionTitle,
+			CompletionMessage: courseCompletionMessage,
+			Sections: []handlers.AddSectionParams{
+				{Video: &handlers.AddVideoSectionParams{
+					Title:      "Video Section",
+					StorageKey: uuid.New().String(),
+					Position:   0,
+					Type:       domain.SectionTypeVideo,
+				}},
+			},
+		})
+
+		courses := getCourses(t, testResources.AppURL)
+
+		findCourse := func(id uuid.UUID) *domain.Course {
+			for _, c := range courses {
+				if c.ID == id {
+					return c
+				}
+			}
+			return nil
+		}
+
+		foundA := findCourse(createdA.ID)
+		if foundA == nil {
+			t.Fatalf("course A %s not found in courses response", createdA.ID)
+		}
+
+		foundB := findCourse(createdB.ID)
+		if foundB == nil {
+			t.Fatalf("course B %s not found in courses response", createdB.ID)
+		}
+
+		expectedA := &domain.Course{
+			ID:                createdA.ID,
+			Title:             createdA.Title,
+			Description:       createdA.Description,
+			CompletionTitle:   createdA.CompletionTitle,
+			CompletionMessage: createdA.CompletionMessage,
+			Sections: []domain.CourseSection{
+				createdA.Sections[0],
+				&domain.QuizSection{
+					ID:       createdA.Sections[1].GetID(),
+					Position: createdA.Sections[1].GetPosition(),
+					Type:     domain.SectionTypeQuiz,
+				},
+			},
+			Materials: createdA.Materials,
+		}
+
+		expectedB := &domain.Course{
+			ID:                createdB.ID,
+			Title:             createdB.Title,
+			Description:       createdB.Description,
+			CompletionTitle:   createdB.CompletionTitle,
+			CompletionMessage: createdB.CompletionMessage,
+			Sections:          createdB.Sections,
+			Materials:         []domain.CourseMaterial{},
+		}
+
+		if diff := cmp.Diff(expectedA, foundA); diff != "" {
+			t.Errorf("course A mismatch (-want +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff(expectedB, foundB); diff != "" {
+			t.Errorf("course B mismatch (-want +got):\n%s", diff)
+		}
+
+		deleteCourse(t, testResources.AppURL, createdA.ID)
+		deleteCourse(t, testResources.AppURL, createdB.ID)
+	})
+}
+
 func TestQuiz(t *testing.T) {
 	t.Run("quiz questions - happy path", func(t *testing.T) {
 		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
