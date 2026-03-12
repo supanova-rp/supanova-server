@@ -8,9 +8,6 @@ import (
 
 func RegisterCourseRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/course", h.GetCourse)
-	// TODO: To be deprecated and replaced with /courses/overview endpoint on admin edit course dashboard and single
-	// /course endpoint when editing course
-	private.POST("/courses", h.GetCourses)
 	private.POST("/materials", h.GetCourseMaterials)
 	// TODO: To be deprecated and replaced with single /course-titles or /courses/overview endpoint
 	// that handles getting either assigned course details or all (depending on if user is admin or not)
@@ -18,6 +15,9 @@ func RegisterCourseRoutes(private *echo.Group, h *handlers.Handlers) {
 
 	// admin routes
 	private.POST("/course-titles", h.GetCoursesOverview)
+	// TODO: To be deprecated and replaced with /courses/overview endpoint on admin edit course dashboard and single
+	// /course endpoint when editing course
+	private.POST("/courses", h.GetCourses)
 	private.POST("/add-course", h.AddCourse)
 	private.POST("/delete-course", h.DeleteCourse)
 }
@@ -36,9 +36,6 @@ func RegisterQuizRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/quiz/save-attempt", h.SaveQuizAttempt)
 	private.POST("/quiz/save-state", h.SaveQuizState)
 	private.POST("/quiz/get-all-sections", h.GetAllQuizSections)
-	// TODO: To be deprecated and replaced with combination of /course and /courses/overview endpoint
-	// (for edit courses admin panel)
-	private.POST("/quiz-questions", h.GetQuizQuestions)
 
 	// -----------------------------------------------------
 	// to be deprecated and replaced with /quiz/get-attempt and /quiz/save-attempt
@@ -50,6 +47,9 @@ func RegisterQuizRoutes(private *echo.Group, h *handlers.Handlers) {
 	// admin routes
 	private.POST("/admin/quiz/get-attempts", h.GetQuizAttemptsByUserID)
 	private.POST("/admin/quiz/reset-progress", h.ResetQuizProgress)
+	// TODO: To be deprecated and replaced with combination of /course and /courses/overview endpoint
+	// (for edit courses admin panel)
+	private.POST("/quiz-questions", h.GetQuizQuestions)
 }
 
 func RegisterMediaRoutes(private *echo.Group, h *handlers.Handlers) {
