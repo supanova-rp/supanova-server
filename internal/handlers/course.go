@@ -15,6 +15,7 @@ import (
 
 const (
 	courseResource               = "course"
+	coursesResource              = "courses"
 	courseOverviewResource       = "course overview"
 	assignedCourseTitlesResource = "assigned course titles"
 )
@@ -230,6 +231,17 @@ func (h *Handlers) DeleteCourse(e echo.Context) error {
 	}
 
 	return e.JSON(http.StatusOK, params.CourseID)
+}
+
+func (h *Handlers) GetCourses(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	courses, err := h.Course.GetAllCourses(ctx)
+	if err != nil {
+		return httpError(http.StatusInternalServerError, errors.Getting(coursesResource), err)
+	}
+
+	return e.JSON(http.StatusOK, courses)
 }
 
 func (h *Handlers) GetCoursesOverview(e echo.Context) error {

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 
@@ -12,6 +13,25 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 	"github.com/supanova-rp/supanova-server/internal/utils"
 )
+
+type sqlcVideoSection struct {
+	ID         string `json:"id"`
+	Title      string `json:"title"`
+	StorageKey string `json:"storage_key"`
+	Position   int    `json:"position"`
+}
+
+type sqlcQuizSection struct {
+	ID       string `json:"id"`
+	Position int    `json:"position"`
+}
+
+type sqlcCourseMaterial struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	StorageKey string `json:"storage_key"`
+	Position   int    `json:"position"`
+}
 
 func (s *Store) GetCourse(ctx context.Context, id pgtype.UUID) (*domain.Course, error) {
 	course, err := ExecQuery(ctx, func() (sqlc.Course, error) {
@@ -135,6 +155,107 @@ func (s *Store) AddCourse(ctx context.Context, params *domain.AddCourseParams) (
 	}
 
 	return s.GetCourse(ctx, courseID)
+}
+
+// TODO: Remove once edit course dashboard reuses /courses/overview endpoint
+func (s *Store) GetAllCourses(ctx context.Context) ([]*domain.AllCourseLegacy, error) {
+	rows, err := ExecQuery(ctx, func() ([]sqlc.GetAllCoursesRow, error) {
+		return s.Queries.GetAllCourses(ctx)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return utils.MapToWithError(rows, func(row sqlc.GetAllCoursesRow) (*domain.AllCourseLegacy, error) {
+		return allCourseFrom(&row)
+	})
+}
+
+// TODO: Remove once edit course dashboard reuses /courses/overview endpoint
+func allCourseFrom(row *sqlc.GetAllCoursesRow) (*domain.AllCourseLegacy, error) {
+	var sqlcVideos []sqlcVideoSection
+	if row.VideoSections != nil {
+		if err := json.Unmarshal(row.VideoSections, &sqlcVideos); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal video sections: %w", err)
+		}
+	}
+
+	var sqlcQuizzes []sqlcQuizSection
+	if row.QuizSections != nil {
+		if err := json.Unmarshal(row.QuizSections, &sqlcQuizzes); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal quiz sections: %w", err)
+		}
+	}
+
+	var sqlcMaterials []sqlcCourseMaterial
+	if row.Materials != nil {
+		if err := json.Unmarshal(row.Materials, &sqlcMaterials); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal materials: %w", err)
+		}
+	}
+
+	sections := make([]domain.CourseSection, 0, len(sqlcVideos)+len(sqlcQuizzes))
+	for _, v := range sqlcVideos {
+		id, err := uuid.Parse(v.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse video section ID: %w", err)
+		}
+		storageKey, err := uuid.Parse(v.StorageKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse video section storage key: %w", err)
+		}
+		sections = append(sections, &domain.VideoSection{
+			ID:         id,
+			Title:      v.Title,
+			Position:   v.Position,
+			StorageKey: storageKey,
+			Type:       domain.SectionTypeVideo,
+		})
+	}
+	for _, q := range sqlcQuizzes {
+		id, err := uuid.Parse(q.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse quiz section ID: %w", err)
+		}
+		sections = append(sections, &domain.QuizSectionLegacy{
+			ID:       id,
+			Position: q.Position,
+			Type:     domain.SectionTypeQuiz,
+		})
+	}
+	sort.Slice(sections, func(i, j int) bool {
+		return sections[i].GetPosition() < sections[j].GetPosition()
+	})
+
+	materials, err := utils.MapToWithError(sqlcMaterials, func(m sqlcCourseMaterial) (domain.CourseMaterial, error) {
+		id, err := uuid.Parse(m.ID)
+		if err != nil {
+			return domain.CourseMaterial{}, fmt.Errorf("failed to parse material ID: %w", err)
+		}
+		storageKey, err := uuid.Parse(m.StorageKey)
+		if err != nil {
+			return domain.CourseMaterial{}, fmt.Errorf("failed to parse material storage key: %w", err)
+		}
+		return domain.CourseMaterial{
+			ID:         id,
+			Name:       m.Name,
+			Position:   m.Position,
+			StorageKey: storageKey,
+		}, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &domain.AllCourseLegacy{
+		ID:                utils.UUIDFrom(row.ID),
+		Title:             row.Title.String,
+		Description:       row.Description.String,
+		CompletionTitle:   row.CompletionTitle.String,
+		CompletionMessage: row.CompletionMessage.String,
+		Sections:          sections,
+		Materials:         materials,
+	}, nil
 }
 
 func (s *Store) GetCoursesOverview(ctx context.Context) ([]domain.CourseOverview, error) {

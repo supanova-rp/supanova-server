@@ -13,6 +13,7 @@ import (
 
 type CourseRepository interface {
 	GetCourse(context.Context, pgtype.UUID) (*Course, error)
+	GetAllCourses(context.Context) ([]*AllCourseLegacy, error)
 	GetCoursesOverview(context.Context) ([]CourseOverview, error)
 	GetAssignedCourseTitles(context.Context, string) ([]CourseOverview, error)
 	AddCourse(context.Context, *AddCourseParams) (*Course, error)
@@ -132,10 +133,10 @@ type CourseOverview struct {
 }
 
 type CourseMaterial struct {
-	ID         uuid.UUID
-	Name       string
-	Position   int
-	StorageKey uuid.UUID
+	ID         uuid.UUID `json:"id"`
+	Name       string    `json:"name"`
+	Position   int       `json:"position"`
+	StorageKey uuid.UUID `json:"storageKey"`
 }
 
 type CourseMaterialWithURL struct {
@@ -184,6 +185,72 @@ func (q *QuizSection) GetID() uuid.UUID     { return q.ID }
 func (q *QuizSection) GetTitle() string     { return q.Title }
 func (q *QuizSection) GetPosition() int     { return q.Position }
 func (q *QuizSection) GetType() SectionType { return q.Type }
+
+// TODO: Remove once edit course dashboard reuses /courses/overview endpoint
+type QuizSectionLegacy struct {
+	ID       uuid.UUID   `json:"id"`
+	Position int         `json:"position"`
+	Type     SectionType `json:"type"`
+}
+
+// Implements CourseSection interface
+func (q *QuizSectionLegacy) GetID() uuid.UUID     { return q.ID }
+func (q *QuizSectionLegacy) GetTitle() string     { return "" }
+func (q *QuizSectionLegacy) GetPosition() int     { return q.Position }
+func (q *QuizSectionLegacy) GetType() SectionType { return q.Type }
+
+// TODO: Remove once edit course dashboard reuses /courses/overview endpoint
+type AllCourseLegacy struct {
+	ID                uuid.UUID        `json:"id"`
+	Title             string           `json:"title"`
+	Description       string           `json:"description"`
+	CompletionTitle   string           `json:"completionTitle"`
+	CompletionMessage string           `json:"completionMessage"`
+	Sections          []CourseSection  `json:"sections"`
+	Materials         []CourseMaterial `json:"materials"`
+}
+
+// TODO: Remove once edit course dashboard reuses /courses/overview endpoint
+func (c *AllCourseLegacy) UnmarshalJSON(data []byte) error {
+	type alias AllCourseLegacy
+
+	var raw struct {
+		alias
+		Sections []json.RawMessage `json:"sections"`
+	}
+
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	*c = AllCourseLegacy(raw.alias)
+	c.Sections = make([]CourseSection, 0, len(raw.Sections))
+	for _, s := range raw.Sections {
+		var typeChecker struct {
+			Type SectionType `json:"type"`
+		}
+		if err := json.Unmarshal(s, &typeChecker); err != nil {
+			return fmt.Errorf("missing or invalid section type: %w", err)
+		}
+		switch typeChecker.Type {
+		case SectionTypeVideo:
+			var v VideoSection
+			if err := json.Unmarshal(s, &v); err != nil {
+				return err
+			}
+			c.Sections = append(c.Sections, &v)
+		case SectionTypeQuiz:
+			var q QuizSectionLegacy
+			if err := json.Unmarshal(s, &q); err != nil {
+				return err
+			}
+			c.Sections = append(c.Sections, &q)
+		default:
+			return fmt.Errorf("unknown section type %q", typeChecker.Type)
+		}
+	}
+	return nil
+}
 
 type QuizQuestion struct {
 	ID            uuid.UUID    `json:"id"`

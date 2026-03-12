@@ -43,6 +43,7 @@ const (
 	SendEmailHandlerName               = "SendEmail"
 	GetTemplateNamesHandlerName        = "GetEmailTemplateNames"
 	GetQuizQuestionsHandlerName        = "GetQuizQuestions"
+	GetCoursesHandlerName              = "GetCourses"
 
 	TestUserID = "test-user-id"
 )

@@ -29,6 +29,19 @@ const (
 	courseCompletionMessage = "Well done on completing the course"
 )
 
+// TODO: Remove once edit course dashboard reuses /courses/overview endpoint
+func getCourses(t *testing.T, baseURL string) []*domain.AllCourseLegacy {
+	t.Helper()
+
+	resp := makePOSTRequest(t, baseURL, "courses", nil)
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", resp.StatusCode)
+	}
+
+	return *parseJSONResponse[[]*domain.AllCourseLegacy](t, resp)
+}
+
 func getCourse(t *testing.T, baseURL string, id uuid.UUID) *domain.Course {
 	t.Helper()
 
@@ -43,6 +56,7 @@ func getCourse(t *testing.T, baseURL string, id uuid.UUID) *domain.Course {
 	return parseJSONResponse[domain.Course](t, resp)
 }
 
+// TODO: Remove once edit course dashboard reuses /courses/overview endpoint
 func getQuizQuestions(t *testing.T, baseURL string, quizSectionIDs []uuid.UUID) *[]domain.QuizQuestionLegacy {
 	t.Helper()
 
