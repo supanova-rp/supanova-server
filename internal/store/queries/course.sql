@@ -1,11 +1,61 @@
 -- name: GetCourse :one
 SELECT
-  id,
-  title,
-  description,
-  completion_title,
-  completion_message
-FROM courses WHERE id = $1;
+  c.id,
+  c.title,
+  c.description,
+  c.completion_title,
+  c.completion_message,
+  (
+    SELECT json_agg(json_build_object(
+      'id', v.id,
+      'title', v.title,
+      'storage_key', v.storage_key,
+      'position', v.position
+    ) ORDER BY v.position)
+    FROM videosections v WHERE v.course_id = c.id
+  ) AS video_sections,
+  (
+    SELECT json_agg(json_build_object(
+      'id', qs.id,
+      'position', qs.position,
+      'questions', (
+        SELECT json_agg(
+          json_build_object(
+            'id', qq.id,
+            'question', qq.question,
+            'position', qq.position,
+            'is_multi_answer', qq.is_multi_answer,
+            'answers', (
+              SELECT json_agg(
+                json_build_object(
+                  'id', qa.id,
+                  'answer', qa.answer,
+                  'correct_answer', qa.correct_answer,
+                  'position', qa.position
+                ) ORDER BY qa.position
+              )
+              FROM quizanswers qa
+              WHERE qa.quiz_question_id = qq.id
+            )
+          ) ORDER BY qq.position
+        )
+        FROM quizquestions qq
+        WHERE qq.quiz_section_id = qs.id
+      )
+    ) ORDER BY qs.position)
+    FROM quizsections qs WHERE qs.course_id = c.id
+  ) AS quiz_sections,
+  (
+    SELECT json_agg(json_build_object(
+      'id', m.id,
+      'name', m.name,
+      'storage_key', m.storage_key,
+      'position', m.position
+    ) ORDER BY m.position)
+    FROM course_materials m WHERE m.course_id = c.id
+  ) AS materials
+FROM courses c
+WHERE c.id = $1;
 
 -- name: GetCoursesOverview :many
 SELECT id, title, description FROM courses ORDER BY title;
