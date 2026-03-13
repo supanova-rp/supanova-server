@@ -13,10 +13,18 @@ type Handlers struct {
 	Progress  domain.ProgressRepository
 	Enrolment domain.EnrolmentRepository
 	User      domain.UserRepository
+	Auth      domain.AuthRepository
 	Quiz      domain.QuizRepository
 
 	ObjectStorage ObjectStorage
 	EmailService  EmailService
+	AuthProvider  AuthProvider
+}
+
+//go:generate moq -out ../handlers/mocks/authprovider_mock.go -pkg mocks . AuthProvider
+
+type AuthProvider interface {
+	CreateUser(ctx context.Context, email, password, name string) (string, error)
 }
 
 //go:generate moq -out ../handlers/mocks/objectstorage_mock.go -pkg mocks . ObjectStorage
@@ -42,9 +50,11 @@ func NewHandlers(
 	progress domain.ProgressRepository,
 	enrolment domain.EnrolmentRepository,
 	user domain.UserRepository,
+	auth domain.AuthRepository,
 	quiz domain.QuizRepository,
 	objectStorage ObjectStorage,
 	emailService EmailService,
+	authProvider AuthProvider,
 ) *Handlers {
 	return &Handlers{
 		System:        system,
@@ -52,8 +62,10 @@ func NewHandlers(
 		Progress:      progress,
 		Enrolment:     enrolment,
 		User:          user,
+		Auth:          auth,
 		Quiz:          quiz,
 		ObjectStorage: objectStorage,
 		EmailService:  emailService,
+		AuthProvider:  authProvider,
 	}
 }

@@ -10,26 +10,26 @@ import (
 	"sync"
 )
 
-// Ensure, that AuthProviderMock does implement middleware.AuthProvider.
+// Ensure, that AuthMock does implement middleware.Auth.
 // If this is not the case, regenerate this file with moq.
-var _ middleware.AuthProvider = &AuthProviderMock{}
+var _ middleware.Auth = &AuthMock{}
 
-// AuthProviderMock is a mock implementation of middleware.AuthProvider.
+// AuthMock is a mock implementation of middleware.Auth.
 //
-//	func TestSomethingThatUsesAuthProvider(t *testing.T) {
+//	func TestSomethingThatUsesAuth(t *testing.T) {
 //
-//		// make and configure a mocked middleware.AuthProvider
-//		mockedAuthProvider := &AuthProviderMock{
+//		// make and configure a mocked middleware.Auth
+//		mockedAuth := &AuthMock{
 //			GetUserFromIDTokenFunc: func(ctx context.Context, token string) (*auth.User, error) {
 //				panic("mock out the GetUserFromIDToken method")
 //			},
 //		}
 //
-//		// use mockedAuthProvider in code that requires middleware.AuthProvider
+//		// use mockedAuth in code that requires middleware.Auth
 //		// and then make assertions.
 //
 //	}
-type AuthProviderMock struct {
+type AuthMock struct {
 	// GetUserFromIDTokenFunc mocks the GetUserFromIDToken method.
 	GetUserFromIDTokenFunc func(ctx context.Context, token string) (*auth.User, error)
 
@@ -47,9 +47,9 @@ type AuthProviderMock struct {
 }
 
 // GetUserFromIDToken calls GetUserFromIDTokenFunc.
-func (mock *AuthProviderMock) GetUserFromIDToken(ctx context.Context, token string) (*auth.User, error) {
+func (mock *AuthMock) GetUserFromIDToken(ctx context.Context, token string) (*auth.User, error) {
 	if mock.GetUserFromIDTokenFunc == nil {
-		panic("AuthProviderMock.GetUserFromIDTokenFunc: method is nil but AuthProvider.GetUserFromIDToken was just called")
+		panic("AuthMock.GetUserFromIDTokenFunc: method is nil but Auth.GetUserFromIDToken was just called")
 	}
 	callInfo := struct {
 		Ctx   context.Context
@@ -67,8 +67,8 @@ func (mock *AuthProviderMock) GetUserFromIDToken(ctx context.Context, token stri
 // GetUserFromIDTokenCalls gets all the calls that were made to GetUserFromIDToken.
 // Check the length with:
 //
-//	len(mockedAuthProvider.GetUserFromIDTokenCalls())
-func (mock *AuthProviderMock) GetUserFromIDTokenCalls() []struct {
+//	len(mockedAuth.GetUserFromIDTokenCalls())
+func (mock *AuthMock) GetUserFromIDTokenCalls() []struct {
 	Ctx   context.Context
 	Token string
 } {

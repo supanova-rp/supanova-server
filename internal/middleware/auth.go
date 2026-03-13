@@ -17,9 +17,9 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/services/auth"
 )
 
-//go:generate moq -out ./mocks/authprovider_mock.go -pkg mocks . AuthProvider
+//go:generate moq -out ./mocks/auth_mock.go -pkg mocks . Auth
 
-type AuthProvider interface {
+type Auth interface {
 	GetUserFromIDToken(ctx context.Context, token string) (*auth.User, error)
 }
 
@@ -50,7 +50,7 @@ var nonAdminPaths = []string{
 	fmt.Sprintf("/%s/quiz/get-all-sections", config.APIVersion),
 }
 
-func AuthMiddleware(next echo.HandlerFunc, authProvider AuthProvider) echo.HandlerFunc {
+func AuthMiddleware(next echo.HandlerFunc, authProvider Auth) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
 		bodyBytes, err := io.ReadAll(c.Request().Body)
