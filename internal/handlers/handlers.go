@@ -21,6 +21,8 @@ type Handlers struct {
 	AuthProvider  AuthProvider
 }
 
+//go:generate moq -out ../handlers/mocks/authprovider_mock.go -pkg mocks . AuthProvider
+
 type AuthProvider interface {
 	CreateUser(ctx context.Context, email, password, name string) (string, error)
 }
