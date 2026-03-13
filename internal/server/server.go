@@ -35,7 +35,7 @@ type Server struct {
 	port string
 }
 
-func New(h *handlers.Handlers, authProvider middleware.AuthProvider, cfg *config.App) *Server {
+func New(h *handlers.Handlers, auth middleware.Auth, cfg *config.App) *Server {
 	e := echo.New()
 	e.Validator = &customValidator{validator: validator.New()}
 	e.HideBanner = true // Prevents startup banner from being logged
@@ -67,7 +67,7 @@ func New(h *handlers.Handlers, authProvider middleware.AuthProvider, cfg *config
 		private.Use(middleware.TestAuthMiddleware)
 	} else {
 		private.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-			return middleware.AuthMiddleware(next, authProvider)
+			return middleware.AuthMiddleware(next, auth)
 		})
 	}
 
@@ -103,6 +103,7 @@ func (s *Server) Stop() error {
 func registerRoutes(private, public *echo.Group, h *handlers.Handlers) {
 	public.GET("/health", h.HealthCheck)
 
+	RegisterAuthRoutes(private, h)
 	RegisterCourseRoutes(private, h)
 	RegisterProgressRoutes(private, h)
 	RegisterQuizRoutes(private, h)
