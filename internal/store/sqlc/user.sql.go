@@ -7,6 +7,8 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getUser = `-- name: GetUser :one
@@ -18,4 +20,49 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 	var i User
 	err := row.Scan(&i.ID, &i.Name, &i.Email)
 	return i, err
+}
+
+const getUsersAndAssignedCourses = `-- name: GetUsersAndAssignedCourses :many
+SELECT
+  u.id,
+  u.name,
+  u.email,
+  json_agg(json_build_object('id', c.id, 'title', c.title)) AS courses
+FROM users u
+LEFT JOIN usercourses uc ON u.id = uc.user_id
+LEFT JOIN courses c ON uc.course_id = c.id
+GROUP BY u.id, u.name, u.email
+ORDER BY u.name
+`
+
+type GetUsersAndAssignedCoursesRow struct {
+	ID      string
+	Name    pgtype.Text
+	Email   pgtype.Text
+	Courses []byte
+}
+
+func (q *Queries) GetUsersAndAssignedCourses(ctx context.Context) ([]GetUsersAndAssignedCoursesRow, error) {
+	rows, err := q.db.Query(ctx, getUsersAndAssignedCourses)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUsersAndAssignedCoursesRow
+	for rows.Next() {
+		var i GetUsersAndAssignedCoursesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Email,
+			&i.Courses,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
