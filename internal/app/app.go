@@ -12,10 +12,10 @@ import (
 )
 
 type Dependencies struct {
-	Store          *store.Store
-	ObjectStorage  handlers.ObjectStorage
-	EmailService   handlers.EmailService
-	AuthProvider   auth.AuthProvider
+	Store         *store.Store
+	ObjectStorage handlers.ObjectStorage
+	EmailService  handlers.EmailService
+	AuthProvider  auth.AuthProvider
 }
 
 func Run(ctx context.Context, cfg *config.App, deps Dependencies) (err error) {

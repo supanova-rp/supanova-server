@@ -36,7 +36,7 @@ type Server struct {
 	port string
 }
 
-func New(h *handlers.Handlers, auth auth.AuthProvider, cfg *config.App) *Server {
+func New(h *handlers.Handlers, authProvider auth.AuthProvider, cfg *config.App) *Server {
 	e := echo.New()
 	e.Validator = &customValidator{validator: validator.New()}
 	e.HideBanner = true // Prevents startup banner from being logged
@@ -68,7 +68,7 @@ func New(h *handlers.Handlers, auth auth.AuthProvider, cfg *config.App) *Server 
 		private.Use(middleware.TestAuthMiddleware)
 	} else {
 		private.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-			return middleware.AuthMiddleware(next, auth)
+			return middleware.AuthMiddleware(next, authProvider)
 		})
 	}
 
