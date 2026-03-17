@@ -10,8 +10,8 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
 	"github.com/supanova-rp/supanova-server/internal/middleware"
-	"github.com/supanova-rp/supanova-server/internal/middleware/mocks"
 	"github.com/supanova-rp/supanova-server/internal/middleware/testhelpers"
 	"github.com/supanova-rp/supanova-server/internal/services/auth"
 )
@@ -23,7 +23,7 @@ const (
 
 func TestMiddleware(t *testing.T) {
 	t.Run("authorised: user is admin", func(t *testing.T) {
-		mockAuthProvider := &mocks.AuthMock{
+		mockAuthProvider := &mocks.AuthProviderMock{
 			GetUserFromIDTokenFunc: func(ctx context.Context, token string) (*auth.User, error) {
 				return &auth.User{
 					ID:      testUserID,
@@ -56,7 +56,7 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("authorised: user is non admin", func(t *testing.T) {
-		mockAuthProvider := &mocks.AuthMock{
+		mockAuthProvider := &mocks.AuthProviderMock{
 			GetUserFromIDTokenFunc: func(ctx context.Context, token string) (*auth.User, error) {
 				return &auth.User{
 					ID:      testUserID,
@@ -89,7 +89,7 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("unauthorised: user is non admin on admin route", func(t *testing.T) {
-		mockAuthProvider := &mocks.AuthMock{
+		mockAuthProvider := &mocks.AuthProviderMock{
 			GetUserFromIDTokenFunc: func(ctx context.Context, token string) (*auth.User, error) {
 				return &auth.User{
 					ID:      testUserID,
@@ -117,7 +117,7 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("unauthorised: access_token is invalid", func(t *testing.T) {
-		mockAuthProvider := &mocks.AuthMock{
+		mockAuthProvider := &mocks.AuthProviderMock{
 			GetUserFromIDTokenFunc: func(ctx context.Context, token string) (*auth.User, error) {
 				return nil, errors.New("access_token is invalid")
 			},

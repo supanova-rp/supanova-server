@@ -5,32 +5,38 @@ package mocks
 
 import (
 	"context"
-	"github.com/supanova-rp/supanova-server/internal/handlers"
+	"github.com/supanova-rp/supanova-server/internal/services/auth"
 	"sync"
 )
 
-// Ensure, that AuthProviderMock does implement handlers.AuthProvider.
+// Ensure, that AuthProviderMock does implement auth.AuthProvider.
 // If this is not the case, regenerate this file with moq.
-var _ handlers.AuthProvider = &AuthProviderMock{}
+var _ auth.AuthProvider = &AuthProviderMock{}
 
-// AuthProviderMock is a mock implementation of handlers.AuthProvider.
+// AuthProviderMock is a mock implementation of auth.AuthProvider.
 //
 //	func TestSomethingThatUsesAuthProvider(t *testing.T) {
 //
-//		// make and configure a mocked handlers.AuthProvider
+//		// make and configure a mocked auth.AuthProvider
 //		mockedAuthProvider := &AuthProviderMock{
 //			CreateUserFunc: func(ctx context.Context, email string, password string, name string) (string, error) {
 //				panic("mock out the CreateUser method")
 //			},
+//			GetUserFromIDTokenFunc: func(ctx context.Context, token string) (*auth.User, error) {
+//				panic("mock out the GetUserFromIDToken method")
+//			},
 //		}
 //
-//		// use mockedAuthProvider in code that requires handlers.AuthProvider
+//		// use mockedAuthProvider in code that requires auth.AuthProvider
 //		// and then make assertions.
 //
 //	}
 type AuthProviderMock struct {
 	// CreateUserFunc mocks the CreateUser method.
 	CreateUserFunc func(ctx context.Context, email string, password string, name string) (string, error)
+
+	// GetUserFromIDTokenFunc mocks the GetUserFromIDToken method.
+	GetUserFromIDTokenFunc func(ctx context.Context, token string) (*auth.User, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -45,8 +51,16 @@ type AuthProviderMock struct {
 			// Name is the name argument value.
 			Name string
 		}
+		// GetUserFromIDToken holds details about calls to the GetUserFromIDToken method.
+		GetUserFromIDToken []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Token is the token argument value.
+			Token string
+		}
 	}
-	lockCreateUser sync.RWMutex
+	lockCreateUser         sync.RWMutex
+	lockGetUserFromIDToken sync.RWMutex
 }
 
 // CreateUser calls CreateUserFunc.
@@ -90,5 +104,41 @@ func (mock *AuthProviderMock) CreateUserCalls() []struct {
 	mock.lockCreateUser.RLock()
 	calls = mock.calls.CreateUser
 	mock.lockCreateUser.RUnlock()
+	return calls
+}
+
+// GetUserFromIDToken calls GetUserFromIDTokenFunc.
+func (mock *AuthProviderMock) GetUserFromIDToken(ctx context.Context, token string) (*auth.User, error) {
+	if mock.GetUserFromIDTokenFunc == nil {
+		panic("AuthProviderMock.GetUserFromIDTokenFunc: method is nil but AuthProvider.GetUserFromIDToken was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Token string
+	}{
+		Ctx:   ctx,
+		Token: token,
+	}
+	mock.lockGetUserFromIDToken.Lock()
+	mock.calls.GetUserFromIDToken = append(mock.calls.GetUserFromIDToken, callInfo)
+	mock.lockGetUserFromIDToken.Unlock()
+	return mock.GetUserFromIDTokenFunc(ctx, token)
+}
+
+// GetUserFromIDTokenCalls gets all the calls that were made to GetUserFromIDToken.
+// Check the length with:
+//
+//	len(mockedAuthProvider.GetUserFromIDTokenCalls())
+func (mock *AuthProviderMock) GetUserFromIDTokenCalls() []struct {
+	Ctx   context.Context
+	Token string
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Token string
+	}
+	mock.lockGetUserFromIDToken.RLock()
+	calls = mock.calls.GetUserFromIDToken
+	mock.lockGetUserFromIDToken.RUnlock()
 	return calls
 }

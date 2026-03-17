@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/supanova-rp/supanova-server/internal/domain"
+	"github.com/supanova-rp/supanova-server/internal/services/auth"
 	"github.com/supanova-rp/supanova-server/internal/services/email"
 )
 
@@ -18,13 +19,7 @@ type Handlers struct {
 
 	ObjectStorage ObjectStorage
 	EmailService  EmailService
-	AuthProvider  AuthProvider
-}
-
-//go:generate moq -out ../handlers/mocks/authprovider_mock.go -pkg mocks . AuthProvider
-
-type AuthProvider interface {
-	CreateUser(ctx context.Context, email, password, name string) (string, error)
+	AuthProvider  auth.AuthProvider
 }
 
 //go:generate moq -out ../handlers/mocks/objectstorage_mock.go -pkg mocks . ObjectStorage
@@ -54,7 +49,7 @@ func NewHandlers(
 	quiz domain.QuizRepository,
 	objectStorage ObjectStorage,
 	emailService EmailService,
-	authProvider AuthProvider,
+	authProvider auth.AuthProvider,
 ) *Handlers {
 	return &Handlers{
 		System:        system,

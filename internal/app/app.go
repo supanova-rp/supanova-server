@@ -6,8 +6,8 @@ import (
 
 	"github.com/supanova-rp/supanova-server/internal/config"
 	"github.com/supanova-rp/supanova-server/internal/handlers"
-	"github.com/supanova-rp/supanova-server/internal/middleware"
 	"github.com/supanova-rp/supanova-server/internal/server"
+	"github.com/supanova-rp/supanova-server/internal/services/auth"
 	"github.com/supanova-rp/supanova-server/internal/store"
 )
 
@@ -15,8 +15,7 @@ type Dependencies struct {
 	Store          *store.Store
 	ObjectStorage  handlers.ObjectStorage
 	EmailService   handlers.EmailService
-	AuthMiddleware middleware.Auth
-	AuthProvider   handlers.AuthProvider
+	AuthProvider   auth.AuthProvider
 }
 
 func Run(ctx context.Context, cfg *config.App, deps Dependencies) (err error) {
@@ -33,7 +32,7 @@ func Run(ctx context.Context, cfg *config.App, deps Dependencies) (err error) {
 		deps.AuthProvider,
 	)
 
-	svr := server.New(h, deps.AuthMiddleware, cfg)
+	svr := server.New(h, deps.AuthProvider, cfg)
 	serverErr := make(chan error, 1)
 
 	go func() {
