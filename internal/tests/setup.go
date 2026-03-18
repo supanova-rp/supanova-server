@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/testcontainers/testcontainers-go/modules/compose"
 
 	"github.com/supanova-rp/supanova-server/internal/app"
@@ -87,11 +88,18 @@ func setupTestResources(ctx context.Context) (*TestResources, error) {
 	}
 
 	// Start the app in a goroutine
+	mockAuthProvider := &mocks.AuthProviderMock{
+		CreateUserFunc: func(_ context.Context, _, _, _ string) (string, error) {
+			return uuid.New().String(), nil
+		},
+	}
+
 	go func() {
 		err := app.Run(ctx, cfg, app.Dependencies{
 			Store:         st,
 			EmailService:  mockEmailService,
 			ObjectStorage: mockObjectStorage,
+			AuthProvider:  mockAuthProvider,
 		})
 		if err != nil {
 			slog.Error("app error", slog.Any("error", err))

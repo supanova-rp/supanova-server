@@ -64,3 +64,8 @@ func RegisterEnrolmentRoutes(private *echo.Group, h *handlers.Handlers) {
 	// admin routes
 	private.POST("/update-users-to-courses", h.UpdateCourseEnrolment)
 }
+
+func RegisterAuthRoutes(private *echo.Group, h *handlers.Handlers) {
+	// admin routes
+	private.POST("/register", h.Register)
+}
