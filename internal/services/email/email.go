@@ -74,6 +74,9 @@ func (p *CourseCompletionParams) ToTemplateVariables() map[string]string {
 func New(cfg *config.EmailService, store EmailRepository) (*EmailService, error) {
 	mg := mailgun.NewMailgun(cfg.SendingKey)
 	err := mg.SetAPIBase(mailgun.APIBaseEU)
+	if err != nil {
+		return nil, err
+	}
 
 	retryCron := cron.New(cfg.CronSchedule, "email-retry")
 
