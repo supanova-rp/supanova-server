@@ -73,8 +73,7 @@ func (p *CourseCompletionParams) ToTemplateVariables() map[string]string {
 
 func New(cfg *config.EmailService, store EmailRepository) (*EmailService, error) {
 	mg := mailgun.NewMailgun(cfg.SendingKey)
-	// TODO: set EU domain once we have a Supanova email domain
-	// err := mg.SetAPIBase(mailgun.APIBaseEU)
+	err := mg.SetAPIBase(mailgun.APIBaseEU)
 
 	retryCron := cron.New(cfg.CronSchedule, "email-retry")
 
