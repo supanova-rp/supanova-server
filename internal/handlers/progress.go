@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+	_ "time/tzdata" // embed timezone database in binary so time.LoadLocation works on ubuntu
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
