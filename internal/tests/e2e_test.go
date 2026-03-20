@@ -238,14 +238,14 @@ func TestProgress(t *testing.T) {
 		sectionID := created.Sections[0].GetID()
 		updateProgress(t, testResources.AppURL, created.ID, sectionID)
 
-		expected := &domain.Progress{
+		expectedProgress := &domain.Progress{
 			CompletedSectionIDs: []uuid.UUID{sectionID},
 			CompletedIntro:      false,
 		}
 
-		actual := getProgress(t, testResources.AppURL, created.ID)
+		actualProgress := getProgress(t, testResources.AppURL, created.ID)
 
-		if diff := cmp.Diff(expected, actual); diff != "" {
+		if diff := cmp.Diff(expectedProgress, actualProgress); diff != "" {
 			t.Errorf("progress mismatch (-want +got):\n%s", diff)
 		}
 
@@ -260,6 +260,17 @@ func TestProgress(t *testing.T) {
 
 		if diff := cmp.Diff(expectedAfterReset, afterReset); diff != "" {
 			t.Errorf("progress after reset mismatch (-want +got):\n%s", diff)
+		}
+
+		actualIntroCompleted := setIntroCompleted(t, testResources.AppURL, created.ID)
+
+		expectedIntroCompleted := &handlers.SetIntroCompletedResponse{
+			CourseID:       created.ID.String(),
+			CompletedIntro: true,
+		}
+
+		if diff := cmp.Diff(expectedIntroCompleted, actualIntroCompleted); diff != "" {
+			t.Errorf("set intro completed response mismatch (-want +got):\n%s", diff)
 		}
 	})
 }

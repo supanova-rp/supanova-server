@@ -81,6 +81,11 @@ func resetProgress(t *testing.T, baseURL string, courseID uuid.UUID) {
 	postOnly(t, baseURL, "reset-progress", &handlers.ResetProgressParams{CourseID: courseID.String()}, http.StatusNoContent)
 }
 
+func setIntroCompleted(t *testing.T, baseURL string, courseID uuid.UUID) *handlers.SetIntroCompletedResponse {
+	t.Helper()
+	return postAndParse[handlers.SetIntroCompletedResponse](t, baseURL, "set-intro-completed", &handlers.SetIntroCompletedParams{CourseID: courseID.String()}, http.StatusOK)
+}
+
 func enrolUserInCourse(t *testing.T, baseURL string, courseID uuid.UUID) {
 	t.Helper()
 	postOnly(t, baseURL, "update-users-to-courses", &handlers.UpdateCourseEnrolmentParams{UserID: TestUserID, CourseID: courseID.String(), IsEnrolled: false}, http.StatusNoContent)
