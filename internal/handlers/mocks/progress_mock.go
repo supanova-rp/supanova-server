@@ -34,6 +34,9 @@ var _ domain.ProgressRepository = &ProgressRepositoryMock{}
 //			SetCourseCompletedFunc: func(contextMoqParam context.Context, setCourseCompletedParams domain.SetCourseCompletedParams) error {
 //				panic("mock out the SetCourseCompleted method")
 //			},
+//			SetIntroCompletedFunc: func(contextMoqParam context.Context, setIntroCompletedParams domain.SetIntroCompletedParams) error {
+//				panic("mock out the SetIntroCompleted method")
+//			},
 //			UpdateProgressFunc: func(contextMoqParam context.Context, updateProgressParams domain.UpdateProgressParams) error {
 //				panic("mock out the UpdateProgress method")
 //			},
@@ -58,6 +61,9 @@ type ProgressRepositoryMock struct {
 
 	// SetCourseCompletedFunc mocks the SetCourseCompleted method.
 	SetCourseCompletedFunc func(contextMoqParam context.Context, setCourseCompletedParams domain.SetCourseCompletedParams) error
+
+	// SetIntroCompletedFunc mocks the SetIntroCompleted method.
+	SetIntroCompletedFunc func(contextMoqParam context.Context, setIntroCompletedParams domain.SetIntroCompletedParams) error
 
 	// UpdateProgressFunc mocks the UpdateProgress method.
 	UpdateProgressFunc func(contextMoqParam context.Context, updateProgressParams domain.UpdateProgressParams) error
@@ -97,6 +103,13 @@ type ProgressRepositoryMock struct {
 			// SetCourseCompletedParams is the setCourseCompletedParams argument value.
 			SetCourseCompletedParams domain.SetCourseCompletedParams
 		}
+		// SetIntroCompleted holds details about calls to the SetIntroCompleted method.
+		SetIntroCompleted []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// SetIntroCompletedParams is the setIntroCompletedParams argument value.
+			SetIntroCompletedParams domain.SetIntroCompletedParams
+		}
 		// UpdateProgress holds details about calls to the UpdateProgress method.
 		UpdateProgress []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
@@ -110,6 +123,7 @@ type ProgressRepositoryMock struct {
 	lockHasCompletedCourse sync.RWMutex
 	lockResetProgress      sync.RWMutex
 	lockSetCourseCompleted sync.RWMutex
+	lockSetIntroCompleted  sync.RWMutex
 	lockUpdateProgress     sync.RWMutex
 }
 
@@ -286,6 +300,42 @@ func (mock *ProgressRepositoryMock) SetCourseCompletedCalls() []struct {
 	mock.lockSetCourseCompleted.RLock()
 	calls = mock.calls.SetCourseCompleted
 	mock.lockSetCourseCompleted.RUnlock()
+	return calls
+}
+
+// SetIntroCompleted calls SetIntroCompletedFunc.
+func (mock *ProgressRepositoryMock) SetIntroCompleted(contextMoqParam context.Context, setIntroCompletedParams domain.SetIntroCompletedParams) error {
+	if mock.SetIntroCompletedFunc == nil {
+		panic("ProgressRepositoryMock.SetIntroCompletedFunc: method is nil but ProgressRepository.SetIntroCompleted was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam         context.Context
+		SetIntroCompletedParams domain.SetIntroCompletedParams
+	}{
+		ContextMoqParam:         contextMoqParam,
+		SetIntroCompletedParams: setIntroCompletedParams,
+	}
+	mock.lockSetIntroCompleted.Lock()
+	mock.calls.SetIntroCompleted = append(mock.calls.SetIntroCompleted, callInfo)
+	mock.lockSetIntroCompleted.Unlock()
+	return mock.SetIntroCompletedFunc(contextMoqParam, setIntroCompletedParams)
+}
+
+// SetIntroCompletedCalls gets all the calls that were made to SetIntroCompleted.
+// Check the length with:
+//
+//	len(mockedProgressRepository.SetIntroCompletedCalls())
+func (mock *ProgressRepositoryMock) SetIntroCompletedCalls() []struct {
+	ContextMoqParam         context.Context
+	SetIntroCompletedParams domain.SetIntroCompletedParams
+} {
+	var calls []struct {
+		ContextMoqParam         context.Context
+		SetIntroCompletedParams domain.SetIntroCompletedParams
+	}
+	mock.lockSetIntroCompleted.RLock()
+	calls = mock.calls.SetIntroCompleted
+	mock.lockSetIntroCompleted.RUnlock()
 	return calls
 }
 

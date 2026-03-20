@@ -26,6 +26,7 @@ func RegisterCourseRoutes(private *echo.Group, h *handlers.Handlers) {
 func RegisterProgressRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/get-progress", h.GetProgress)
 	private.POST("/update-progress", h.UpdateProgress)
+	private.POST("/set-intro-completed", h.SetIntroCompleted)
 	private.POST("/set-course-completed", h.SetCourseCompleted)
 
 	// admin routes

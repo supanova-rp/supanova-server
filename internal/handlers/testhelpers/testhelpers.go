@@ -38,6 +38,7 @@ const (
 	GetProgressHandlerName                = "GetProgress"
 	UpdateProgressHandlerName             = "UpdateProgress"
 	SetCourseCompletedHandlerName         = "SetCourseCompleted"
+	SetIntroCompletedHandlerName          = "SetIntroCompleted"
 	HasCompletedCourseHandlerName         = "HasCompletedCourse"
 	GetUserHandlerName                    = "GetUser"
 	SendEmailHandlerName                  = "SendEmail"

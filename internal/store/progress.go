@@ -72,6 +72,17 @@ func (s *Store) ResetProgress(ctx context.Context, args domain.ResetProgressPara
 	})
 }
 
+func (s *Store) SetIntroCompleted(ctx context.Context, args domain.SetIntroCompletedParams) error {
+	sqlcArgs := sqlc.SetIntroCompletedParams{
+		UserID:   args.UserID,
+		CourseID: utils.PGUUIDFromUUID(args.CourseID),
+	}
+
+	return ExecCommand(ctx, func() error {
+		return s.Queries.SetIntroCompleted(ctx, sqlcArgs)
+	})
+}
+
 func (s *Store) SetCourseCompleted(ctx context.Context, args domain.SetCourseCompletedParams) error {
 	sqlcArgs := sqlc.SetCourseCompletedParams{
 		UserID:   args.UserID,

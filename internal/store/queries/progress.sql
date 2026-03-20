@@ -31,6 +31,12 @@ SET completed_section_ids = ARRAY[]::uuid[],
     completed_course = FALSE
 WHERE user_id = $1 AND course_id = $2;
 
+-- name: SetIntroCompleted :exec
+INSERT INTO userprogress (user_id, course_id, completed_section_ids, completed_intro)
+VALUES ($1, $2, ARRAY[]::uuid[], TRUE)
+ON CONFLICT (user_id, course_id)
+DO UPDATE SET completed_intro = TRUE;
+
 -- name: GetAllProgress :many
 SELECT
   COALESCE(uc.user_id, up.user_id) AS user_id,
