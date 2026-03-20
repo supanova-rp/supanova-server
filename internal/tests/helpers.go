@@ -29,6 +29,18 @@ const (
 	courseCompletionMessage = "Well done on completing the course"
 )
 
+func getUsersAndAssignedCourses(t *testing.T, baseURL string) []domain.UserWithAssignedCourses {
+	t.Helper()
+
+	resp := makePOSTRequest(t, baseURL, "users-to-courses", nil)
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", resp.StatusCode)
+	}
+
+	return *parseJSONResponse[[]domain.UserWithAssignedCourses](t, resp)
+}
+
 // TODO: Remove once edit course dashboard reuses /courses/overview endpoint
 func getCourses(t *testing.T, baseURL string) []*domain.AllCourseLegacy {
 	t.Helper()
