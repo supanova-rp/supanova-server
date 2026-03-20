@@ -175,6 +175,18 @@ func enrolUserInCourse(t *testing.T, baseURL string, courseID uuid.UUID) {
 	}
 }
 
+func register(t *testing.T, baseURL string, params *handlers.RegisterParams) map[string]string {
+	t.Helper()
+
+	resp := makePOSTRequest(t, baseURL, "register", params)
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("register failed, expected status 200, got %d", resp.StatusCode)
+	}
+
+	return *parseJSONResponse[map[string]string](t, resp)
+}
+
 func makePOSTRequest(t *testing.T, baseURL, endpoint string, resource any) *http.Response {
 	t.Helper()
 

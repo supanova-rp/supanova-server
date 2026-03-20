@@ -44,6 +44,31 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
+func TestAuth(t *testing.T) {
+	t.Run("register - happy path", func(t *testing.T) {
+		result := register(t, testResources.AppURL, &handlers.RegisterParams{
+			Name:     "New User",
+			Email:    "newuser@example.com",
+			Password: "password123",
+		})
+
+		if result["newUserId"] == "" {
+			t.Fatal("expected newUserId in response, got empty string")
+		}
+	})
+
+	t.Run("register - missing required fields", func(t *testing.T) {
+		resp := makePOSTRequest(t, testResources.AppURL, "register", &handlers.RegisterParams{
+			Name: "New User",
+		})
+		defer resp.Body.Close() //nolint:errcheck
+
+		if resp.StatusCode != http.StatusBadRequest {
+			t.Fatalf("expected status 400, got %d", resp.StatusCode)
+		}
+	})
+}
+
 func TestCourse(t *testing.T) {
 	t.Run("course happy path - add, get, delete", func(t *testing.T) {
 		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{

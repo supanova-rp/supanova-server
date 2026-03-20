@@ -10,8 +10,8 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/supanova-rp/supanova-server/internal/config"
+	"github.com/supanova-rp/supanova-server/internal/handlers/mocks"
 	"github.com/supanova-rp/supanova-server/internal/middleware"
-	"github.com/supanova-rp/supanova-server/internal/middleware/mocks"
 	"github.com/supanova-rp/supanova-server/internal/middleware/testhelpers"
 	"github.com/supanova-rp/supanova-server/internal/services/auth"
 )
