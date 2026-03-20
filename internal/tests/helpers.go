@@ -31,147 +31,77 @@ const (
 
 func getUsersAndAssignedCourses(t *testing.T, baseURL string) []domain.UserWithAssignedCourses {
 	t.Helper()
-
-	resp := makePOSTRequest(t, baseURL, "users-to-courses", nil)
-	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", resp.StatusCode)
-	}
-
-	return *parseJSONResponse[[]domain.UserWithAssignedCourses](t, resp)
+	return *postAndParse[[]domain.UserWithAssignedCourses](t, baseURL, "users-to-courses", nil, http.StatusOK)
 }
 
 // TODO: Remove once edit course dashboard reuses /courses/overview endpoint
 func getCourses(t *testing.T, baseURL string) []*domain.AllCourseLegacy {
 	t.Helper()
-
-	resp := makePOSTRequest(t, baseURL, "courses", nil)
-	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", resp.StatusCode)
-	}
-
-	return *parseJSONResponse[[]*domain.AllCourseLegacy](t, resp)
+	return *postAndParse[[]*domain.AllCourseLegacy](t, baseURL, "courses", nil, http.StatusOK)
 }
 
 func getCourse(t *testing.T, baseURL string, id uuid.UUID) *domain.Course {
 	t.Helper()
-
-	resp := makePOSTRequest(t, baseURL, "course", map[string]uuid.UUID{
-		"courseId": id,
-	})
-	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", resp.StatusCode)
-	}
-
-	return parseJSONResponse[domain.Course](t, resp)
+	return postAndParse[domain.Course](t, baseURL, "course", map[string]uuid.UUID{"courseId": id}, http.StatusOK)
 }
 
 // TODO: Remove once edit course dashboard reuses /courses/overview endpoint
 func getQuizQuestions(t *testing.T, baseURL string, quizSectionIDs []uuid.UUID) *[]domain.QuizQuestionLegacy {
 	t.Helper()
-
-	resp := makePOSTRequest(t, baseURL, "quiz-questions", map[string][]uuid.UUID{
-		"quizSectionIds": quizSectionIDs,
-	})
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", resp.StatusCode)
-	}
-
-	return parseJSONResponse[[]domain.QuizQuestionLegacy](t, resp)
+	return postAndParse[[]domain.QuizQuestionLegacy](t, baseURL, "quiz-questions", map[string][]uuid.UUID{"quizSectionIds": quizSectionIDs}, http.StatusOK)
 }
 
 func deleteCourse(t *testing.T, baseURL string, id uuid.UUID) {
 	t.Helper()
-
-	resp := makePOSTRequest(t, baseURL, "delete-course", map[string]string{
-		"course_id": id.String(),
-	})
-	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("delete course failed, expected status 200, got %d", resp.StatusCode)
-	}
+	postOnly(t, baseURL, "delete-course", map[string]string{"course_id": id.String()}, http.StatusOK)
 }
 
 func addCourse(t *testing.T, baseURL string, params *handlers.AddCourseParams) *domain.Course {
 	t.Helper()
-
-	resp := makePOSTRequest(t, baseURL, "add-course", params)
-	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("expected status 201, got %d", resp.StatusCode)
-	}
-
-	return parseJSONResponse[domain.Course](t, resp)
+	return postAndParse[domain.Course](t, baseURL, "add-course", params, http.StatusCreated)
 }
 
 func getProgress(t *testing.T, baseURL string, courseID uuid.UUID) *domain.Progress {
 	t.Helper()
-
-	resp := makePOSTRequest(t, baseURL, "get-progress", map[string]uuid.UUID{
-		"courseId": courseID,
-	})
-	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", resp.StatusCode)
-	}
-
-	return parseJSONResponse[domain.Progress](t, resp)
+	return postAndParse[domain.Progress](t, baseURL, "get-progress", map[string]uuid.UUID{"courseId": courseID}, http.StatusOK)
 }
 
 func updateProgress(t *testing.T, baseURL string, courseID, sectionID uuid.UUID) {
 	t.Helper()
-
-	resp := makePOSTRequest(t, baseURL, "update-progress", &handlers.UpdateProgressParams{
-		CourseID:  courseID.String(),
-		SectionID: sectionID.String(),
-	})
-	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode != http.StatusNoContent {
-		t.Fatalf("update progress failed, expected status 204, got %d", resp.StatusCode)
-	}
+	postOnly(t, baseURL, "update-progress", &handlers.UpdateProgressParams{CourseID: courseID.String(), SectionID: sectionID.String()}, http.StatusNoContent)
 }
 
 func getMaterials(t *testing.T, baseURL string, courseID uuid.UUID) []domain.CourseMaterialWithURL {
 	t.Helper()
-
-	resp := makePOSTRequest(t, baseURL, "materials", map[string]string{
-		"courseId": courseID.String(),
-	})
-	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", resp.StatusCode)
-	}
-
-	return *parseJSONResponse[[]domain.CourseMaterialWithURL](t, resp)
+	return *postAndParse[[]domain.CourseMaterialWithURL](t, baseURL, "materials", map[string]string{"courseId": courseID.String()}, http.StatusOK)
 }
 
 func resetProgress(t *testing.T, baseURL string, courseID uuid.UUID) {
 	t.Helper()
-
-	resp := makePOSTRequest(t, baseURL, "reset-progress", &handlers.ResetProgressParams{
-		CourseID: courseID.String(),
-	})
-	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode != http.StatusNoContent {
-		t.Fatalf("reset progress failed, expected status 204, got %d", resp.StatusCode)
-	}
+	postOnly(t, baseURL, "reset-progress", &handlers.ResetProgressParams{CourseID: courseID.String()}, http.StatusNoContent)
 }
 
 func enrolUserInCourse(t *testing.T, baseURL string, courseID uuid.UUID) {
 	t.Helper()
+	postOnly(t, baseURL, "update-users-to-courses", &handlers.UpdateCourseEnrolmentParams{UserID: TestUserID, CourseID: courseID.String(), IsEnrolled: false}, http.StatusNoContent)
+}
 
-	resp := makePOSTRequest(t, baseURL, "update-users-to-courses", &handlers.UpdateCourseEnrolmentParams{
-		UserID:     TestUserID,
-		CourseID:   courseID.String(),
-		IsEnrolled: false,
-	})
+func postAndParse[T any](t *testing.T, baseURL, endpoint string, body any, expectedStatus int) *T {
+	t.Helper()
+	resp := makePOSTRequest(t, baseURL, endpoint, body)
 	defer resp.Body.Close() //nolint:errcheck
-	if resp.StatusCode != http.StatusNoContent {
-		t.Fatalf("enrol failed, expected status 200, got %d", resp.StatusCode)
+	if resp.StatusCode != expectedStatus {
+		t.Fatalf("expected status %d, got %d", expectedStatus, resp.StatusCode)
+	}
+	return parseJSONResponse[T](t, resp)
+}
+
+func postOnly(t *testing.T, baseURL, endpoint string, body any, expectedStatus int) {
+	t.Helper()
+	resp := makePOSTRequest(t, baseURL, endpoint, body)
+	defer resp.Body.Close() //nolint:errcheck
+	if resp.StatusCode != expectedStatus {
+		t.Fatalf("expected status %d, got %d", expectedStatus, resp.StatusCode)
 	}
 }
 
