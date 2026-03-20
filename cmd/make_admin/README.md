@@ -17,6 +17,6 @@ go run cmd/make_admin/main.go
 Remove user admin status:
 
 ```bash
-go run cmd/make_admin/main.go make-admin=false
+go run cmd/make_admin/main.go -make-admin=false
 ```
 
