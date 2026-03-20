@@ -14,10 +14,11 @@ import (
 )
 
 const (
-	courseResource               = "course"
-	coursesResource              = "courses"
-	courseOverviewResource       = "course overview"
-	assignedCourseTitlesResource = "assigned course titles"
+	courseResource                   = "course"
+	coursesResource                  = "courses"
+	courseOverviewResource           = "course overview"
+	assignedCourseTitlesResource     = "assigned course titles"
+	usersWithAssignedCoursesResource = "users with assigned courses"
 )
 
 type GetCourseParams struct {
@@ -269,4 +270,15 @@ func (h *Handlers) GetAssignedCourseTitles(e echo.Context) error {
 	}
 
 	return e.JSON(http.StatusOK, overviews)
+}
+
+func (h *Handlers) GetUsersAndAssignedCourses(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	users, err := h.User.GetUsersAndAssignedCourses(ctx)
+	if err != nil {
+		return httpError(http.StatusInternalServerError, errors.Getting(usersWithAssignedCoursesResource), err)
+	}
+
+	return e.JSON(http.StatusOK, users)
 }

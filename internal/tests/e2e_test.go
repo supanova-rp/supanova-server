@@ -120,6 +120,36 @@ func TestCourse(t *testing.T) {
 			t.Errorf("course mismatch (-want +got):\n%s", diff)
 		}
 
+		users := getUsersAndAssignedCourses(t, testResources.AppURL)
+
+		var testUser *domain.UserWithAssignedCourses
+		for i := range users {
+			if users[i].ID == TestUserID {
+				testUser = &users[i]
+				break
+			}
+		}
+
+		if testUser == nil {
+			t.Fatalf("test user %s not found in users-to-courses response", TestUserID)
+		}
+
+		var foundCourse *domain.AssignedCourseTitle
+		for i := range testUser.Courses {
+			if testUser.Courses[i].ID == created.ID.String() {
+				foundCourse = &testUser.Courses[i]
+				break
+			}
+		}
+
+		if foundCourse == nil {
+			t.Fatalf("expected course %s to be in test user's courses, got %v", created.ID, testUser.Courses)
+		}
+
+		if foundCourse.Title != courseTitle {
+			t.Errorf("expected course title %q, got %q", courseTitle, foundCourse.Title)
+		}
+
 		deleteCourse(t, testResources.AppURL, created.ID)
 
 		resp := makePOSTRequest(t, testResources.AppURL, "course", &handlers.GetCourseParams{
