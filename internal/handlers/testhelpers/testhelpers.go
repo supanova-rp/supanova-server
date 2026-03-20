@@ -45,7 +45,7 @@ const (
 	GetTemplateNamesHandlerName           = "GetEmailTemplateNames"
 	GetQuizQuestionsHandlerName           = "GetQuizQuestions"
 	GetCoursesHandlerName                 = "GetCourses"
-	GetUsersAndAssignedCoursesHandlerName = "GetUserAndAssignedCourses"
+	GetUsersAndAssignedCoursesHandlerName = "GetUsersAndAssignedCourses"
 
 	TestUserID = "test-user-id"
 )
