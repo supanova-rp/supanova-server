@@ -277,6 +277,108 @@ func TestUpdateProgress_UnhappyPath(t *testing.T) {
 		})
 	}
 }
+func TestSetIntroCompleted_HappyPath(t *testing.T) {
+	t.Run("sets intro completed successfully", func(t *testing.T) {
+		courseID := testhelpers.Course.ID.String()
+
+		mockRepo := &mocks.ProgressRepositoryMock{
+			SetIntroCompletedFunc: func(ctx context.Context, params domain.SetIntroCompletedParams) error {
+				return nil
+			},
+		}
+
+		h := &handlers.Handlers{Progress: mockRepo}
+
+		req := handlers.SetIntroCompletedParams{
+			CourseID: courseID,
+		}
+
+		ctx, rec := testhelpers.SetupEchoContext(t, req, "set-intro-completed")
+
+		err := h.SetIntroCompleted(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		var actual handlers.SetIntroCompletedResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+			t.Fatalf("unmarshal failed: %v", err)
+		}
+
+		if actual.CourseID != courseID {
+			t.Errorf("expected courseId %s, got %s", courseID, actual.CourseID)
+		}
+		if !actual.CompletedIntro {
+			t.Error("expected completed_intro to be true")
+		}
+
+		testhelpers.AssertRepoCalls(t, len(mockRepo.SetIntroCompletedCalls()), 1, testhelpers.SetIntroCompletedHandlerName)
+	})
+}
+
+func TestSetIntroCompleted_UnhappyPath(t *testing.T) {
+	type testCase struct {
+		name           string
+		reqBody        handlers.SetIntroCompletedParams
+		setup          func() *handlers.Handlers
+		wantStatus     int
+		expectedErrMsg string
+	}
+
+	tests := []testCase{
+		{
+			name:           "validation - missing courseId",
+			reqBody:        handlers.SetIntroCompletedParams{},
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Progress: &mocks.ProgressRepositoryMock{}}
+			},
+		},
+		{
+			name: "validation - invalid uuid",
+			reqBody: handlers.SetIntroCompletedParams{
+				CourseID: "invalid-uuid",
+			},
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.InvalidUUID,
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Progress: &mocks.ProgressRepositoryMock{}}
+			},
+		},
+		{
+			name: "internal server error",
+			reqBody: handlers.SetIntroCompletedParams{
+				CourseID: testhelpers.Course.ID.String(),
+			},
+			wantStatus:     http.StatusInternalServerError,
+			expectedErrMsg: errors.Updating("user progress"),
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{
+					Progress: &mocks.ProgressRepositoryMock{
+						SetIntroCompletedFunc: func(ctx context.Context, params domain.SetIntroCompletedParams) error {
+							return stdErrors.New("db error")
+						},
+					},
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := tt.setup()
+			ctx, _ := testhelpers.SetupEchoContext(t, tt.reqBody, "set-intro-completed")
+			err := h.SetIntroCompleted(ctx)
+			testhelpers.AssertHTTPError(t, err, tt.wantStatus, tt.expectedErrMsg)
+		})
+	}
+}
+
 func TestSetCourseCompleted_HappyPath(t *testing.T) {
 	t.Run("already completed course - no update", func(t *testing.T) {
 		courseID := testhelpers.Course.ID.String()

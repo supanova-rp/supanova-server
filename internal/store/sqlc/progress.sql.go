@@ -169,6 +169,23 @@ func (q *Queries) SetCourseCompleted(ctx context.Context, arg SetCourseCompleted
 	return err
 }
 
+const setIntroCompleted = `-- name: SetIntroCompleted :exec
+INSERT INTO userprogress (user_id, course_id, completed_section_ids, completed_intro)
+VALUES ($1, $2, ARRAY[]::uuid[], TRUE)
+ON CONFLICT (user_id, course_id)
+DO UPDATE SET completed_intro = TRUE
+`
+
+type SetIntroCompletedParams struct {
+	UserID   string
+	CourseID pgtype.UUID
+}
+
+func (q *Queries) SetIntroCompleted(ctx context.Context, arg SetIntroCompletedParams) error {
+	_, err := q.db.Exec(ctx, setIntroCompleted, arg.UserID, arg.CourseID)
+	return err
+}
+
 const updateProgress = `-- name: UpdateProgress :exec
 INSERT INTO userprogress (user_id, course_id, completed_section_ids)
 VALUES ($1, $2, ARRAY[$3::uuid])

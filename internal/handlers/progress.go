@@ -190,6 +190,47 @@ func (h *Handlers) SetCourseCompleted(e echo.Context) error {
 	return e.NoContent(http.StatusNoContent)
 }
 
+type SetIntroCompletedParams struct {
+	CourseID string `json:"courseId" validate:"required"`
+}
+
+type SetIntroCompletedResponse struct {
+	CourseID       string `json:"courseId"`
+	CompletedIntro bool   `json:"completed_intro"`
+}
+
+func (h *Handlers) SetIntroCompleted(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	userID, ok := getUserID(ctx)
+	if !ok {
+		return httpError(http.StatusInternalServerError, errors.NotFoundInCtx("user"), nil)
+	}
+
+	var params SetIntroCompletedParams
+	if err := bindAndValidate(e, &params); err != nil {
+		return err
+	}
+
+	courseID, err := uuid.Parse(params.CourseID)
+	if err != nil {
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
+	}
+
+	err = h.Progress.SetIntroCompleted(ctx, domain.SetIntroCompletedParams{
+		UserID:   userID,
+		CourseID: courseID,
+	})
+	if err != nil {
+		return httpError(http.StatusInternalServerError, errors.Updating(progressResource), err)
+	}
+
+	return e.JSON(http.StatusOK, SetIntroCompletedResponse{
+		CourseID:       params.CourseID,
+		CompletedIntro: true,
+	})
+}
+
 type ResetProgressParams struct {
 	CourseID string `json:"courseId" validate:"required"`
 }
