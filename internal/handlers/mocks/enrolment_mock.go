@@ -25,6 +25,9 @@ var _ domain.EnrolmentRepository = &EnrolmentRepositoryMock{}
 //			EnrolInCourseFunc: func(ctx context.Context, params domain.EnrolInCourseParams) error {
 //				panic("mock out the EnrolInCourse method")
 //			},
+//			GetUsersAndAssignedCoursesFunc: func(contextMoqParam context.Context) ([]domain.UserWithAssignedCourses, error) {
+//				panic("mock out the GetUsersAndAssignedCourses method")
+//			},
 //			IsEnrolledFunc: func(ctx context.Context, params domain.IsEnrolledParams) (bool, error) {
 //				panic("mock out the IsEnrolled method")
 //			},
@@ -40,6 +43,9 @@ type EnrolmentRepositoryMock struct {
 
 	// EnrolInCourseFunc mocks the EnrolInCourse method.
 	EnrolInCourseFunc func(ctx context.Context, params domain.EnrolInCourseParams) error
+
+	// GetUsersAndAssignedCoursesFunc mocks the GetUsersAndAssignedCourses method.
+	GetUsersAndAssignedCoursesFunc func(contextMoqParam context.Context) ([]domain.UserWithAssignedCourses, error)
 
 	// IsEnrolledFunc mocks the IsEnrolled method.
 	IsEnrolledFunc func(ctx context.Context, params domain.IsEnrolledParams) (bool, error)
@@ -60,6 +66,11 @@ type EnrolmentRepositoryMock struct {
 			// Params is the params argument value.
 			Params domain.EnrolInCourseParams
 		}
+		// GetUsersAndAssignedCourses holds details about calls to the GetUsersAndAssignedCourses method.
+		GetUsersAndAssignedCourses []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+		}
 		// IsEnrolled holds details about calls to the IsEnrolled method.
 		IsEnrolled []struct {
 			// Ctx is the ctx argument value.
@@ -68,9 +79,10 @@ type EnrolmentRepositoryMock struct {
 			Params domain.IsEnrolledParams
 		}
 	}
-	lockDisenrolInCourse sync.RWMutex
-	lockEnrolInCourse    sync.RWMutex
-	lockIsEnrolled       sync.RWMutex
+	lockDisenrolInCourse           sync.RWMutex
+	lockEnrolInCourse              sync.RWMutex
+	lockGetUsersAndAssignedCourses sync.RWMutex
+	lockIsEnrolled                 sync.RWMutex
 }
 
 // DisenrolInCourse calls DisenrolInCourseFunc.
@@ -142,6 +154,38 @@ func (mock *EnrolmentRepositoryMock) EnrolInCourseCalls() []struct {
 	mock.lockEnrolInCourse.RLock()
 	calls = mock.calls.EnrolInCourse
 	mock.lockEnrolInCourse.RUnlock()
+	return calls
+}
+
+// GetUsersAndAssignedCourses calls GetUsersAndAssignedCoursesFunc.
+func (mock *EnrolmentRepositoryMock) GetUsersAndAssignedCourses(contextMoqParam context.Context) ([]domain.UserWithAssignedCourses, error) {
+	if mock.GetUsersAndAssignedCoursesFunc == nil {
+		panic("EnrolmentRepositoryMock.GetUsersAndAssignedCoursesFunc: method is nil but EnrolmentRepository.GetUsersAndAssignedCourses was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam context.Context
+	}{
+		ContextMoqParam: contextMoqParam,
+	}
+	mock.lockGetUsersAndAssignedCourses.Lock()
+	mock.calls.GetUsersAndAssignedCourses = append(mock.calls.GetUsersAndAssignedCourses, callInfo)
+	mock.lockGetUsersAndAssignedCourses.Unlock()
+	return mock.GetUsersAndAssignedCoursesFunc(contextMoqParam)
+}
+
+// GetUsersAndAssignedCoursesCalls gets all the calls that were made to GetUsersAndAssignedCourses.
+// Check the length with:
+//
+//	len(mockedEnrolmentRepository.GetUsersAndAssignedCoursesCalls())
+func (mock *EnrolmentRepositoryMock) GetUsersAndAssignedCoursesCalls() []struct {
+	ContextMoqParam context.Context
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+	}
+	mock.lockGetUsersAndAssignedCourses.RLock()
+	calls = mock.calls.GetUsersAndAssignedCourses
+	mock.lockGetUsersAndAssignedCourses.RUnlock()
 	return calls
 }
 

@@ -9,9 +9,17 @@ import (
 //go:generate moq -out ../handlers/mocks/enrolment_mock.go -pkg mocks . EnrolmentRepository
 
 type EnrolmentRepository interface {
+	GetUsersAndAssignedCourses(context.Context) ([]UserWithAssignedCourses, error)
 	IsEnrolled(ctx context.Context, params IsEnrolledParams) (bool, error)
 	EnrolInCourse(ctx context.Context, params EnrolInCourseParams) error
 	DisenrolInCourse(ctx context.Context, params DisenrolInCourseParams) error
+}
+
+type UserWithAssignedCourses struct {
+	ID        string      `json:"id"`
+	Name      string      `json:"name"`
+	Email     string      `json:"email"`
+	CourseIDs []uuid.UUID `json:"courseIds"`
 }
 
 type IsEnrolledParams struct {
