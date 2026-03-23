@@ -20,12 +20,12 @@ const (
 func (h *Handlers) GetUsersAndAssignedCourses(e echo.Context) error {
 	ctx := e.Request().Context()
 
-	users, err := h.Enrolment.GetUsersAndAssignedCourses(ctx)
+	usersToCourses, err := h.Enrolment.GetUsersAndAssignedCourses(ctx)
 	if err != nil {
 		return httpError(http.StatusInternalServerError, errors.Getting(usersWithAssignedCoursesResource), err)
 	}
 
-	return e.JSON(http.StatusOK, users)
+	return e.JSON(http.StatusOK, usersToCourses)
 }
 
 type UpdateCourseEnrolmentParams struct {
