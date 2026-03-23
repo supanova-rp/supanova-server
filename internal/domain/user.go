@@ -2,6 +2,8 @@ package domain
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 //go:generate moq -out ../handlers/mocks/user_mock.go -pkg mocks . UserRepository
@@ -17,14 +19,9 @@ type User struct {
 	Email string `json:"email"`
 }
 
-type AssignedCourseTitle struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-}
-
 type UserWithAssignedCourses struct {
-	ID      string                `json:"id"`
-	Name    string                `json:"name"`
-	Email   string                `json:"email"`
-	Courses []AssignedCourseTitle `json:"courses"`
+	ID        string      `json:"id"`
+	Name      string      `json:"name"`
+	Email     string      `json:"email"`
+	CourseIDs []uuid.UUID `json:"courseIds"`
 }

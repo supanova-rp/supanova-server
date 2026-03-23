@@ -7,9 +7,8 @@ SELECT
   u.id,
   u.name,
   u.email,
-  json_agg(json_build_object('id', c.id, 'title', c.title)) AS courses
+  json_agg(c.course_id) FILTER (WHERE c.course_id IS NOT NULL) AS course_ids
 FROM users u
-LEFT JOIN usercourses uc ON u.id = uc.user_id
-LEFT JOIN courses c ON uc.course_id = c.id
+LEFT JOIN usercourses c ON u.id = c.user_id
 GROUP BY u.id, u.name, u.email
 ORDER BY u.name;

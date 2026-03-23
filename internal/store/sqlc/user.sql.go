@@ -27,19 +27,18 @@ SELECT
   u.id,
   u.name,
   u.email,
-  json_agg(json_build_object('id', c.id, 'title', c.title)) AS courses
+  json_agg(c.course_id) FILTER (WHERE c.course_id IS NOT NULL) AS course_ids
 FROM users u
-LEFT JOIN usercourses uc ON u.id = uc.user_id
-LEFT JOIN courses c ON uc.course_id = c.id
+LEFT JOIN usercourses c ON u.id = c.user_id
 GROUP BY u.id, u.name, u.email
 ORDER BY u.name
 `
 
 type GetUsersAndAssignedCoursesRow struct {
-	ID      string
-	Name    pgtype.Text
-	Email   pgtype.Text
-	Courses []byte
+	ID        string
+	Name      pgtype.Text
+	Email     pgtype.Text
+	CourseIds []byte
 }
 
 func (q *Queries) GetUsersAndAssignedCourses(ctx context.Context) ([]GetUsersAndAssignedCoursesRow, error) {
@@ -55,7 +54,7 @@ func (q *Queries) GetUsersAndAssignedCourses(ctx context.Context) ([]GetUsersAnd
 			&i.ID,
 			&i.Name,
 			&i.Email,
-			&i.Courses,
+			&i.CourseIds,
 		); err != nil {
 			return nil, err
 		}

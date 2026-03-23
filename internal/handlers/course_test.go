@@ -616,19 +616,16 @@ func TestGetUsersAndAssignedCourses_HappyPath(t *testing.T) {
 	t.Run("returns users with assigned courses successfully", func(t *testing.T) {
 		expected := []domain.UserWithAssignedCourses{
 			{
-				ID:    "user-1",
-				Name:  "Alice",
-				Email: "alice@example.com",
-				Courses: []domain.AssignedCourseTitle{
-					{ID: uuid.New().String(), Title: "Course A"},
-					{ID: uuid.New().String(), Title: "Course B"},
-				},
+				ID:        "user-1",
+				Name:      "Alice",
+				Email:     "alice@example.com",
+				CourseIDs: []uuid.UUID{uuid.New(), uuid.New()},
 			},
 			{
-				ID:      "user-2",
-				Name:    "Bob",
-				Email:   "bob@example.com",
-				Courses: []domain.AssignedCourseTitle{},
+				ID:        "user-2",
+				Name:      "Bob",
+				Email:     "bob@example.com",
+				CourseIDs: []uuid.UUID{},
 			},
 		}
 

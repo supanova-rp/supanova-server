@@ -134,20 +134,16 @@ func TestCourse(t *testing.T) {
 			t.Fatalf("test user %s not found in users-to-courses response", TestUserID)
 		}
 
-		var foundCourse *domain.AssignedCourseTitle
-		for i := range testUser.Courses {
-			if testUser.Courses[i].ID == created.ID.String() {
-				foundCourse = &testUser.Courses[i]
+		var foundCourseID *uuid.UUID
+		for i := range testUser.CourseIDs {
+			if testUser.CourseIDs[i] == created.ID {
+				foundCourseID = &testUser.CourseIDs[i]
 				break
 			}
 		}
 
-		if foundCourse == nil {
-			t.Fatalf("expected course %s to be in test user's courses, got %v", created.ID, testUser.Courses)
-		}
-
-		if foundCourse.Title != courseTitle {
-			t.Errorf("expected course title %q, got %q", courseTitle, foundCourse.Title)
+		if foundCourseID == nil {
+			t.Fatalf("expected course %s to be in test user's courses, got %v", created.ID, testUser.CourseIDs)
 		}
 
 		deleteCourse(t, testResources.AppURL, created.ID)

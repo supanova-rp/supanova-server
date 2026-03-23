@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/store/sqlc"
 	"github.com/supanova-rp/supanova-server/internal/utils"
@@ -25,11 +27,6 @@ func (s *Store) GetUser(ctx context.Context, id string) (*domain.User, error) {
 	}, nil
 }
 
-type sqlcAssignedCourseTitle struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-}
-
 func (s *Store) GetUsersAndAssignedCourses(ctx context.Context) ([]domain.UserWithAssignedCourses, error) {
 	rows, err := ExecQuery(ctx, func() ([]sqlc.GetUsersAndAssignedCoursesRow, error) {
 		return s.Queries.GetUsersAndAssignedCourses(ctx)
@@ -39,25 +36,18 @@ func (s *Store) GetUsersAndAssignedCourses(ctx context.Context) ([]domain.UserWi
 	}
 
 	return utils.MapToWithError(rows, func(row sqlc.GetUsersAndAssignedCoursesRow) (domain.UserWithAssignedCourses, error) {
-		var sqlcCourses []sqlcAssignedCourseTitle
-		if row.Courses != nil {
-			if err := json.Unmarshal(row.Courses, &sqlcCourses); err != nil {
-				return domain.UserWithAssignedCourses{}, fmt.Errorf("failed to unmarshal courses: %w", err)
+		var courseIDs []uuid.UUID
+		if row.CourseIds != nil {
+			if err := json.Unmarshal(row.CourseIds, &courseIDs); err != nil {
+				return domain.UserWithAssignedCourses{}, fmt.Errorf("failed to unmarshal course IDs: %w", err)
 			}
 		}
 
-		courses := utils.Map(sqlcCourses, func(c sqlcAssignedCourseTitle) domain.AssignedCourseTitle {
-			return domain.AssignedCourseTitle{
-				ID:    c.ID,
-				Title: c.Title,
-			}
-		})
-
 		return domain.UserWithAssignedCourses{
-			ID:      row.ID,
-			Name:    row.Name.String,
-			Email:   row.Email.String,
-			Courses: courses,
+			ID:        row.ID,
+			Name:      row.Name.String,
+			Email:     row.Email.String,
+			CourseIDs: courseIDs,
 		}, nil
 	})
 }
