@@ -20,7 +20,6 @@ func RegisterCourseRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/courses", h.GetCourses)
 	private.POST("/add-course", h.AddCourse)
 	private.POST("/delete-course", h.DeleteCourse)
-	private.POST("/users-to-courses", h.GetUsersAndAssignedCourses)
 }
 
 func RegisterProgressRoutes(private *echo.Group, h *handlers.Handlers) {
@@ -64,6 +63,7 @@ func RegisterMediaRoutes(private *echo.Group, h *handlers.Handlers) {
 
 func RegisterEnrolmentRoutes(private *echo.Group, h *handlers.Handlers) {
 	// admin routes
+	private.POST("/users-to-courses", h.GetUsersAndAssignedCourses)
 	private.POST("/update-users-to-courses", h.UpdateCourseEnrolment)
 }
 

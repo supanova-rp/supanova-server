@@ -39,6 +39,55 @@ func (q *Queries) EnrolInCourse(ctx context.Context, arg EnrolInCourseParams) er
 	return err
 }
 
+const getUsersAndAssignedCourses = `-- name: GetUsersAndAssignedCourses :many
+SELECT
+  u.id,
+  u.name,
+  u.email,
+  (
+    COALESCE(
+    jsonb_agg(c.course_id) FILTER (WHERE c.course_id IS NOT NULL),
+    '[]'::jsonb
+    )
+  )::jsonb AS course_ids
+FROM users u
+LEFT JOIN usercourses c ON u.id = c.user_id
+GROUP BY u.id, u.name, u.email
+ORDER BY u.name
+`
+
+type GetUsersAndAssignedCoursesRow struct {
+	ID        string
+	Name      pgtype.Text
+	Email     pgtype.Text
+	CourseIds []byte
+}
+
+func (q *Queries) GetUsersAndAssignedCourses(ctx context.Context) ([]GetUsersAndAssignedCoursesRow, error) {
+	rows, err := q.db.Query(ctx, getUsersAndAssignedCourses)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUsersAndAssignedCoursesRow
+	for rows.Next() {
+		var i GetUsersAndAssignedCoursesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Email,
+			&i.CourseIds,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const isUserEnrolledInCourse = `-- name: IsUserEnrolledInCourse :one
 SELECT EXISTS(SELECT 1 FROM usercourses WHERE user_id = $1 AND course_id = $2)
 `

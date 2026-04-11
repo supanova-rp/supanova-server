@@ -22,9 +22,6 @@ var _ domain.UserRepository = &UserRepositoryMock{}
 //			GetUserFunc: func(contextMoqParam context.Context, s string) (*domain.User, error) {
 //				panic("mock out the GetUser method")
 //			},
-//			GetUsersAndAssignedCoursesFunc: func(contextMoqParam context.Context) ([]domain.UserWithAssignedCourses, error) {
-//				panic("mock out the GetUsersAndAssignedCourses method")
-//			},
 //		}
 //
 //		// use mockedUserRepository in code that requires domain.UserRepository
@@ -35,9 +32,6 @@ type UserRepositoryMock struct {
 	// GetUserFunc mocks the GetUser method.
 	GetUserFunc func(contextMoqParam context.Context, s string) (*domain.User, error)
 
-	// GetUsersAndAssignedCoursesFunc mocks the GetUsersAndAssignedCourses method.
-	GetUsersAndAssignedCoursesFunc func(contextMoqParam context.Context) ([]domain.UserWithAssignedCourses, error)
-
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetUser holds details about calls to the GetUser method.
@@ -47,14 +41,8 @@ type UserRepositoryMock struct {
 			// S is the s argument value.
 			S string
 		}
-		// GetUsersAndAssignedCourses holds details about calls to the GetUsersAndAssignedCourses method.
-		GetUsersAndAssignedCourses []struct {
-			// ContextMoqParam is the contextMoqParam argument value.
-			ContextMoqParam context.Context
-		}
 	}
-	lockGetUser                    sync.RWMutex
-	lockGetUsersAndAssignedCourses sync.RWMutex
+	lockGetUser sync.RWMutex
 }
 
 // GetUser calls GetUserFunc.
@@ -90,37 +78,5 @@ func (mock *UserRepositoryMock) GetUserCalls() []struct {
 	mock.lockGetUser.RLock()
 	calls = mock.calls.GetUser
 	mock.lockGetUser.RUnlock()
-	return calls
-}
-
-// GetUsersAndAssignedCourses calls GetUsersAndAssignedCoursesFunc.
-func (mock *UserRepositoryMock) GetUsersAndAssignedCourses(contextMoqParam context.Context) ([]domain.UserWithAssignedCourses, error) {
-	if mock.GetUsersAndAssignedCoursesFunc == nil {
-		panic("UserRepositoryMock.GetUsersAndAssignedCoursesFunc: method is nil but UserRepository.GetUsersAndAssignedCourses was just called")
-	}
-	callInfo := struct {
-		ContextMoqParam context.Context
-	}{
-		ContextMoqParam: contextMoqParam,
-	}
-	mock.lockGetUsersAndAssignedCourses.Lock()
-	mock.calls.GetUsersAndAssignedCourses = append(mock.calls.GetUsersAndAssignedCourses, callInfo)
-	mock.lockGetUsersAndAssignedCourses.Unlock()
-	return mock.GetUsersAndAssignedCoursesFunc(contextMoqParam)
-}
-
-// GetUsersAndAssignedCoursesCalls gets all the calls that were made to GetUsersAndAssignedCourses.
-// Check the length with:
-//
-//	len(mockedUserRepository.GetUsersAndAssignedCoursesCalls())
-func (mock *UserRepositoryMock) GetUsersAndAssignedCoursesCalls() []struct {
-	ContextMoqParam context.Context
-} {
-	var calls []struct {
-		ContextMoqParam context.Context
-	}
-	mock.lockGetUsersAndAssignedCourses.RLock()
-	calls = mock.calls.GetUsersAndAssignedCourses
-	mock.lockGetUsersAndAssignedCourses.RUnlock()
 	return calls
 }

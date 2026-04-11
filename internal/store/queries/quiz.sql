@@ -92,17 +92,23 @@ SELECT
   qq.quiz_section_id,
   qq.is_multi_answer,
   (
-    SELECT json_agg(
-      json_build_object(
-        'id', qa.id,
-        'answer', qa.answer,
-        'correct_answer', qa.correct_answer,
-        'position', qa.position
-      ) ORDER BY qa.position
+    COALESCE(
+      (
+        SELECT jsonb_agg(
+          jsonb_build_object(
+            'id', qa.id,
+            'answer', qa.answer,
+            'correct_answer', qa.correct_answer,
+            'position', qa.position
+          )
+          ORDER BY qa.position
+        )
+        FROM quizanswers qa
+        WHERE qa.quiz_question_id = qq.id
+      ),
+      '[]'::jsonb
     )
-    FROM quizanswers qa
-    WHERE qa.quiz_question_id = qq.id
-  ) AS answers
+  )::jsonb AS answers
 FROM quizquestions qq
 WHERE qq.quiz_section_id = ANY($1::uuid[])
 ORDER BY qq.position;

@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"encoding/json"
-	stdErrors "errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -329,9 +328,6 @@ func (s *Store) GetQuizQuestions(ctx context.Context, sectionIDs []uuid.UUID) ([
 
 func quizQuestionLegacyFrom(row *sqlc.GetQuizQuestionsBySectionIDsRow) (*domain.QuizQuestionLegacy, error) {
 	var sqlcAnswers []SqlcQuizAnswer
-	if row.Answers == nil {
-		return nil, stdErrors.New("no quiz answers")
-	}
 
 	if err := json.Unmarshal(row.Answers, &sqlcAnswers); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal answers: %w", err)

@@ -12,7 +12,21 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
 )
 
-const enrolmentResource = "enrolment"
+const (
+	enrolmentResource                = "enrolment"
+	usersWithAssignedCoursesResource = "users with assigned courses"
+)
+
+func (h *Handlers) GetUsersAndAssignedCourses(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	usersToCourses, err := h.Enrolment.GetUsersAndAssignedCourses(ctx)
+	if err != nil {
+		return httpError(http.StatusInternalServerError, errors.Getting(usersWithAssignedCoursesResource), err)
+	}
+
+	return e.JSON(http.StatusOK, usersToCourses)
+}
 
 type UpdateCourseEnrolmentParams struct {
 	UserID     string `json:"user_id" validate:"required"`
