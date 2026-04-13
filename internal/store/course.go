@@ -373,7 +373,167 @@ func (s *Store) GetCourseMaterials(ctx context.Context, courseID uuid.UUID) ([]d
 	return utils.Map(rows, courseMaterialFrom), nil
 }
 
-func (s *Store) EditCourse(ctx context.Context, id pgtype.UUID) error {
+func (s *Store) EditCourse(ctx context.Context, params *domain.EditCourseParams) (*domain.Course, error) {
+	courseID := utils.PGUUIDFromUUID(params.CourseID)
+
+	err := ExecCommand(ctx, func() error {
+		tx, err := s.pool.Begin(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to begin transaction: %w", err)
+		}
+		defer tx.Rollback(ctx) //nolint:errcheck
+
+		qtx := s.Queries.WithTx(tx)
+
+		if err := qtx.UpdateCourse(ctx, sqlc.UpdateCourseParams{
+			Title:             utils.PGTextFrom(params.Title),
+			Description:       utils.PGTextFrom(params.Description),
+			CompletionTitle:   utils.PGTextFrom(params.CompletionTitle),
+			CompletionMessage: utils.PGTextFrom(params.CompletionMessage),
+			ID:                courseID,
+		}); err != nil {
+			return fmt.Errorf("failed to update course: %w", err)
+		}
+
+		for _, m := range params.Materials {
+			if err := qtx.UpsertCourseMaterial(ctx, sqlc.UpsertCourseMaterialParams{
+				ID:         pgtype.UUID{Bytes: m.ID, Valid: true},
+				Name:       m.Name,
+				StorageKey: pgtype.UUID{Bytes: m.StorageKey, Valid: true},
+				Position:   pgtype.Int4{Int32: int32(m.Position), Valid: true}, //nolint:gosec
+				CourseID:   courseID,
+			}); err != nil {
+				return fmt.Errorf("failed to upsert material: %w", err)
+			}
+		}
+
+		for _, v := range params.NewVideoSections {
+			if err := qtx.InsertVideoSection(ctx, insertVideoSectionParamsFrom(&v, courseID)); err != nil {
+				return fmt.Errorf("failed to insert video section: %w", err)
+			}
+		}
+
+		for _, v := range params.ExistingVideoSections {
+			if err := qtx.UpdateVideoSection(ctx, sqlc.UpdateVideoSectionParams{
+				Title:      utils.PGTextFrom(v.Title),
+				StorageKey: pgtype.UUID{Bytes: v.StorageKey, Valid: true},
+				Position:   pgtype.Int4{Int32: int32(v.Position), Valid: true}, //nolint:gosec
+				ID:         pgtype.UUID{Bytes: v.ID, Valid: true},
+			}); err != nil {
+				return fmt.Errorf("failed to update video section: %w", err)
+			}
+		}
+
+		for _, q := range params.QuizSections {
+			sectionID, err := upsertQuizSection(ctx, qtx, q, courseID)
+			if err != nil {
+				return err
+			}
+
+			for _, question := range q.Questions {
+				if err := qtx.UpsertQuizQuestion(ctx, sqlc.UpsertQuizQuestionParams{
+					ID:            pgtype.UUID{Bytes: question.ID, Valid: true},
+					Question:      utils.PGTextFrom(question.Question),
+					Position:      pgtype.Int4{Int32: int32(question.Position), Valid: true}, //nolint:gosec
+					IsMultiAnswer: question.IsMultiAnswer,
+					QuizSectionID: sectionID,
+				}); err != nil {
+					return fmt.Errorf("failed to upsert quiz question: %w", err)
+				}
+
+				for _, answer := range question.Answers {
+					if err := qtx.UpsertQuizAnswer(ctx, sqlc.UpsertQuizAnswerParams{
+						ID:             pgtype.UUID{Bytes: answer.ID, Valid: true},
+						Answer:         utils.PGTextFrom(answer.Answer),
+						CorrectAnswer:  pgtype.Bool{Bool: answer.IsCorrectAnswer, Valid: true},
+						Position:       pgtype.Int4{Int32: int32(answer.Position), Valid: true}, //nolint:gosec
+						QuizQuestionID: pgtype.UUID{Bytes: question.ID, Valid: true},
+					}); err != nil {
+						return fmt.Errorf("failed to upsert quiz answer: %w", err)
+					}
+				}
+			}
+		}
+
+		if err := deleteCourseItems(ctx, qtx, params.DeletedSectionIDs, params.DeletedMaterialIDs); err != nil {
+			return err
+		}
+
+		return tx.Commit(ctx)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return s.GetCourse(ctx, courseID)
+}
+
+func upsertQuizSection(ctx context.Context, qtx *sqlc.Queries, section domain.EditQuizSectionParams, courseID pgtype.UUID) (pgtype.UUID, error) {
+	if section.IsNewSection {
+		id, err := qtx.InsertQuizSection(ctx, insertQuizSectionParamsFrom(&domain.AddQuizSectionParams{
+			Position: section.Position,
+		}, courseID))
+		if err != nil {
+			return pgtype.UUID{}, fmt.Errorf("failed to insert quiz section: %w", err)
+		}
+		return id, nil
+	}
+
+	if err := qtx.UpdateQuizSectionPosition(ctx, sqlc.UpdateQuizSectionPositionParams{
+		Position: pgtype.Int4{Int32: int32(section.Position), Valid: true}, //nolint:gosec
+		ID:       pgtype.UUID{Bytes: section.ID, Valid: true},
+	}); err != nil {
+		return pgtype.UUID{}, fmt.Errorf("failed to update quiz section: %w", err)
+	}
+
+	return pgtype.UUID{Bytes: section.ID, Valid: true}, nil
+}
+
+func deleteCourseItems(ctx context.Context, qtx *sqlc.Queries, deletedSectionIDs domain.DeletedSectionIDs, deletedMaterialIDs []uuid.UUID) error {
+	if len(deletedSectionIDs.AnswerIDs) > 0 {
+		pgIDs := utils.Map(deletedSectionIDs.AnswerIDs, utils.PGUUIDFromUUID)
+		if err := qtx.DeleteQuizAnswers(ctx, pgIDs); err != nil {
+			return fmt.Errorf("failed to delete quiz answers: %w", err)
+		}
+	}
+
+	if len(deletedSectionIDs.QuestionIDs) > 0 {
+		pgIDs := utils.Map(deletedSectionIDs.QuestionIDs, utils.PGUUIDFromUUID)
+		if err := qtx.DeleteQuizQuestions(ctx, pgIDs); err != nil {
+			return fmt.Errorf("failed to delete quiz questions: %w", err)
+		}
+	}
+
+	// Deleting a quiz section cascades to its questions and answers
+	if len(deletedSectionIDs.QuizSectionIDs) > 0 {
+		pgIDs := utils.Map(deletedSectionIDs.QuizSectionIDs, utils.PGUUIDFromUUID)
+		if err := qtx.DeleteQuizSections(ctx, pgIDs); err != nil {
+			return fmt.Errorf("failed to delete quiz sections: %w", err)
+		}
+	}
+
+	if len(deletedSectionIDs.VideoSectionIDs) > 0 {
+		pgIDs := utils.Map(deletedSectionIDs.VideoSectionIDs, utils.PGUUIDFromUUID)
+		if err := qtx.DeleteVideoSections(ctx, pgIDs); err != nil {
+			return fmt.Errorf("failed to delete video sections: %w", err)
+		}
+	}
+
+	allDeletedSectionIDs := append(deletedSectionIDs.VideoSectionIDs, deletedSectionIDs.QuizSectionIDs...)
+	if len(allDeletedSectionIDs) > 0 {
+		pgIDs := utils.Map(allDeletedSectionIDs, utils.PGUUIDFromUUID)
+		if err := qtx.RemoveDeletedSectionsFromProgress(ctx, pgIDs); err != nil {
+			return fmt.Errorf("failed to remove deleted sections from progress: %w", err)
+		}
+	}
+
+	if len(deletedMaterialIDs) > 0 {
+		pgIDs := utils.Map(deletedMaterialIDs, utils.PGUUIDFromUUID)
+		if err := qtx.DeleteCourseMaterials(ctx, pgIDs); err != nil {
+			return fmt.Errorf("failed to delete course materials: %w", err)
+		}
+	}
+
 	return nil
 }
 
