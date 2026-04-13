@@ -221,8 +221,8 @@ type EditedCourseFields struct {
 	Description       string               `json:"description" validate:"required"`
 	CompletionTitle   string               `json:"completionTitle" validate:"required"`
 	CompletionMessage string               `json:"completionMessage" validate:"required"`
-	Materials         []EditMaterialParams `json:"materials"`
-	Sections          []EditSectionParams  `json:"sections"`
+	Materials         []EditMaterialParams `json:"materials" validate:"dive"`
+	Sections          []EditSectionParams  `json:"sections" validate:"dive"`
 }
 
 type EditMaterialParams struct {

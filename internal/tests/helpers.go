@@ -61,6 +61,11 @@ func addCourse(t *testing.T, baseURL string, params *handlers.AddCourseParams) *
 	return postAndParse[domain.Course](t, baseURL, "add-course", params, http.StatusCreated)
 }
 
+func editCourse(t *testing.T, baseURL string, params *handlers.EditCourseRequest) *domain.Course {
+	t.Helper()
+	return postAndParse[domain.Course](t, baseURL, "edit-course", params, http.StatusOK)
+}
+
 func getProgress(t *testing.T, baseURL string, courseID uuid.UUID) *domain.Progress {
 	t.Helper()
 	return postAndParse[domain.Progress](t, baseURL, "get-progress", map[string]uuid.UUID{"courseId": courseID}, http.StatusOK)

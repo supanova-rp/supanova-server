@@ -271,6 +271,297 @@ func TestProgress(t *testing.T) {
 	})
 }
 
+func TestEditCourse(t *testing.T) {
+	t.Run("updates course fields, sections, and materials", func(t *testing.T) {
+		videoStorageKey := uuid.New()
+		materialID := uuid.New()
+		materialStorageKey := uuid.New()
+
+		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
+			Title:             "Original Title",
+			Description:       "Original Description",
+			CompletionTitle:   "Original Completion Title",
+			CompletionMessage: "Original Completion Message",
+			Materials: []handlers.AddMaterialParams{
+				{ID: materialID.String(), Name: "Original Guide", StorageKey: materialStorageKey.String(), Position: 0},
+			},
+			Sections: []handlers.AddSectionParams{
+				{Video: &handlers.AddVideoSectionParams{
+					Type:       domain.SectionTypeVideo,
+					Title:      "Original Video",
+					StorageKey: videoStorageKey.String(),
+					Position:   0,
+				}},
+				{Quiz: &handlers.AddQuizSectionParams{
+					Type:     domain.SectionTypeQuiz,
+					Position: 1,
+					Questions: []handlers.AddQuizQuestionParams{
+						{
+							Question: "Original question?",
+							Position: 0,
+							Answers: []handlers.AddQuizAnswerParams{
+								{Answer: "Original answer", IsCorrectAnswer: true, Position: 0},
+							},
+						},
+					},
+				}},
+			},
+		})
+
+		existingVideo, ok := created.Sections[0].(*domain.VideoSection)
+		if !ok {
+			t.Fatal("expected first section to be a VideoSection")
+		}
+		existingQuiz, ok := created.Sections[1].(*domain.QuizSection)
+		if !ok {
+			t.Fatal("expected second section to be a QuizSection")
+		}
+		existingQuestion := existingQuiz.Questions[0]
+		existingAnswer := existingQuestion.Answers[0]
+
+		newMaterialID := uuid.New()
+		newMaterialStorageKey := uuid.New()
+		newVideoStorageKey := uuid.New()
+
+		edited := editCourse(t, testResources.AppURL, &handlers.EditCourseRequest{
+			CourseID: created.ID.String(),
+			EditedCourse: handlers.EditedCourseFields{
+				Title:             "Updated Title",
+				Description:       "Updated Description",
+				CompletionTitle:   "Updated Completion Title",
+				CompletionMessage: "Updated Completion Message",
+				Materials: []handlers.EditMaterialParams{
+					{ID: materialID.String(), Name: "Updated Guide", StorageKey: materialStorageKey.String(), Position: 0},
+					{ID: newMaterialID.String(), Name: "New Guide", StorageKey: newMaterialStorageKey.String(), Position: 1},
+				},
+				Sections: []handlers.EditSectionParams{
+					{Video: &handlers.EditVideoSectionParams{
+						Type:         domain.SectionTypeVideo,
+						ID:           existingVideo.ID.String(),
+						IsNewSection: false,
+						Title:        "Updated Video",
+						StorageKey:   videoStorageKey.String(),
+						Position:     0,
+					}},
+					{Quiz: &handlers.EditQuizSectionParams{
+						Type:         domain.SectionTypeQuiz,
+						ID:           existingQuiz.ID.String(),
+						IsNewSection: false,
+						Position:     1,
+						Questions: []handlers.EditQuizQuestionParams{
+							{
+								ID:       existingQuestion.ID.String(),
+								Question: "Updated question?",
+								Position: 0,
+								Answers: []handlers.EditQuizAnswerParams{
+									{ID: existingAnswer.ID.String(), Answer: "Updated answer", IsCorrectAnswer: true, Position: 0},
+								},
+							},
+						},
+					}},
+					{Video: &handlers.EditVideoSectionParams{
+						Type:         domain.SectionTypeVideo,
+						IsNewSection: true,
+						Title:        "New Video",
+						StorageKey:   newVideoStorageKey.String(),
+						Position:     2,
+					}},
+				},
+			},
+			DeletedSectionIDs: handlers.DeletedSectionIDs{
+				VideoSectionIDs: []string{},
+				QuizSectionIDs:  []string{},
+				QuestionIDs:     []string{},
+				AnswerIDs:       []string{},
+			},
+			DeletedMaterialIDs: []string{},
+		})
+
+		if edited.Title != "Updated Title" {
+			t.Errorf("expected title 'Updated Title', got %q", edited.Title)
+		}
+		if edited.Description != "Updated Description" {
+			t.Errorf("expected description 'Updated Description', got %q", edited.Description)
+		}
+		if edited.CompletionTitle != "Updated Completion Title" {
+			t.Errorf("expected completionTitle 'Updated Completion Title', got %q", edited.CompletionTitle)
+		}
+		if edited.CompletionMessage != "Updated Completion Message" {
+			t.Errorf("expected completionMessage 'Updated Completion Message', got %q", edited.CompletionMessage)
+		}
+
+		if len(edited.Sections) != 3 {
+			t.Fatalf("expected 3 sections, got %d", len(edited.Sections))
+		}
+
+		updatedVideo, ok := edited.Sections[0].(*domain.VideoSection)
+		if !ok {
+			t.Fatal("expected first section to be a VideoSection")
+		}
+		if updatedVideo.ID != existingVideo.ID {
+			t.Errorf("expected video section ID to be unchanged, got %s", updatedVideo.ID)
+		}
+		if updatedVideo.Title != "Updated Video" {
+			t.Errorf("expected video title 'Updated Video', got %q", updatedVideo.Title)
+		}
+
+		updatedQuiz, ok := edited.Sections[1].(*domain.QuizSection)
+		if !ok {
+			t.Fatal("expected second section to be a QuizSection")
+		}
+		if updatedQuiz.ID != existingQuiz.ID {
+			t.Errorf("expected quiz section ID to be unchanged, got %s", updatedQuiz.ID)
+		}
+		if len(updatedQuiz.Questions) != 1 {
+			t.Fatalf("expected 1 question, got %d", len(updatedQuiz.Questions))
+		}
+		if updatedQuiz.Questions[0].Question != "Updated question?" {
+			t.Errorf("expected question 'Updated question?', got %q", updatedQuiz.Questions[0].Question)
+		}
+		if updatedQuiz.Questions[0].Answers[0].Answer != "Updated answer" {
+			t.Errorf("expected answer 'Updated answer', got %q", updatedQuiz.Questions[0].Answers[0].Answer)
+		}
+
+		newVideo, ok := edited.Sections[2].(*domain.VideoSection)
+		if !ok {
+			t.Fatal("expected third section to be a VideoSection")
+		}
+		if newVideo.Title != "New Video" {
+			t.Errorf("expected new video title 'New Video', got %q", newVideo.Title)
+		}
+		if newVideo.StorageKey != newVideoStorageKey {
+			t.Errorf("expected new video storage key %s, got %s", newVideoStorageKey, newVideo.StorageKey)
+		}
+
+		if len(edited.Materials) != 2 {
+			t.Fatalf("expected 2 materials, got %d", len(edited.Materials))
+		}
+
+		findMaterial := func(id uuid.UUID) *domain.CourseMaterial {
+			for i := range edited.Materials {
+				if edited.Materials[i].ID == id {
+					return &edited.Materials[i]
+				}
+			}
+			return nil
+		}
+
+		updatedMaterial := findMaterial(materialID)
+		if updatedMaterial == nil {
+			t.Fatalf("expected existing material %s to be present", materialID)
+		}
+		if updatedMaterial.Name != "Updated Guide" {
+			t.Errorf("expected material name 'Updated Guide', got %q", updatedMaterial.Name)
+		}
+
+		newMaterial := findMaterial(newMaterialID)
+		if newMaterial == nil {
+			t.Fatalf("expected new material %s to be present", newMaterialID)
+		}
+		if newMaterial.Name != "New Guide" {
+			t.Errorf("expected new material name 'New Guide', got %q", newMaterial.Name)
+		}
+
+		deleteCourse(t, testResources.AppURL, created.ID)
+	})
+
+	t.Run("deleted sections are removed from user progress", func(t *testing.T) {
+		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
+			Title:             courseTitle,
+			Description:       courseDescription,
+			CompletionTitle:   courseCompletionTitle,
+			CompletionMessage: courseCompletionMessage,
+			Sections: []handlers.AddSectionParams{
+				{Video: &handlers.AddVideoSectionParams{
+					Type:       domain.SectionTypeVideo,
+					Title:      "Video To Delete",
+					StorageKey: uuid.New().String(),
+					Position:   0,
+				}},
+				{Video: &handlers.AddVideoSectionParams{
+					Type:       domain.SectionTypeVideo,
+					Title:      "Video To Keep",
+					StorageKey: uuid.New().String(),
+					Position:   1,
+				}},
+			},
+		})
+
+		enrolUserInCourse(t, testResources.AppURL, created.ID)
+
+		sectionToDelete := created.Sections[0].GetID()
+		sectionToKeep := created.Sections[1].GetID()
+
+		updateProgress(t, testResources.AppURL, created.ID, sectionToDelete)
+		updateProgress(t, testResources.AppURL, created.ID, sectionToKeep)
+
+		videoToKeep, ok := created.Sections[1].(*domain.VideoSection)
+		if !ok {
+			t.Fatal("expected second section to be a VideoSection")
+		}
+
+		editCourse(t, testResources.AppURL, &handlers.EditCourseRequest{
+			CourseID: created.ID.String(),
+			EditedCourse: handlers.EditedCourseFields{
+				Title:             created.Title,
+				Description:       created.Description,
+				CompletionTitle:   created.CompletionTitle,
+				CompletionMessage: created.CompletionMessage,
+				Materials:         []handlers.EditMaterialParams{},
+				Sections: []handlers.EditSectionParams{
+					{Video: &handlers.EditVideoSectionParams{
+						Type:         domain.SectionTypeVideo,
+						ID:           videoToKeep.ID.String(),
+						IsNewSection: false,
+						Title:        videoToKeep.Title,
+						StorageKey:   videoToKeep.StorageKey.String(),
+						Position:     videoToKeep.Position,
+					}},
+				},
+			},
+			DeletedSectionIDs: handlers.DeletedSectionIDs{
+				VideoSectionIDs: []string{sectionToDelete.String()},
+				QuizSectionIDs:  []string{},
+				QuestionIDs:     []string{},
+				AnswerIDs:       []string{},
+			},
+			DeletedMaterialIDs: []string{},
+		})
+
+		progress := getProgress(t, testResources.AppURL, created.ID)
+
+		for _, id := range progress.CompletedSectionIDs {
+			if id == sectionToDelete {
+				t.Errorf("expected deleted section %s to be removed from progress", sectionToDelete)
+			}
+		}
+
+		foundKept := false
+		for _, id := range progress.CompletedSectionIDs {
+			if id == sectionToKeep {
+				foundKept = true
+				break
+			}
+		}
+		if !foundKept {
+			t.Errorf("expected kept section %s to remain in progress", sectionToKeep)
+		}
+
+		deleteCourse(t, testResources.AppURL, created.ID)
+	})
+
+	t.Run("missing required fields returns 400", func(t *testing.T) {
+		resp := makePOSTRequest(t, testResources.AppURL, "edit-course", map[string]string{
+			"edited_course_id": uuid.New().String(),
+		})
+		defer resp.Body.Close() //nolint:errcheck
+
+		if resp.StatusCode != http.StatusBadRequest {
+			t.Fatalf("expected status 400, got %d", resp.StatusCode)
+		}
+	})
+}
+
 // TODO: Remove once edit course dashboard reuses /courses/overview endpoint
 func TestCourses(t *testing.T) {
 	t.Run("courses - returns courses with sections and materials", func(t *testing.T) {
