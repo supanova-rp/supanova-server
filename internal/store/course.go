@@ -455,7 +455,7 @@ func (s *Store) EditCourse(ctx context.Context, params *domain.EditCourseParams)
 			}
 		}
 
-		if err := deleteCourseItems(ctx, qtx, params.DeletedSectionIDs, params.DeletedMaterialIDs); err != nil {
+		if err := deleteCourseItems(ctx, qtx, &params.DeletedSectionIDs, params.DeletedMaterialIDs); err != nil {
 			return err
 		}
 
@@ -468,7 +468,12 @@ func (s *Store) EditCourse(ctx context.Context, params *domain.EditCourseParams)
 	return s.GetCourse(ctx, courseID)
 }
 
-func upsertQuizSection(ctx context.Context, qtx *sqlc.Queries, section domain.EditQuizSectionParams, courseID pgtype.UUID) (pgtype.UUID, error) {
+func upsertQuizSection(
+	ctx context.Context,
+	qtx *sqlc.Queries,
+	section domain.EditQuizSectionParams,
+	courseID pgtype.UUID,
+) (pgtype.UUID, error) {
 	if section.IsNewSection {
 		id, err := qtx.InsertQuizSection(ctx, insertQuizSectionParamsFrom(&domain.AddQuizSectionParams{
 			Position: section.Position,
@@ -489,7 +494,12 @@ func upsertQuizSection(ctx context.Context, qtx *sqlc.Queries, section domain.Ed
 	return pgtype.UUID{Bytes: section.ID, Valid: true}, nil
 }
 
-func deleteCourseItems(ctx context.Context, qtx *sqlc.Queries, deletedSectionIDs domain.DeletedSectionIDs, deletedMaterialIDs []uuid.UUID) error {
+func deleteCourseItems(
+	ctx context.Context,
+	qtx *sqlc.Queries,
+	deletedSectionIDs *domain.DeletedSectionIDs,
+	deletedMaterialIDs []uuid.UUID,
+) error {
 	if len(deletedSectionIDs.AnswerIDs) > 0 {
 		pgIDs := utils.Map(deletedSectionIDs.AnswerIDs, utils.PGUUIDFromUUID)
 		if err := qtx.DeleteQuizAnswers(ctx, pgIDs); err != nil {
@@ -519,7 +529,9 @@ func deleteCourseItems(ctx context.Context, qtx *sqlc.Queries, deletedSectionIDs
 		}
 	}
 
-	allDeletedSectionIDs := append(deletedSectionIDs.VideoSectionIDs, deletedSectionIDs.QuizSectionIDs...)
+	allDeletedSectionIDs := make([]uuid.UUID, 0, len(deletedSectionIDs.VideoSectionIDs)+len(deletedSectionIDs.QuizSectionIDs))
+	allDeletedSectionIDs = append(allDeletedSectionIDs, deletedSectionIDs.VideoSectionIDs...)
+	allDeletedSectionIDs = append(allDeletedSectionIDs, deletedSectionIDs.QuizSectionIDs...)
 	if len(allDeletedSectionIDs) > 0 {
 		pgIDs := utils.Map(allDeletedSectionIDs, utils.PGUUIDFromUUID)
 		if err := qtx.RemoveDeletedSectionsFromProgress(ctx, pgIDs); err != nil {

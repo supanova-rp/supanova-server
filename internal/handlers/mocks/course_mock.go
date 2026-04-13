@@ -27,6 +27,9 @@ var _ domain.CourseRepository = &CourseRepositoryMock{}
 //			DeleteCourseFunc: func(contextMoqParam context.Context, uUID uuid.UUID) error {
 //				panic("mock out the DeleteCourse method")
 //			},
+//			EditCourseFunc: func(contextMoqParam context.Context, editCourseParams *domain.EditCourseParams) (*domain.Course, error) {
+//				panic("mock out the EditCourse method")
+//			},
 //			GetAllCoursesFunc: func(contextMoqParam context.Context) ([]*domain.AllCourseLegacy, error) {
 //				panic("mock out the GetAllCourses method")
 //			},
@@ -54,6 +57,9 @@ type CourseRepositoryMock struct {
 
 	// DeleteCourseFunc mocks the DeleteCourse method.
 	DeleteCourseFunc func(contextMoqParam context.Context, uUID uuid.UUID) error
+
+	// EditCourseFunc mocks the EditCourse method.
+	EditCourseFunc func(contextMoqParam context.Context, editCourseParams *domain.EditCourseParams) (*domain.Course, error)
 
 	// GetAllCoursesFunc mocks the GetAllCourses method.
 	GetAllCoursesFunc func(contextMoqParam context.Context) ([]*domain.AllCourseLegacy, error)
@@ -85,6 +91,13 @@ type CourseRepositoryMock struct {
 			ContextMoqParam context.Context
 			// UUID is the uUID argument value.
 			UUID uuid.UUID
+		}
+		// EditCourse holds details about calls to the EditCourse method.
+		EditCourse []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// EditCourseParams is the editCourseParams argument value.
+			EditCourseParams *domain.EditCourseParams
 		}
 		// GetAllCourses holds details about calls to the GetAllCourses method.
 		GetAllCourses []struct {
@@ -120,6 +133,7 @@ type CourseRepositoryMock struct {
 	}
 	lockAddCourse               sync.RWMutex
 	lockDeleteCourse            sync.RWMutex
+	lockEditCourse              sync.RWMutex
 	lockGetAllCourses           sync.RWMutex
 	lockGetAssignedCourseTitles sync.RWMutex
 	lockGetCourse               sync.RWMutex
@@ -196,6 +210,42 @@ func (mock *CourseRepositoryMock) DeleteCourseCalls() []struct {
 	mock.lockDeleteCourse.RLock()
 	calls = mock.calls.DeleteCourse
 	mock.lockDeleteCourse.RUnlock()
+	return calls
+}
+
+// EditCourse calls EditCourseFunc.
+func (mock *CourseRepositoryMock) EditCourse(contextMoqParam context.Context, editCourseParams *domain.EditCourseParams) (*domain.Course, error) {
+	if mock.EditCourseFunc == nil {
+		panic("CourseRepositoryMock.EditCourseFunc: method is nil but CourseRepository.EditCourse was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam  context.Context
+		EditCourseParams *domain.EditCourseParams
+	}{
+		ContextMoqParam:  contextMoqParam,
+		EditCourseParams: editCourseParams,
+	}
+	mock.lockEditCourse.Lock()
+	mock.calls.EditCourse = append(mock.calls.EditCourse, callInfo)
+	mock.lockEditCourse.Unlock()
+	return mock.EditCourseFunc(contextMoqParam, editCourseParams)
+}
+
+// EditCourseCalls gets all the calls that were made to EditCourse.
+// Check the length with:
+//
+//	len(mockedCourseRepository.EditCourseCalls())
+func (mock *CourseRepositoryMock) EditCourseCalls() []struct {
+	ContextMoqParam  context.Context
+	EditCourseParams *domain.EditCourseParams
+} {
+	var calls []struct {
+		ContextMoqParam  context.Context
+		EditCourseParams *domain.EditCourseParams
+	}
+	mock.lockEditCourse.RLock()
+	calls = mock.calls.EditCourse
+	mock.lockEditCourse.RUnlock()
 	return calls
 }
 

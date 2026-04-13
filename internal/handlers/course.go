@@ -217,10 +217,10 @@ type EditCourseRequest struct {
 }
 
 type EditedCourseFields struct {
-	Title             string              `json:"title" validate:"required"`
-	Description       string              `json:"description" validate:"required"`
-	CompletionTitle   string              `json:"completionTitle" validate:"required"`
-	CompletionMessage string              `json:"completionMessage" validate:"required"`
+	Title             string               `json:"title" validate:"required"`
+	Description       string               `json:"description" validate:"required"`
+	CompletionTitle   string               `json:"completionTitle" validate:"required"`
+	CompletionMessage string               `json:"completionMessage" validate:"required"`
 	Materials         []EditMaterialParams `json:"materials"`
 	Sections          []EditSectionParams  `json:"sections"`
 }
@@ -289,10 +289,10 @@ type EditQuizQuestionParams struct {
 }
 
 type EditQuizSectionParams struct {
-	Type         domain.SectionType      `json:"type"`
-	ID           string                  `json:"id" validate:"omitempty,uuid"`
-	IsNewSection bool                    `json:"isNewSection"`
-	Position     int                     `json:"position" validate:"gte=0"`
+	Type         domain.SectionType       `json:"type"`
+	ID           string                   `json:"id" validate:"omitempty,uuid"`
+	IsNewSection bool                     `json:"isNewSection"`
+	Position     int                      `json:"position" validate:"gte=0"`
 	Questions    []EditQuizQuestionParams `json:"questions" validate:"required,min=1,dive"`
 }
 
