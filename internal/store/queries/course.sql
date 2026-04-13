@@ -135,6 +135,65 @@ INNER JOIN usercourses uc ON uc.course_id = c.id
 WHERE uc.user_id = $1
 ORDER BY c.title;
 
+-- name: UpdateCourse :exec
+UPDATE courses
+SET title = $1, description = $2, completion_title = $3, completion_message = $4
+WHERE id = $5;
+
+-- name: UpsertCourseMaterial :exec
+INSERT INTO course_materials (id, name, storage_key, position, course_id)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  storage_key = EXCLUDED.storage_key,
+  position = EXCLUDED.position;
+
+-- name: DeleteCourseMaterials :exec
+DELETE FROM course_materials WHERE id = ANY($1::uuid[]);
+
+-- name: UpdateVideoSection :exec
+UPDATE videosections SET title = $1, storage_key = $2, position = $3 WHERE id = $4;
+
+-- name: UpdateQuizSectionPosition :exec
+UPDATE quizsections SET position = $1 WHERE id = $2;
+
+-- name: UpsertQuizQuestion :exec
+INSERT INTO quizquestions (id, question, position, is_multi_answer, quiz_section_id)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (id) DO UPDATE SET
+  question = EXCLUDED.question,
+  position = EXCLUDED.position,
+  is_multi_answer = EXCLUDED.is_multi_answer;
+
+-- name: UpsertQuizAnswer :exec
+INSERT INTO quizanswers (id, answer, correct_answer, position, quiz_question_id)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (id) DO UPDATE SET
+  answer = EXCLUDED.answer,
+  correct_answer = EXCLUDED.correct_answer,
+  position = EXCLUDED.position;
+
+-- name: DeleteVideoSections :exec
+DELETE FROM videosections WHERE id = ANY($1::uuid[]);
+
+-- name: DeleteQuizSections :exec
+DELETE FROM quizsections WHERE id = ANY($1::uuid[]);
+
+-- name: DeleteQuizQuestions :exec
+DELETE FROM quizquestions WHERE id = ANY($1::uuid[]);
+
+-- name: DeleteQuizAnswers :exec
+DELETE FROM quizanswers WHERE id = ANY($1::uuid[]);
+
+-- name: RemoveDeletedSectionsFromProgress :exec
+UPDATE userprogress
+SET completed_section_ids = (
+  SELECT COALESCE(array_agg(section_id), ARRAY[]::uuid[])
+  FROM unnest(completed_section_ids) AS section_id
+  WHERE section_id != ALL($1::uuid[])
+)
+WHERE completed_section_ids && $1::uuid[];
+
 -- name: DeleteCourse :exec
 DELETE FROM courses WHERE id = $1;
 

@@ -17,6 +17,7 @@ type CourseRepository interface {
 	GetCoursesOverview(context.Context) ([]CourseOverview, error)
 	GetAssignedCourseTitles(context.Context, string) ([]CourseOverview, error)
 	AddCourse(context.Context, *AddCourseParams) (*Course, error)
+	EditCourse(context.Context, *EditCourseParams) (*Course, error)
 	DeleteCourse(context.Context, uuid.UUID) error
 	GetCourseMaterials(context.Context, uuid.UUID) ([]CourseMaterial, error)
 }
