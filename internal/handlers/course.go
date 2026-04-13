@@ -264,6 +264,17 @@ func (s *EditSectionParams) UnmarshalJSON(data []byte) error {
 	}
 }
 
+// Custom MarshalJSON needed to serialise EditSectionParams correctly in tests
+func (s EditSectionParams) MarshalJSON() ([]byte, error) {
+	if s.Video != nil {
+		return json.Marshal(s.Video)
+	}
+	if s.Quiz != nil {
+		return json.Marshal(s.Quiz)
+	}
+	return nil, fmt.Errorf("EditSectionParams: neither Video nor Quiz is set")
+}
+
 type EditVideoSectionParams struct {
 	Type         domain.SectionType `json:"type"`
 	ID           string             `json:"id" validate:"omitempty,uuid"`

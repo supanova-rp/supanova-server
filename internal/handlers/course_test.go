@@ -743,3 +743,300 @@ func TestGetCourses_UnhappyPath(t *testing.T) {
 		testhelpers.AssertHTTPError(t, err, http.StatusInternalServerError, errors.Getting("courses"))
 	})
 }
+
+func TestEditCourse_HappyPath(t *testing.T) {
+	t.Run("edits course successfully", func(t *testing.T) {
+		expected := testhelpers.Course
+
+		mockRepo := &mocks.CourseRepositoryMock{
+			EditCourseFunc: func(_ context.Context, _ *domain.EditCourseParams) (*domain.Course, error) {
+				return expected, nil
+			},
+		}
+
+		h := &handlers.Handlers{Course: mockRepo}
+
+		ctx, rec := testhelpers.SetupEchoContext(t, validEditCourseRequest(), "edit-course")
+
+		err := h.EditCourse(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		var actual domain.Course
+		if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+			t.Fatalf("failed to unmarshal response: %v", err)
+		}
+
+		if diff := cmp.Diff(expected, &actual); diff != "" {
+			t.Errorf("course mismatch (-want +got):\n%s", diff)
+		}
+
+		testhelpers.AssertRepoCalls(t, len(mockRepo.EditCourseCalls()), 1, testhelpers.EditCourseHandlerName)
+	})
+}
+
+func TestEditCourse_UnhappyPath(t *testing.T) {
+	type testCase struct {
+		name           string
+		reqBody        any
+		setup          func() *handlers.Handlers
+		wantStatus     int
+		expectedErrMsg string
+	}
+
+	existingVideoSection := handlers.EditVideoSectionParams{
+		Type:         domain.SectionTypeVideo,
+		ID:           uuid.New().String(),
+		IsNewSection: false,
+		Title:        "Video Title",
+		StorageKey:   uuid.New().String(),
+		Position:     0,
+	}
+
+	tests := []testCase{
+		{
+			name:           "validation - missing course ID",
+			reqBody:        withCourseID(validEditCourseRequest(), ""),
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Course: &mocks.CourseRepositoryMock{}}
+			},
+		},
+		{
+			name:           "validation - missing title",
+			reqBody:        withTitle(validEditCourseRequest(), ""),
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Course: &mocks.CourseRepositoryMock{}}
+			},
+		},
+		{
+			name:           "validation - missing description",
+			reqBody:        withDescription(validEditCourseRequest(), ""),
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Course: &mocks.CourseRepositoryMock{}}
+			},
+		},
+		{
+			name:           "invalid course ID",
+			reqBody:        withCourseID(validEditCourseRequest(), "not-a-uuid"),
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Course: &mocks.CourseRepositoryMock{}}
+			},
+		},
+		{
+			name: "invalid video section storage key",
+			reqBody: withSections(validEditCourseRequest(), []handlers.EditSectionParams{
+				{Video: &handlers.EditVideoSectionParams{
+					Type:         domain.SectionTypeVideo,
+					IsNewSection: true,
+					Title:        "Video",
+					StorageKey:   "not-a-uuid",
+					Position:     0,
+				}},
+			}),
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Course: &mocks.CourseRepositoryMock{}}
+			},
+		},
+		{
+			name: "existing video section missing ID",
+			reqBody: withSections(validEditCourseRequest(), []handlers.EditSectionParams{
+				{Video: &handlers.EditVideoSectionParams{
+					Type:         domain.SectionTypeVideo,
+					IsNewSection: false,
+					Title:        "Video",
+					StorageKey:   uuid.New().String(),
+					Position:     0,
+					// ID intentionally omitted — will fail UUID parse
+				}},
+			}),
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.InvalidUUID,
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Course: &mocks.CourseRepositoryMock{}}
+			},
+		},
+		{
+			name: "quiz section - no questions",
+			reqBody: withSections(validEditCourseRequest(), []handlers.EditSectionParams{
+				{Quiz: &handlers.EditQuizSectionParams{
+					Type:         domain.SectionTypeQuiz,
+					IsNewSection: true,
+					Position:     0,
+					Questions:    []handlers.EditQuizQuestionParams{},
+				}},
+			}),
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Course: &mocks.CourseRepositoryMock{}}
+			},
+		},
+		{
+			name: "unknown section type",
+			reqBody: struct {
+				CourseID     string           `json:"edited_course_id"`
+				EditedCourse map[string]any   `json:"edited_course"`
+				DeletedIDs   map[string][]any `json:"deleted_section_ids_map"`
+				DeletedMats  []any            `json:"deleted_materials_ids"`
+			}{
+				CourseID: uuid.New().String(),
+				EditedCourse: map[string]any{
+					"title":             "T",
+					"description":       "D",
+					"completionTitle":   "CT",
+					"completionMessage": "CM",
+					"sections":          []map[string]any{{"type": "unknown"}},
+					"materials":         []any{},
+				},
+				DeletedIDs:  map[string][]any{"videoSectionIds": {}, "quizSectionIds": {}, "questionIds": {}, "answerIds": {}},
+				DeletedMats: []any{},
+			},
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.InvalidRequestBody,
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Course: &mocks.CourseRepositoryMock{}}
+			},
+		},
+		{
+			name: "internal server error",
+			reqBody: withSections(validEditCourseRequest(), []handlers.EditSectionParams{
+				{Video: &existingVideoSection},
+			}),
+			wantStatus:     http.StatusInternalServerError,
+			expectedErrMsg: errors.Updating("course"),
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{
+					Course: &mocks.CourseRepositoryMock{
+						EditCourseFunc: func(_ context.Context, _ *domain.EditCourseParams) (*domain.Course, error) {
+							return nil, stdErrors.New("database connection failed")
+						},
+					},
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := tt.setup()
+			ctx, _ := testhelpers.SetupEchoContext(t, tt.reqBody, "edit-course")
+			err := h.EditCourse(ctx)
+			testhelpers.AssertHTTPError(t, err, tt.wantStatus, tt.expectedErrMsg)
+		})
+	}
+}
+
+func validEditCourseRequest() handlers.EditCourseRequest {
+	existingVideoID := uuid.New().String()
+	existingVideoStorageKey := uuid.New().String()
+	existingQuizID := uuid.New().String()
+	existingQuestionID := uuid.New().String()
+	existingAnswerID := uuid.New().String()
+	existingMaterialID := uuid.New().String()
+	existingMaterialStorageKey := uuid.New().String()
+	deletedVideoSectionID := uuid.New().String()
+	deletedQuizSectionID := uuid.New().String()
+	deletedQuestionID := uuid.New().String()
+	deletedAnswerID := uuid.New().String()
+	deletedMaterialID := uuid.New().String()
+	newVideoStorageKey := uuid.New().String()
+
+	return handlers.EditCourseRequest{
+		CourseID: uuid.New().String(),
+		EditedCourse: handlers.EditedCourseFields{
+			Title:             "Updated Title",
+			Description:       "Updated Description",
+			CompletionTitle:   "Updated Completion Title",
+			CompletionMessage: "Updated Completion Message",
+			Materials: []handlers.EditMaterialParams{
+				{
+					ID:         existingMaterialID,
+					Name:       "Updated Study Guide",
+					StorageKey: existingMaterialStorageKey,
+					Position:   0,
+				},
+			},
+			Sections: []handlers.EditSectionParams{
+				{Video: &handlers.EditVideoSectionParams{
+					Type:         domain.SectionTypeVideo,
+					ID:           existingVideoID,
+					IsNewSection: false,
+					Title:        "Updated Video Title",
+					StorageKey:   existingVideoStorageKey,
+					Position:     0,
+				}},
+				{Quiz: &handlers.EditQuizSectionParams{
+					Type:         domain.SectionTypeQuiz,
+					ID:           existingQuizID,
+					IsNewSection: false,
+					Position:     1,
+					Questions: []handlers.EditQuizQuestionParams{
+						{
+							ID:            existingQuestionID,
+							Question:      "Updated question?",
+							Position:      0,
+							IsMultiAnswer: false,
+							Answers: []handlers.EditQuizAnswerParams{
+								{
+									ID:              existingAnswerID,
+									Answer:          "Updated answer",
+									IsCorrectAnswer: true,
+									Position:        0,
+								},
+							},
+						},
+					},
+				}},
+				{Video: &handlers.EditVideoSectionParams{
+					Type:         domain.SectionTypeVideo,
+					IsNewSection: true,
+					Title:        "New Video Section",
+					StorageKey:   newVideoStorageKey,
+					Position:     2,
+				}},
+			},
+		},
+		DeletedSectionIDs: handlers.DeletedSectionIDs{
+			VideoSectionIDs: []string{deletedVideoSectionID},
+			QuizSectionIDs:  []string{deletedQuizSectionID},
+			QuestionIDs:     []string{deletedQuestionID},
+			AnswerIDs:       []string{deletedAnswerID},
+		},
+		DeletedMaterialIDs: []string{deletedMaterialID},
+	}
+}
+
+func withCourseID(r handlers.EditCourseRequest, id string) handlers.EditCourseRequest {
+	r.CourseID = id
+	return r
+}
+
+func withTitle(r handlers.EditCourseRequest, title string) handlers.EditCourseRequest {
+	r.EditedCourse.Title = title
+	return r
+}
+
+func withDescription(r handlers.EditCourseRequest, description string) handlers.EditCourseRequest {
+	r.EditedCourse.Description = description
+	return r
+}
+
+func withSections(r handlers.EditCourseRequest, sections []handlers.EditSectionParams) handlers.EditCourseRequest {
+	r.EditedCourse.Sections = sections
+	return r
+}

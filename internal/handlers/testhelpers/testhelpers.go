@@ -21,6 +21,7 @@ import (
 
 const (
 	AddCourseHandlerName                  = "AddCourse"
+	EditCourseHandlerName                 = "EditCourse"
 	DeleteCourseHandlerName               = "DeleteCourse"
 	GetCourseHandlerName                  = "GetCourse"
 	GetCourseMaterialsHandlerName         = "GetCourseMaterials"
