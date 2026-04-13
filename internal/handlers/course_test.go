@@ -984,23 +984,3 @@ func validEditCourseRequest() handlers.EditCourseRequest {
 		DeletedMaterialIDs: []string{deletedMaterialID},
 	}
 }
-
-func withCourseID(r *handlers.EditCourseRequest, id string) *handlers.EditCourseRequest {
-	r.CourseID = id
-	return r
-}
-
-func withTitle(r *handlers.EditCourseRequest, title string) *handlers.EditCourseRequest {
-	r.EditedCourse.Title = title
-	return r
-}
-
-func withDescription(r *handlers.EditCourseRequest, description string) *handlers.EditCourseRequest {
-	r.EditedCourse.Description = description
-	return r
-}
-
-func withSections(r *handlers.EditCourseRequest, sections []handlers.EditSectionParams) *handlers.EditCourseRequest {
-	r.EditedCourse.Sections = sections
-	return r
-}
