@@ -44,6 +44,51 @@ func (q *Queries) DeleteCourse(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const deleteCourseMaterials = `-- name: DeleteCourseMaterials :exec
+DELETE FROM course_materials WHERE id = ANY($1::uuid[])
+`
+
+func (q *Queries) DeleteCourseMaterials(ctx context.Context, dollar_1 []pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteCourseMaterials, dollar_1)
+	return err
+}
+
+const deleteQuizAnswers = `-- name: DeleteQuizAnswers :exec
+DELETE FROM quizanswers WHERE id = ANY($1::uuid[])
+`
+
+func (q *Queries) DeleteQuizAnswers(ctx context.Context, dollar_1 []pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteQuizAnswers, dollar_1)
+	return err
+}
+
+const deleteQuizQuestions = `-- name: DeleteQuizQuestions :exec
+DELETE FROM quizquestions WHERE id = ANY($1::uuid[])
+`
+
+func (q *Queries) DeleteQuizQuestions(ctx context.Context, dollar_1 []pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteQuizQuestions, dollar_1)
+	return err
+}
+
+const deleteQuizSections = `-- name: DeleteQuizSections :exec
+DELETE FROM quizsections WHERE id = ANY($1::uuid[])
+`
+
+func (q *Queries) DeleteQuizSections(ctx context.Context, dollar_1 []pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteQuizSections, dollar_1)
+	return err
+}
+
+const deleteVideoSections = `-- name: DeleteVideoSections :exec
+DELETE FROM videosections WHERE id = ANY($1::uuid[])
+`
+
+func (q *Queries) DeleteVideoSections(ctx context.Context, dollar_1 []pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteVideoSections, dollar_1)
+	return err
+}
+
 const getAllCourses = `-- name: GetAllCourses :many
 SELECT
   c.id,
@@ -519,6 +564,165 @@ func (q *Queries) InsertVideoSection(ctx context.Context, arg InsertVideoSection
 		arg.StorageKey,
 		arg.Position,
 		arg.CourseID,
+	)
+	return err
+}
+
+const removeDeletedSectionsFromProgress = `-- name: RemoveDeletedSectionsFromProgress :exec
+UPDATE userprogress
+SET completed_section_ids = (
+  SELECT COALESCE(array_agg(section_id), ARRAY[]::uuid[])
+  FROM unnest(completed_section_ids) AS section_id
+  WHERE section_id != ALL($1::uuid[])
+)
+WHERE completed_section_ids && $1::uuid[]
+`
+
+func (q *Queries) RemoveDeletedSectionsFromProgress(ctx context.Context, dollar_1 []pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, removeDeletedSectionsFromProgress, dollar_1)
+	return err
+}
+
+const updateCourse = `-- name: UpdateCourse :exec
+UPDATE courses
+SET title = $1, description = $2, completion_title = $3, completion_message = $4
+WHERE id = $5
+`
+
+type UpdateCourseParams struct {
+	Title             pgtype.Text
+	Description       pgtype.Text
+	CompletionTitle   pgtype.Text
+	CompletionMessage pgtype.Text
+	ID                pgtype.UUID
+}
+
+func (q *Queries) UpdateCourse(ctx context.Context, arg UpdateCourseParams) error {
+	_, err := q.db.Exec(ctx, updateCourse,
+		arg.Title,
+		arg.Description,
+		arg.CompletionTitle,
+		arg.CompletionMessage,
+		arg.ID,
+	)
+	return err
+}
+
+const updateQuizSectionPosition = `-- name: UpdateQuizSectionPosition :exec
+UPDATE quizsections SET position = $1 WHERE id = $2
+`
+
+type UpdateQuizSectionPositionParams struct {
+	Position pgtype.Int4
+	ID       pgtype.UUID
+}
+
+func (q *Queries) UpdateQuizSectionPosition(ctx context.Context, arg UpdateQuizSectionPositionParams) error {
+	_, err := q.db.Exec(ctx, updateQuizSectionPosition, arg.Position, arg.ID)
+	return err
+}
+
+const updateVideoSection = `-- name: UpdateVideoSection :exec
+UPDATE videosections SET title = $1, storage_key = $2, position = $3 WHERE id = $4
+`
+
+type UpdateVideoSectionParams struct {
+	Title      pgtype.Text
+	StorageKey pgtype.UUID
+	Position   pgtype.Int4
+	ID         pgtype.UUID
+}
+
+func (q *Queries) UpdateVideoSection(ctx context.Context, arg UpdateVideoSectionParams) error {
+	_, err := q.db.Exec(ctx, updateVideoSection,
+		arg.Title,
+		arg.StorageKey,
+		arg.Position,
+		arg.ID,
+	)
+	return err
+}
+
+const upsertCourseMaterial = `-- name: UpsertCourseMaterial :exec
+INSERT INTO course_materials (id, name, storage_key, position, course_id)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  storage_key = EXCLUDED.storage_key,
+  position = EXCLUDED.position
+`
+
+type UpsertCourseMaterialParams struct {
+	ID         pgtype.UUID
+	Name       string
+	StorageKey pgtype.UUID
+	Position   pgtype.Int4
+	CourseID   pgtype.UUID
+}
+
+func (q *Queries) UpsertCourseMaterial(ctx context.Context, arg UpsertCourseMaterialParams) error {
+	_, err := q.db.Exec(ctx, upsertCourseMaterial,
+		arg.ID,
+		arg.Name,
+		arg.StorageKey,
+		arg.Position,
+		arg.CourseID,
+	)
+	return err
+}
+
+const upsertQuizAnswer = `-- name: UpsertQuizAnswer :exec
+INSERT INTO quizanswers (id, answer, correct_answer, position, quiz_question_id)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (id) DO UPDATE SET
+  answer = EXCLUDED.answer,
+  correct_answer = EXCLUDED.correct_answer,
+  position = EXCLUDED.position
+`
+
+type UpsertQuizAnswerParams struct {
+	ID             pgtype.UUID
+	Answer         pgtype.Text
+	CorrectAnswer  pgtype.Bool
+	Position       pgtype.Int4
+	QuizQuestionID pgtype.UUID
+}
+
+func (q *Queries) UpsertQuizAnswer(ctx context.Context, arg UpsertQuizAnswerParams) error {
+	_, err := q.db.Exec(ctx, upsertQuizAnswer,
+		arg.ID,
+		arg.Answer,
+		arg.CorrectAnswer,
+		arg.Position,
+		arg.QuizQuestionID,
+	)
+	return err
+}
+
+const upsertQuizQuestion = `-- name: UpsertQuizQuestion :exec
+INSERT INTO quizquestions (id, question, position, is_multi_answer, quiz_section_id)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (id) DO UPDATE SET
+  question = EXCLUDED.question,
+  position = EXCLUDED.position,
+  is_multi_answer = EXCLUDED.is_multi_answer
+`
+
+type UpsertQuizQuestionParams struct {
+	ID            pgtype.UUID
+	Question      pgtype.Text
+	Position      pgtype.Int4
+	IsMultiAnswer bool
+	QuizSectionID pgtype.UUID
+}
+
+func (q *Queries) UpsertQuizQuestion(ctx context.Context, arg UpsertQuizQuestionParams) error {
+	_, err := q.db.Exec(ctx, upsertQuizQuestion,
+		arg.ID,
+		arg.Question,
+		arg.Position,
+		arg.IsMultiAnswer,
+		arg.QuizSectionID,
 	)
 	return err
 }

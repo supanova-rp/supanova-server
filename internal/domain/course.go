@@ -17,6 +17,7 @@ type CourseRepository interface {
 	GetCoursesOverview(context.Context) ([]CourseOverview, error)
 	GetAssignedCourseTitles(context.Context, string) ([]CourseOverview, error)
 	AddCourse(context.Context, *AddCourseParams) (*Course, error)
+	EditCourse(context.Context, *EditCourseParams) (*Course, error)
 	DeleteCourse(context.Context, uuid.UUID) error
 	GetCourseMaterials(context.Context, uuid.UUID) ([]CourseMaterial, error)
 }
@@ -68,6 +69,56 @@ type AddCourseParams struct {
 	CompletionMessage string
 	Materials         []AddMaterialParams
 	Sections          []AddSectionParams
+}
+
+type EditVideoSectionParams struct {
+	ID         uuid.UUID
+	Title      string
+	StorageKey uuid.UUID
+	Position   int
+}
+
+type EditQuizAnswerParams struct {
+	ID              uuid.UUID
+	Answer          string
+	IsCorrectAnswer bool
+	Position        int
+}
+
+type EditQuizQuestionParams struct {
+	ID            uuid.UUID
+	Question      string
+	Position      int
+	IsMultiAnswer bool
+	Answers       []EditQuizAnswerParams
+}
+
+type EditQuizSectionParams struct {
+	ID           uuid.UUID
+	IsNewSection bool
+	Position     int
+	Questions    []EditQuizQuestionParams
+}
+
+type DeletedSectionIDs struct {
+	VideoSectionIDs []uuid.UUID
+	QuizSectionIDs  []uuid.UUID
+	QuestionIDs     []uuid.UUID
+	AnswerIDs       []uuid.UUID
+}
+
+type EditCourseParams struct {
+	CourseID              uuid.UUID
+	Title                 string
+	Description           string
+	CompletionTitle       string
+	CompletionMessage     string
+	Materials             []AddMaterialParams
+	NewVideoSections      []AddVideoSectionParams
+	ExistingVideoSections []EditVideoSectionParams
+	QuizSections          []EditQuizSectionParams
+	DeletedSectionIDs     DeletedSectionIDs
+	DeletedMaterialIDs    []uuid.UUID
 }
 
 type Course struct {

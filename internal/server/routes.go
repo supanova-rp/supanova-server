@@ -19,6 +19,7 @@ func RegisterCourseRoutes(private *echo.Group, h *handlers.Handlers) {
 	// /course endpoint when editing course
 	private.POST("/courses", h.GetCourses)
 	private.POST("/add-course", h.AddCourse)
+	private.POST("/edit-course", h.EditCourse)
 	private.POST("/delete-course", h.DeleteCourse)
 }
 

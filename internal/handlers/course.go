@@ -209,6 +209,283 @@ func addQuizQuestionParamsFrom(questions []AddQuizQuestionParams) []domain.AddSe
 	})
 }
 
+type EditCourseRequest struct {
+	CourseID           string             `json:"edited_course_id" validate:"required,uuid"`
+	EditedCourse       EditedCourseFields `json:"edited_course" validate:"required"`
+	DeletedSectionIDs  DeletedSectionIDs  `json:"deleted_section_ids_map" validate:"required"`
+	DeletedMaterialIDs []string           `json:"deleted_materials_ids" validate:"dive,uuid"`
+}
+
+type EditedCourseFields struct {
+	Title             string               `json:"title" validate:"required"`
+	Description       string               `json:"description" validate:"required"`
+	CompletionTitle   string               `json:"completionTitle" validate:"required"`
+	CompletionMessage string               `json:"completionMessage" validate:"required"`
+	Materials         []EditMaterialParams `json:"materials" validate:"dive"`
+	Sections          []EditSectionParams  `json:"sections" validate:"dive"`
+}
+
+type EditMaterialParams struct {
+	ID         string `json:"id" validate:"required,uuid"`
+	Name       string `json:"name" validate:"required"`
+	StorageKey string `json:"storageKey" validate:"required,uuid"`
+	Position   int    `json:"position" validate:"gte=0"`
+}
+
+type DeletedSectionIDs struct {
+	VideoSectionIDs []string `json:"videoSectionIds" validate:"dive,uuid"`
+	QuizSectionIDs  []string `json:"quizSectionIds" validate:"dive,uuid"`
+	QuestionIDs     []string `json:"questionIds" validate:"dive,uuid"`
+	AnswerIDs       []string `json:"answerIds" validate:"dive,uuid"`
+}
+
+type EditSectionParams struct {
+	Video *EditVideoSectionParams
+	Quiz  *EditQuizSectionParams
+}
+
+func (s *EditSectionParams) UnmarshalJSON(data []byte) error {
+	var typeChecker struct {
+		Type domain.SectionType `json:"type"`
+	}
+	if err := json.Unmarshal(data, &typeChecker); err != nil {
+		return fmt.Errorf("missing or invalid section type: %w", err)
+	}
+
+	switch typeChecker.Type {
+	case domain.SectionTypeVideo:
+		s.Video = &EditVideoSectionParams{}
+		return json.Unmarshal(data, s.Video)
+	case domain.SectionTypeQuiz:
+		s.Quiz = &EditQuizSectionParams{}
+		return json.Unmarshal(data, s.Quiz)
+	default:
+		return fmt.Errorf("unknown section type %q", typeChecker.Type)
+	}
+}
+
+// Custom MarshalJSON needed to serialise EditSectionParams correctly in tests
+func (s EditSectionParams) MarshalJSON() ([]byte, error) {
+	if s.Video != nil {
+		return json.Marshal(s.Video)
+	}
+	if s.Quiz != nil {
+		return json.Marshal(s.Quiz)
+	}
+	return nil, fmt.Errorf("EditSectionParams: neither Video nor Quiz is set")
+}
+
+type EditVideoSectionParams struct {
+	Type         domain.SectionType `json:"type"`
+	ID           string             `json:"id" validate:"omitempty,uuid"`
+	IsNewSection bool               `json:"isNewSection"`
+	Title        string             `json:"title" validate:"required"`
+	StorageKey   string             `json:"storageKey" validate:"required,uuid"`
+	Position     int                `json:"position" validate:"gte=0"`
+}
+
+type EditQuizAnswerParams struct {
+	ID              string `json:"id" validate:"required,uuid"`
+	Answer          string `json:"answer" validate:"required"`
+	IsCorrectAnswer bool   `json:"isCorrectAnswer"`
+	Position        int    `json:"position" validate:"gte=0"`
+}
+
+type EditQuizQuestionParams struct {
+	ID            string                 `json:"id" validate:"required,uuid"`
+	Question      string                 `json:"question" validate:"required"`
+	Position      int                    `json:"position" validate:"gte=0"`
+	IsMultiAnswer bool                   `json:"isMultiAnswer"`
+	Answers       []EditQuizAnswerParams `json:"answers" validate:"required,min=1,dive"`
+}
+
+type EditQuizSectionParams struct {
+	Type         domain.SectionType       `json:"type"`
+	ID           string                   `json:"id" validate:"omitempty,uuid"`
+	IsNewSection bool                     `json:"isNewSection"`
+	Position     int                      `json:"position" validate:"gte=0"`
+	Questions    []EditQuizQuestionParams `json:"questions" validate:"required,min=1,dive"`
+}
+
+func (h *Handlers) EditCourse(e echo.Context) error {
+	ctx := e.Request().Context()
+
+	var req EditCourseRequest
+	if err := bindAndValidate(e, &req); err != nil {
+		return err
+	}
+
+	params, err := editCourseParamsFrom(&req)
+	if err != nil {
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
+	}
+
+	course, err := h.Course.EditCourse(ctx, params)
+	if err != nil {
+		return httpError(http.StatusInternalServerError, errors.Updating(courseResource), err)
+	}
+
+	return e.JSON(http.StatusOK, course)
+}
+
+func editCourseParamsFrom(req *EditCourseRequest) (*domain.EditCourseParams, error) {
+	courseID, err := uuid.Parse(req.CourseID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid course ID: %w", err)
+	}
+
+	materials := make([]domain.AddMaterialParams, 0, len(req.EditedCourse.Materials))
+	for _, m := range req.EditedCourse.Materials {
+		id, err := uuid.Parse(m.ID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid material ID: %w", err)
+		}
+		storageKey, err := uuid.Parse(m.StorageKey)
+		if err != nil {
+			return nil, fmt.Errorf("invalid material storage key: %w", err)
+		}
+		materials = append(materials, domain.AddMaterialParams{
+			ID:         id,
+			Name:       m.Name,
+			StorageKey: storageKey,
+			Position:   m.Position,
+		})
+	}
+
+	var newVideoSections []domain.AddVideoSectionParams
+	var existingVideoSections []domain.EditVideoSectionParams
+	var quizSections []domain.EditQuizSectionParams
+
+	for _, s := range req.EditedCourse.Sections {
+		switch {
+		case s.Video != nil:
+			storageKey, err := uuid.Parse(s.Video.StorageKey)
+			if err != nil {
+				return nil, fmt.Errorf("invalid video section storage key: %w", err)
+			}
+			if s.Video.IsNewSection {
+				newVideoSections = append(newVideoSections, domain.AddVideoSectionParams{
+					Title:      s.Video.Title,
+					StorageKey: storageKey,
+					Position:   s.Video.Position,
+				})
+			} else {
+				id, err := uuid.Parse(s.Video.ID)
+				if err != nil {
+					return nil, fmt.Errorf("invalid video section ID: %w", err)
+				}
+				existingVideoSections = append(existingVideoSections, domain.EditVideoSectionParams{
+					ID:         id,
+					Title:      s.Video.Title,
+					StorageKey: storageKey,
+					Position:   s.Video.Position,
+				})
+			}
+		case s.Quiz != nil:
+			var quizID uuid.UUID
+			if !s.Quiz.IsNewSection {
+				quizID, err = uuid.Parse(s.Quiz.ID)
+				if err != nil {
+					return nil, fmt.Errorf("invalid quiz section ID: %w", err)
+				}
+			}
+			questions, err := editQuizQuestionParamsFrom(s.Quiz.Questions)
+			if err != nil {
+				return nil, err
+			}
+			quizSections = append(quizSections, domain.EditQuizSectionParams{
+				ID:           quizID,
+				IsNewSection: s.Quiz.IsNewSection,
+				Position:     s.Quiz.Position,
+				Questions:    questions,
+			})
+		}
+	}
+
+	deletedVideoSectionIDs, err := parseUUIDs(req.DeletedSectionIDs.VideoSectionIDs)
+	if err != nil {
+		return nil, fmt.Errorf("invalid deleted video section ID: %w", err)
+	}
+	deletedQuizSectionIDs, err := parseUUIDs(req.DeletedSectionIDs.QuizSectionIDs)
+	if err != nil {
+		return nil, fmt.Errorf("invalid deleted quiz section ID: %w", err)
+	}
+	deletedQuestionIDs, err := parseUUIDs(req.DeletedSectionIDs.QuestionIDs)
+	if err != nil {
+		return nil, fmt.Errorf("invalid deleted question ID: %w", err)
+	}
+	deletedAnswerIDs, err := parseUUIDs(req.DeletedSectionIDs.AnswerIDs)
+	if err != nil {
+		return nil, fmt.Errorf("invalid deleted answer ID: %w", err)
+	}
+	deletedMaterialIDs, err := parseUUIDs(req.DeletedMaterialIDs)
+	if err != nil {
+		return nil, fmt.Errorf("invalid deleted material ID: %w", err)
+	}
+
+	return &domain.EditCourseParams{
+		CourseID:              courseID,
+		Title:                 req.EditedCourse.Title,
+		Description:           req.EditedCourse.Description,
+		CompletionTitle:       req.EditedCourse.CompletionTitle,
+		CompletionMessage:     req.EditedCourse.CompletionMessage,
+		Materials:             materials,
+		NewVideoSections:      newVideoSections,
+		ExistingVideoSections: existingVideoSections,
+		QuizSections:          quizSections,
+		DeletedSectionIDs: domain.DeletedSectionIDs{
+			VideoSectionIDs: deletedVideoSectionIDs,
+			QuizSectionIDs:  deletedQuizSectionIDs,
+			QuestionIDs:     deletedQuestionIDs,
+			AnswerIDs:       deletedAnswerIDs,
+		},
+		DeletedMaterialIDs: deletedMaterialIDs,
+	}, nil
+}
+
+func editQuizQuestionParamsFrom(questions []EditQuizQuestionParams) ([]domain.EditQuizQuestionParams, error) {
+	result := make([]domain.EditQuizQuestionParams, 0, len(questions))
+	for _, q := range questions {
+		id, err := uuid.Parse(q.ID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid quiz question ID: %w", err)
+		}
+		answers := make([]domain.EditQuizAnswerParams, 0, len(q.Answers))
+		for _, a := range q.Answers {
+			answerID, err := uuid.Parse(a.ID)
+			if err != nil {
+				return nil, fmt.Errorf("invalid quiz answer ID: %w", err)
+			}
+			answers = append(answers, domain.EditQuizAnswerParams{
+				ID:              answerID,
+				Answer:          a.Answer,
+				IsCorrectAnswer: a.IsCorrectAnswer,
+				Position:        a.Position,
+			})
+		}
+		result = append(result, domain.EditQuizQuestionParams{
+			ID:            id,
+			Question:      q.Question,
+			Position:      q.Position,
+			IsMultiAnswer: q.IsMultiAnswer,
+			Answers:       answers,
+		})
+	}
+	return result, nil
+}
+
+func parseUUIDs(ids []string) ([]uuid.UUID, error) {
+	result := make([]uuid.UUID, 0, len(ids))
+	for _, id := range ids {
+		parsed, err := uuid.Parse(id)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, parsed)
+	}
+	return result, nil
+}
+
 type DeleteCourseParams struct {
 	CourseID string `json:"course_id" validate:"required"`
 }
