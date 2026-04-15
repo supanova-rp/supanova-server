@@ -968,10 +968,32 @@ func validEditCourseRequest() handlers.EditCourseRequest {
 				}},
 				{Video: &handlers.EditVideoSectionParams{
 					Type:         domain.SectionTypeVideo,
+					ID:           "1713196800000",
 					IsNewSection: true,
 					Title:        "New Video Section",
 					StorageKey:   newVideoStorageKey,
 					Position:     2,
+				}},
+				{Quiz: &handlers.EditQuizSectionParams{
+					Type:         domain.SectionTypeQuiz,
+					ID:           "1713196800001",
+					IsNewSection: true,
+					Position:     3,
+					Questions: []handlers.EditQuizQuestionParams{
+						{
+							ID:       uuid.New().String(),
+							Question: "New question?",
+							Position: 0,
+							Answers: []handlers.EditQuizAnswerParams{
+								{
+									ID:              uuid.New().String(),
+									Answer:          "New answer",
+									IsCorrectAnswer: true,
+									Position:        0,
+								},
+							},
+						},
+					},
 				}},
 			},
 		},
