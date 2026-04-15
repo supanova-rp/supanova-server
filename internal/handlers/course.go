@@ -277,7 +277,7 @@ func (s EditSectionParams) MarshalJSON() ([]byte, error) {
 
 type EditVideoSectionParams struct {
 	Type         domain.SectionType `json:"type"`
-	ID           string             `json:"id" validate:"omitempty,uuid"`
+	ID           string             `json:"id"` // skip validation: ID UUID/unix timestamp if existing/new section
 	IsNewSection bool               `json:"isNewSection"`
 	Title        string             `json:"title" validate:"required"`
 	StorageKey   string             `json:"storageKey" validate:"required,uuid"`
@@ -301,7 +301,7 @@ type EditQuizQuestionParams struct {
 
 type EditQuizSectionParams struct {
 	Type         domain.SectionType       `json:"type"`
-	ID           string                   `json:"id" validate:"omitempty,uuid"`
+	ID           string                   `json:"id"` // skip validation: ID UUID/unix timestamp if existing/new section
 	IsNewSection bool                     `json:"isNewSection"`
 	Position     int                      `json:"position" validate:"gte=0"`
 	Questions    []EditQuizQuestionParams `json:"questions" validate:"required,min=1,dive"`
