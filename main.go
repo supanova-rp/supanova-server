@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // #nosec G108 -- bound to localhost only, see pprof server below
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
@@ -24,6 +25,8 @@ import (
 	"github.com/supanova-rp/supanova-server/internal/services/secrets"
 	"github.com/supanova-rp/supanova-server/internal/store"
 )
+
+const readTimeout = 10 * time.Second
 
 func main() {
 	err := run()
@@ -100,13 +103,14 @@ func run() error {
 
 	errGroup.Go(func() error {
 		srv := &http.Server{
-			Addr:    "localhost:6060",
-			Handler: http.DefaultServeMux,
+			Addr:              "localhost:6060",
+			Handler:           http.DefaultServeMux,
+			ReadHeaderTimeout: readTimeout,
 		}
 
 		go func() {
 			<-errCtx.Done()
-			srv.Close()
+			_ = srv.Close() // explicitly ignore: best-effort shutdown
 		}()
 
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
