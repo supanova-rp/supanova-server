@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -94,6 +96,24 @@ func run() error {
 		metrics.RegisterMetrics()
 
 		return metrics.Run(errCtx, cfg.Metrics)
+	})
+
+	errGroup.Go(func() error {
+		srv := &http.Server{
+			Addr:    "localhost:6060",
+			Handler: http.DefaultServeMux,
+		}
+
+		go func() {
+			<-errCtx.Done()
+			srv.Close()
+		}()
+
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			return fmt.Errorf("pprof server failed: %v", err)
+		}
+
+		return nil
 	})
 
 	return errGroup.Wait()
