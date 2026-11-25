@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -1005,4 +1006,220 @@ func validEditCourseRequest() handlers.EditCourseRequest {
 		},
 		DeletedMaterialIDs: []string{deletedMaterialID},
 	}
+}
+
+func courseToDuplicate() *domain.Course {
+	return &domain.Course{
+		ID:                uuid.New(),
+		Title:             "Radiation Basics",
+		Description:       "Course description",
+		CompletionTitle:   "Completion Title",
+		CompletionMessage: "Completion Message",
+		Sections: []domain.CourseSection{
+			&domain.VideoSection{
+				ID:         uuid.New(),
+				Title:      "Intro Video",
+				Position:   0,
+				StorageKey: uuid.New(),
+				Type:       domain.SectionTypeVideo,
+			},
+			&domain.QuizSection{
+				ID:       uuid.New(),
+				Title:    "Quiz",
+				Position: 1,
+				Type:     domain.SectionTypeQuiz,
+				Questions: []domain.QuizQuestion{
+					{
+						ID:            uuid.New(),
+						Question:      "Which of these are correct?",
+						Position:      0,
+						IsMultiAnswer: true,
+						Answers: []domain.QuizAnswer{
+							{ID: uuid.New(), Answer: "A", Position: 0, IsCorrectAnswer: true},
+							{ID: uuid.New(), Answer: "B", Position: 1, IsCorrectAnswer: true},
+							{ID: uuid.New(), Answer: "C", Position: 2, IsCorrectAnswer: false},
+						},
+					},
+				},
+			},
+		},
+		Materials: []domain.CourseMaterial{
+			{ID: uuid.New(), Name: "Study Guide", Position: 0, StorageKey: uuid.New()},
+		},
+	}
+}
+
+func TestDuplicateCourse_HappyPath(t *testing.T) {
+	source := courseToDuplicate()
+	video := source.Sections[0].(*domain.VideoSection)
+	quiz := source.Sections[1].(*domain.QuizSection)
+	material := source.Materials[0]
+
+	duplicate := &domain.Course{
+		ID:        uuid.New(),
+		Title:     "Copy of Radiation Basics",
+		Sections:  []domain.CourseSection{},
+		Materials: []domain.CourseMaterial{},
+	}
+
+	courseRepo := &mocks.CourseRepositoryMock{
+		GetCourseFunc: func(_ context.Context, _ pgtype.UUID) (*domain.Course, error) {
+			return source, nil
+		},
+		AddCourseFunc: func(_ context.Context, _ *domain.AddCourseParams) (*domain.Course, error) {
+			return duplicate, nil
+		},
+	}
+	objectStorage := &mocks.ObjectStorageMock{
+		CopyFunc: func(_ context.Context, _, _ string) error {
+			return nil
+		},
+	}
+	h := &handlers.Handlers{Course: courseRepo, ObjectStorage: objectStorage}
+
+	reqBody := handlers.DuplicateCourseParams{CourseID: source.ID.String()}
+	ctx, rec := testhelpers.SetupEchoContext(t, reqBody, "duplicate-course")
+
+	if err := h.DuplicateCourse(ctx); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if rec.Code != http.StatusCreated {
+		t.Errorf("expected status %d, got %d", http.StatusCreated, rec.Code)
+	}
+
+	var actual domain.Course
+	if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	if diff := cmp.Diff(duplicate, &actual); diff != "" {
+		t.Errorf("course mismatch (-want +got):\n%s", diff)
+	}
+
+	addCalls := courseRepo.AddCourseCalls()
+	testhelpers.AssertRepoCalls(t, len(addCalls), 1, testhelpers.AddCourseHandlerName)
+
+	expectedParams := &domain.AddCourseParams{
+		Title:             "Copy of Radiation Basics",
+		Description:       source.Description,
+		CompletionTitle:   source.CompletionTitle,
+		CompletionMessage: source.CompletionMessage,
+		Materials: []domain.AddMaterialParams{
+			{Name: material.Name, StorageKey: material.StorageKey, Position: material.Position},
+		},
+		Sections: []domain.AddSectionParams{
+			&domain.AddVideoSectionParams{Title: video.Title, StorageKey: video.StorageKey, Position: video.Position},
+			&domain.AddQuizSectionParams{
+				Position: quiz.Position,
+				Questions: []domain.AddSectionQuestionParams{
+					{
+						Question:      "Which of these are correct?",
+						Position:      0,
+						IsMultiAnswer: true,
+						Answers: []domain.AddSectionQuestionAnswerParams{
+							{Answer: "A", Position: 0, IsCorrectAnswer: true},
+							{Answer: "B", Position: 1, IsCorrectAnswer: true},
+							{Answer: "C", Position: 2, IsCorrectAnswer: false},
+						},
+					},
+				},
+			},
+		},
+	}
+	actualParams := addCalls[0].AddCourseParams
+	if diff := cmp.Diff(expectedParams, actualParams, cmpopts.IgnoreFields(domain.AddMaterialParams{}, "ID")); diff != "" {
+		t.Errorf("add course params mismatch (-want +got):\n%s", diff)
+	}
+	if newID := actualParams.Materials[0].ID; newID == uuid.Nil || newID == material.ID {
+		t.Errorf("expected the duplicated material to get its own ID, got %s", newID)
+	}
+
+	sourceID, duplicateID := source.ID.String(), duplicate.ID.String()
+	expectedCopies := map[string]string{
+		sourceID + "/videos/" + video.StorageKey.String():                duplicateID + "/videos/" + video.StorageKey.String(),
+		sourceID + "/materials/" + material.StorageKey.String() + ".pdf": duplicateID + "/materials/" + material.StorageKey.String() + ".pdf",
+	}
+	actualCopies := map[string]string{}
+	for _, call := range objectStorage.CopyCalls() {
+		actualCopies[call.SourceKey] = call.DestinationKey
+	}
+	if diff := cmp.Diff(expectedCopies, actualCopies); diff != "" {
+		t.Errorf("copied files mismatch (-want +got):\n%s", diff)
+	}
+
+	testhelpers.AssertRepoCalls(t, len(courseRepo.DeleteCourseCalls()), 0, testhelpers.DeleteCourseHandlerName)
+}
+
+func TestDuplicateCourse_UnhappyPath(t *testing.T) {
+	source := courseToDuplicate()
+	validReqBody := handlers.DuplicateCourseParams{CourseID: source.ID.String()}
+
+	t.Run("validation - missing course ID", func(t *testing.T) {
+		h := &handlers.Handlers{Course: &mocks.CourseRepositoryMock{}}
+		ctx, _ := testhelpers.SetupEchoContext(t, handlers.DuplicateCourseParams{}, "duplicate-course")
+		testhelpers.AssertHTTPError(t, h.DuplicateCourse(ctx), http.StatusBadRequest, errors.Validation)
+	})
+
+	t.Run("invalid course ID", func(t *testing.T) {
+		h := &handlers.Handlers{Course: &mocks.CourseRepositoryMock{}}
+		ctx, _ := testhelpers.SetupEchoContext(t, handlers.DuplicateCourseParams{CourseID: "invalid-uuid"}, "duplicate-course")
+		testhelpers.AssertHTTPError(t, h.DuplicateCourse(ctx), http.StatusBadRequest, errors.InvalidUUID)
+	})
+
+	t.Run("course not found", func(t *testing.T) {
+		courseRepo := &mocks.CourseRepositoryMock{
+			GetCourseFunc: func(_ context.Context, _ pgtype.UUID) (*domain.Course, error) {
+				return nil, pgx.ErrNoRows
+			},
+		}
+		h := &handlers.Handlers{Course: courseRepo}
+		ctx, _ := testhelpers.SetupEchoContext(t, validReqBody, "duplicate-course")
+		testhelpers.AssertHTTPError(t, h.DuplicateCourse(ctx), http.StatusNotFound, errors.NotFound("course"))
+		testhelpers.AssertRepoCalls(t, len(courseRepo.AddCourseCalls()), 0, testhelpers.AddCourseHandlerName)
+	})
+
+	t.Run("fails to create the duplicate", func(t *testing.T) {
+		courseRepo := &mocks.CourseRepositoryMock{
+			GetCourseFunc: func(_ context.Context, _ pgtype.UUID) (*domain.Course, error) {
+				return source, nil
+			},
+			AddCourseFunc: func(_ context.Context, _ *domain.AddCourseParams) (*domain.Course, error) {
+				return nil, stdErrors.New("database connection failed")
+			},
+		}
+		objectStorage := &mocks.ObjectStorageMock{}
+		h := &handlers.Handlers{Course: courseRepo, ObjectStorage: objectStorage}
+		ctx, _ := testhelpers.SetupEchoContext(t, validReqBody, "duplicate-course")
+		testhelpers.AssertHTTPError(t, h.DuplicateCourse(ctx), http.StatusInternalServerError, errors.Creating("course"))
+		testhelpers.AssertRepoCalls(t, len(objectStorage.CopyCalls()), 0, testhelpers.CopyObjectHandlerName)
+	})
+
+	t.Run("deletes the duplicate when copying files fails", func(t *testing.T) {
+		duplicate := &domain.Course{ID: uuid.New()}
+		courseRepo := &mocks.CourseRepositoryMock{
+			GetCourseFunc: func(_ context.Context, _ pgtype.UUID) (*domain.Course, error) {
+				return source, nil
+			},
+			AddCourseFunc: func(_ context.Context, _ *domain.AddCourseParams) (*domain.Course, error) {
+				return duplicate, nil
+			},
+			DeleteCourseFunc: func(_ context.Context, _ uuid.UUID) error {
+				return nil
+			},
+		}
+		objectStorage := &mocks.ObjectStorageMock{
+			CopyFunc: func(_ context.Context, _, _ string) error {
+				return stdErrors.New("s3 unavailable")
+			},
+		}
+		h := &handlers.Handlers{Course: courseRepo, ObjectStorage: objectStorage}
+		ctx, _ := testhelpers.SetupEchoContext(t, validReqBody, "duplicate-course")
+		testhelpers.AssertHTTPError(t, h.DuplicateCourse(ctx), http.StatusInternalServerError, errors.Creating("course"))
+
+		deleteCalls := courseRepo.DeleteCourseCalls()
+		testhelpers.AssertRepoCalls(t, len(deleteCalls), 1, testhelpers.DeleteCourseHandlerName)
+		if len(deleteCalls) == 1 && deleteCalls[0].UUID != duplicate.ID {
+			t.Errorf("expected duplicate %s to be deleted, got %s", duplicate.ID, deleteCalls[0].UUID)
+		}
+	})
 }

@@ -1,12 +1,17 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	stdErrors "errors"
 	"fmt"
+	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/supanova-rp/supanova-server/internal/domain"
 	"github.com/supanova-rp/supanova-server/internal/handlers/errors"
@@ -18,6 +23,10 @@ const (
 	coursesResource              = "courses"
 	courseOverviewResource       = "course overview"
 	assignedCourseTitlesResource = "assigned course titles"
+
+	duplicateTitlePrefix    = "Copy of "
+	duplicateCourseTimeout  = 10 * time.Minute
+	maxConcurrentFileCopies = 5
 )
 
 type GetCourseParams struct {
@@ -484,6 +493,151 @@ func parseUUIDs(ids []string) ([]uuid.UUID, error) {
 		result = append(result, parsed)
 	}
 	return result, nil
+}
+
+type DuplicateCourseParams struct {
+	CourseID string `json:"courseId" validate:"required"`
+}
+
+// DuplicateCourse creates a new course with the same content as an existing one, including its
+// own copies of the videos and materials. Enrolments and progress are not carried over.
+func (h *Handlers) DuplicateCourse(e echo.Context) error {
+	var params DuplicateCourseParams
+	if err := bindAndValidate(e, &params); err != nil {
+		return err
+	}
+
+	sourceID, err := utils.PGUUIDFromString(params.CourseID)
+	if err != nil {
+		return httpError(http.StatusBadRequest, errors.InvalidUUID, err)
+	}
+
+	// Copying videos can take longer than the server's write timeout, and stopping halfway
+	// because the client gave up would only leave a rollback to do, so this request gets its
+	// own deadline instead
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(e.Request().Context()), duplicateCourseTimeout)
+	defer cancel()
+
+	deadline := time.Now().Add(duplicateCourseTimeout)
+	if err := http.NewResponseController(e.Response()).SetWriteDeadline(deadline); err != nil {
+		slog.WarnContext(ctx, "failed to extend write deadline", slog.Any("error", err))
+	}
+
+	source, err := h.Course.GetCourse(ctx, sourceID)
+	if err != nil {
+		if errors.IsNotFoundErr(err) {
+			return httpError(http.StatusNotFound, errors.NotFound(courseResource), err)
+		}
+
+		return httpError(http.StatusInternalServerError, errors.Getting(courseResource), err)
+	}
+
+	duplicate, err := h.Course.AddCourse(ctx, duplicateCourseParamsFrom(source))
+	if err != nil {
+		return httpError(http.StatusInternalServerError, errors.Creating(courseResource), err)
+	}
+
+	if err := h.copyCourseFiles(ctx, source, duplicate.ID); err != nil {
+		// Remove the new course so one with missing files is never left behind. ctx may be the
+		// reason the copy failed, so the delete can't depend on it
+		if deleteErr := h.Course.DeleteCourse(context.WithoutCancel(ctx), duplicate.ID); deleteErr != nil {
+			err = stdErrors.Join(err, fmt.Errorf("failed to delete incomplete duplicate course %s: %w", duplicate.ID, deleteErr))
+		}
+
+		return httpError(http.StatusInternalServerError, errors.Creating(courseResource), err)
+	}
+
+	return e.JSON(http.StatusCreated, duplicate)
+}
+
+// The storage keys are reused as-is: files are stored under their course ID, so the same key
+// in the new course points at a different object
+func duplicateCourseParamsFrom(course *domain.Course) *domain.AddCourseParams {
+	materials := utils.Map(course.Materials, func(m domain.CourseMaterial) domain.AddMaterialParams {
+		return domain.AddMaterialParams{
+			ID:         uuid.New(),
+			Name:       m.Name,
+			StorageKey: m.StorageKey,
+			Position:   m.Position,
+		}
+	})
+
+	sections := utils.Map(course.Sections, func(s domain.CourseSection) domain.AddSectionParams {
+		switch sec := s.(type) {
+		case *domain.VideoSection:
+			return &domain.AddVideoSectionParams{
+				Title:      sec.Title,
+				StorageKey: sec.StorageKey,
+				Position:   sec.Position,
+			}
+		case *domain.QuizSection:
+			return &domain.AddQuizSectionParams{
+				Position: sec.Position,
+				Questions: utils.Map(sec.Questions, func(q domain.QuizQuestion) domain.AddSectionQuestionParams {
+					return domain.AddSectionQuestionParams{
+						Question:      q.Question,
+						Position:      q.Position,
+						IsMultiAnswer: q.IsMultiAnswer,
+						Answers: utils.Map(q.Answers, func(a domain.QuizAnswer) domain.AddSectionQuestionAnswerParams {
+							return domain.AddSectionQuestionAnswerParams{
+								Answer:          a.Answer,
+								IsCorrectAnswer: a.IsCorrectAnswer,
+								Position:        a.Position,
+							}
+						}),
+					}
+				}),
+			}
+		default:
+			return nil
+		}
+	})
+
+	return &domain.AddCourseParams{
+		Title:             duplicateTitlePrefix + course.Title,
+		Description:       course.Description,
+		CompletionTitle:   course.CompletionTitle,
+		CompletionMessage: course.CompletionMessage,
+		Materials:         materials,
+		Sections:          sections,
+	}
+}
+
+func (h *Handlers) copyCourseFiles(ctx context.Context, source *domain.Course, destinationID uuid.UUID) error {
+	sourceCourseID := source.ID.String()
+	destinationCourseID := destinationID.String()
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(maxConcurrentFileCopies)
+
+	for _, s := range source.Sections {
+		video, ok := s.(*domain.VideoSection)
+		if !ok {
+			continue
+		}
+
+		storageKey := video.StorageKey.String()
+		g.Go(func() error {
+			return h.ObjectStorage.Copy(
+				ctx,
+				getVideoKey(VideoURLParams{CourseID: sourceCourseID, StorageKey: storageKey}),
+				getVideoKey(VideoURLParams{CourseID: destinationCourseID, StorageKey: storageKey}),
+			)
+		})
+	}
+
+	for _, m := range source.Materials {
+		storageKey := m.StorageKey.String()
+		g.Go(func() error {
+			return h.ObjectStorage.Copy(
+				ctx,
+				getMaterialKey(sourceCourseID, storageKey),
+				getMaterialKey(destinationCourseID, storageKey),
+			)
+		})
+	}
+
+	return g.Wait()
 }
 
 type DeleteCourseParams struct {

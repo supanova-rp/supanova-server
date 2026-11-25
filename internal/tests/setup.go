@@ -27,10 +27,11 @@ const (
 )
 
 type TestResources struct {
-	Store        *store.Store
-	ComposeStack *compose.DockerCompose
-	DB           *sql.DB
-	AppURL       string
+	Store         *store.Store
+	ComposeStack  *compose.DockerCompose
+	DB            *sql.DB
+	AppURL        string
+	ObjectStorage *mocks.ObjectStorageMock
 }
 
 // setupTestResources creates and starts all required containers for testing
@@ -71,6 +72,9 @@ func setupTestResources(ctx context.Context) (*TestResources, error) {
 	mockObjectStorage := &mocks.ObjectStorageMock{
 		GetCDNURLFunc: func(_ context.Context, key string) (string, error) {
 			return fmt.Sprintf("https://cdn.example.com/%s", key), nil
+		},
+		CopyFunc: func(_ context.Context, _, _ string) error {
+			return nil
 		},
 	}
 
@@ -117,10 +121,11 @@ func setupTestResources(ctx context.Context) (*TestResources, error) {
 	}
 
 	return &TestResources{
-		Store:        st,
-		ComposeStack: composeStack,
-		DB:           db,
-		AppURL:       appURL,
+		Store:         st,
+		ComposeStack:  composeStack,
+		DB:            db,
+		AppURL:        appURL,
+		ObjectStorage: mockObjectStorage,
 	}, nil
 }
 

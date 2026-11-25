@@ -19,6 +19,9 @@ var _ handlers.ObjectStorage = &ObjectStorageMock{}
 //
 //		// make and configure a mocked handlers.ObjectStorage
 //		mockedObjectStorage := &ObjectStorageMock{
+//			CopyFunc: func(ctx context.Context, sourceKey string, destinationKey string) error {
+//				panic("mock out the Copy method")
+//			},
 //			GenerateUploadURLFunc: func(ctx context.Context, key string, contentType *string) (string, error) {
 //				panic("mock out the GenerateUploadURL method")
 //			},
@@ -32,6 +35,9 @@ var _ handlers.ObjectStorage = &ObjectStorageMock{}
 //
 //	}
 type ObjectStorageMock struct {
+	// CopyFunc mocks the Copy method.
+	CopyFunc func(ctx context.Context, sourceKey string, destinationKey string) error
+
 	// GenerateUploadURLFunc mocks the GenerateUploadURL method.
 	GenerateUploadURLFunc func(ctx context.Context, key string, contentType *string) (string, error)
 
@@ -40,6 +46,15 @@ type ObjectStorageMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// Copy holds details about calls to the Copy method.
+		Copy []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// SourceKey is the sourceKey argument value.
+			SourceKey string
+			// DestinationKey is the destinationKey argument value.
+			DestinationKey string
+		}
 		// GenerateUploadURL holds details about calls to the GenerateUploadURL method.
 		GenerateUploadURL []struct {
 			// Ctx is the ctx argument value.
@@ -57,8 +72,49 @@ type ObjectStorageMock struct {
 			Key string
 		}
 	}
+	lockCopy              sync.RWMutex
 	lockGenerateUploadURL sync.RWMutex
 	lockGetCDNURL         sync.RWMutex
+}
+
+// Copy calls CopyFunc.
+func (mock *ObjectStorageMock) Copy(ctx context.Context, sourceKey string, destinationKey string) error {
+	if mock.CopyFunc == nil {
+		panic("ObjectStorageMock.CopyFunc: method is nil but ObjectStorage.Copy was just called")
+	}
+	callInfo := struct {
+		Ctx            context.Context
+		SourceKey      string
+		DestinationKey string
+	}{
+		Ctx:            ctx,
+		SourceKey:      sourceKey,
+		DestinationKey: destinationKey,
+	}
+	mock.lockCopy.Lock()
+	mock.calls.Copy = append(mock.calls.Copy, callInfo)
+	mock.lockCopy.Unlock()
+	return mock.CopyFunc(ctx, sourceKey, destinationKey)
+}
+
+// CopyCalls gets all the calls that were made to Copy.
+// Check the length with:
+//
+//	len(mockedObjectStorage.CopyCalls())
+func (mock *ObjectStorageMock) CopyCalls() []struct {
+	Ctx            context.Context
+	SourceKey      string
+	DestinationKey string
+} {
+	var calls []struct {
+		Ctx            context.Context
+		SourceKey      string
+		DestinationKey string
+	}
+	mock.lockCopy.RLock()
+	calls = mock.calls.Copy
+	mock.lockCopy.RUnlock()
+	return calls
 }
 
 // GenerateUploadURL calls GenerateUploadURLFunc.

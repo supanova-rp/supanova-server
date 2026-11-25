@@ -31,6 +31,7 @@ const (
 	GetVideoURLHandlerName                = "GetVideoURL"
 	GetVideoUploadURLHandlerName          = "GetVideoUploadURL"
 	GetMaterialUploadURLHandlerName       = "GetMaterialUploadURL"
+	CopyObjectHandlerName                 = "Copy"
 	UpdateCourseEnrolmentHandler          = "UpdateCourseEnrolment"
 	EnrolUserInCourseHandlerName          = "EnrolInCourse"
 	DisenrolUserInCourseHandlerName       = "DisenrolInCourse"
