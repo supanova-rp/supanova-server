@@ -63,6 +63,9 @@ type AddQuizSectionParams struct {
 func (q *AddQuizSectionParams) GetPosition() int { return q.Position }
 
 type AddCourseParams struct {
+	// ID is optional. Files are uploaded under the course ID before the course is saved,
+	// so the client picks the ID up front; a new one is generated when it is not set
+	ID                uuid.UUID
 	Title             string
 	Description       string
 	CompletionTitle   string

@@ -158,6 +158,24 @@ func TestCourse(t *testing.T) {
 		}
 	})
 
+	t.Run("add course - keeps the course ID from the request", func(t *testing.T) {
+		courseID := uuid.New()
+
+		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
+			ID:                courseID.String(),
+			Title:             courseTitle,
+			Description:       courseDescription,
+			CompletionTitle:   courseCompletionTitle,
+			CompletionMessage: courseCompletionMessage,
+		})
+
+		if created.ID != courseID {
+			t.Errorf("expected course ID %s, got %s", courseID, created.ID)
+		}
+
+		deleteCourse(t, testResources.AppURL, created.ID)
+	})
+
 	t.Run("course - not found", func(t *testing.T) {
 		nonExistentID := uuid.New()
 

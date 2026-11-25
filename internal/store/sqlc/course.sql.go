@@ -12,11 +12,12 @@ import (
 )
 
 const addCourse = `-- name: AddCourse :one
-INSERT INTO courses (title, description, completion_title, completion_message)
-VALUES ($1, $2, $3, $4) RETURNING id
+INSERT INTO courses (id, title, description, completion_title, completion_message)
+VALUES ($1, $2, $3, $4, $5) RETURNING id
 `
 
 type AddCourseParams struct {
+	ID                pgtype.UUID
 	Title             pgtype.Text
 	Description       pgtype.Text
 	CompletionTitle   pgtype.Text
@@ -25,6 +26,7 @@ type AddCourseParams struct {
 
 func (q *Queries) AddCourse(ctx context.Context, arg AddCourseParams) (pgtype.UUID, error) {
 	row := q.db.QueryRow(ctx, addCourse,
+		arg.ID,
 		arg.Title,
 		arg.Description,
 		arg.CompletionTitle,

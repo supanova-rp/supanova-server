@@ -67,6 +67,7 @@ func (h *Handlers) GetCourse(e echo.Context) error {
 }
 
 type AddCourseParams struct {
+	ID                string              `json:"id" validate:"omitempty,uuid"`
 	Title             string              `json:"title" validate:"required"`
 	Description       string              `json:"description" validate:"required"`
 	CompletionTitle   string              `json:"completionTitle" validate:"required"`
@@ -191,7 +192,13 @@ func addCourseParamsFrom(req *AddCourseParams) *domain.AddCourseParams {
 		}
 	})
 
+	var id uuid.UUID
+	if req.ID != "" {
+		id = uuid.MustParse(req.ID)
+	}
+
 	return &domain.AddCourseParams{
+		ID:                id,
 		Title:             req.Title,
 		Description:       req.Description,
 		CompletionTitle:   req.CompletionTitle,

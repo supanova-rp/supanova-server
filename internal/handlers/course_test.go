@@ -282,6 +282,36 @@ func TestAddCourse_HappyPath(t *testing.T) {
 
 		testhelpers.AssertRepoCalls(t, len(mockRepo.AddCourseCalls()), 1, testhelpers.AddCourseHandlerName)
 	})
+
+	// Files are uploaded under the client's course ID before the course is saved
+	t.Run("uses the course ID from the request", func(t *testing.T) {
+		mockRepo := &mocks.CourseRepositoryMock{
+			AddCourseFunc: func(ctx context.Context, params *domain.AddCourseParams) (*domain.Course, error) {
+				return testhelpers.Course, nil
+			},
+		}
+		h := &handlers.Handlers{Course: mockRepo}
+
+		courseID := uuid.New()
+		reqBody := handlers.AddCourseParams{
+			ID:                courseID.String(),
+			Title:             "New Course",
+			Description:       "New Description",
+			CompletionTitle:   "Completion Title",
+			CompletionMessage: "Completion Message",
+		}
+
+		ctx, _ := testhelpers.SetupEchoContext(t, reqBody, "add-course")
+		if err := h.AddCourse(ctx); err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		calls := mockRepo.AddCourseCalls()
+		testhelpers.AssertRepoCalls(t, len(calls), 1, testhelpers.AddCourseHandlerName)
+		if got := calls[0].AddCourseParams.ID; got != courseID {
+			t.Errorf("expected course ID %s, got %s", courseID, got)
+		}
+	})
 }
 
 func TestAddCourse_UnhappyPath(t *testing.T) {
@@ -306,6 +336,21 @@ func TestAddCourse_UnhappyPath(t *testing.T) {
 		{
 			name:           "validation error - missing description",
 			reqBody:        handlers.AddCourseParams{Title: testhelpers.Course.Title},
+			wantStatus:     http.StatusBadRequest,
+			expectedErrMsg: errors.Validation,
+			setup: func() *handlers.Handlers {
+				return &handlers.Handlers{Course: &mocks.CourseRepositoryMock{}}
+			},
+		},
+		{
+			name: "validation error - invalid course ID",
+			reqBody: handlers.AddCourseParams{
+				ID:                "not-a-uuid",
+				Title:             testhelpers.Course.Title,
+				Description:       testhelpers.Course.Description,
+				CompletionTitle:   testhelpers.Course.CompletionTitle,
+				CompletionMessage: testhelpers.Course.CompletionMessage,
+			},
 			wantStatus:     http.StatusBadRequest,
 			expectedErrMsg: errors.Validation,
 			setup: func() *handlers.Handlers {
