@@ -27,6 +27,7 @@ type Handlers struct {
 type ObjectStorage interface {
 	GenerateUploadURL(ctx context.Context, key string, contentType *string) (string, error)
 	GetCDNURL(ctx context.Context, key string) (string, error)
+	Copy(ctx context.Context, sourceKey, destinationKey string) error
 }
 
 //go:generate moq -out ../handlers/mocks/emailservice_mock.go -pkg mocks . EmailService

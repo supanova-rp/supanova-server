@@ -182,7 +182,13 @@ func (s *Store) AddCourse(ctx context.Context, params *domain.AddCourseParams) (
 
 		qtx := s.Queries.WithTx(tx)
 
+		newID := params.ID
+		if newID == uuid.Nil {
+			newID = uuid.New()
+		}
+
 		id, err := qtx.AddCourse(ctx, sqlc.AddCourseParams{
+			ID:                utils.PGUUIDFromUUID(newID),
 			Title:             utils.PGTextFrom(params.Title),
 			Description:       utils.PGTextFrom(params.Description),
 			CompletionTitle:   utils.PGTextFrom(params.CompletionTitle),

@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -67,6 +68,20 @@ func (s *Store) GenerateUploadURL(ctx context.Context, key string, contentType *
 	}
 
 	return req.URL, nil
+}
+
+// Copy duplicates an object within the bucket. S3 does the copy itself, so nothing is downloaded.
+func (s *Store) Copy(ctx context.Context, sourceKey, destinationKey string) error {
+	_, err := s.client.CopyObject(ctx, &s3.CopyObjectInput{
+		Bucket:     aws.String(s.bucketName),
+		CopySource: aws.String(s.bucketName + "/" + url.PathEscape(sourceKey)),
+		Key:        aws.String(destinationKey),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to copy s3 object %s to %s: %w", sourceKey, destinationKey, err)
+	}
+
+	return nil
 }
 
 func parseCDNKey(pemKey string) (*rsa.PrivateKey, error) {

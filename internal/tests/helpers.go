@@ -66,6 +66,11 @@ func editCourse(t *testing.T, baseURL string, params *handlers.EditCourseRequest
 	return postAndParse[domain.Course](t, baseURL, "edit-course", params, http.StatusOK)
 }
 
+func duplicateCourse(t *testing.T, baseURL string, id uuid.UUID) *domain.Course {
+	t.Helper()
+	return postAndParse[domain.Course](t, baseURL, "duplicate-course", &handlers.DuplicateCourseParams{CourseID: id.String()}, http.StatusCreated)
+}
+
 func getProgress(t *testing.T, baseURL string, courseID uuid.UUID) *domain.Progress {
 	t.Helper()
 	return postAndParse[domain.Progress](t, baseURL, "get-progress", map[string]uuid.UUID{"courseId": courseID}, http.StatusOK)

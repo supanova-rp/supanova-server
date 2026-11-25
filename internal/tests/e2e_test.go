@@ -158,11 +158,126 @@ func TestCourse(t *testing.T) {
 		}
 	})
 
+	t.Run("add course - keeps the course ID from the request", func(t *testing.T) {
+		courseID := uuid.New()
+
+		created := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
+			ID:                courseID.String(),
+			Title:             courseTitle,
+			Description:       courseDescription,
+			CompletionTitle:   courseCompletionTitle,
+			CompletionMessage: courseCompletionMessage,
+		})
+
+		if created.ID != courseID {
+			t.Errorf("expected course ID %s, got %s", courseID, created.ID)
+		}
+
+		deleteCourse(t, testResources.AppURL, created.ID)
+	})
+
 	t.Run("course - not found", func(t *testing.T) {
 		nonExistentID := uuid.New()
 
 		resp := makePOSTRequest(t, testResources.AppURL, "course", &handlers.GetCourseParams{
 			ID: nonExistentID.String(),
+		})
+		defer resp.Body.Close() //nolint:errcheck
+
+		if resp.StatusCode != http.StatusNotFound {
+			t.Fatalf("expected status 404, got %d", resp.StatusCode)
+		}
+	})
+}
+
+func TestDuplicateCourse(t *testing.T) {
+	t.Run("duplicates course content and files", func(t *testing.T) {
+		materialStorageKey := uuid.New().String()
+		videoStorageKey := uuid.New().String()
+
+		source := addCourse(t, testResources.AppURL, &handlers.AddCourseParams{
+			Title:             courseTitle,
+			Description:       courseDescription,
+			CompletionTitle:   courseCompletionTitle,
+			CompletionMessage: courseCompletionMessage,
+			Materials: []handlers.AddMaterialParams{
+				{ID: uuid.New().String(), Name: "Study Guide", StorageKey: materialStorageKey, Position: 0},
+			},
+			Sections: []handlers.AddSectionParams{
+				{Video: &handlers.AddVideoSectionParams{
+					Title:      "Video Section",
+					StorageKey: videoStorageKey,
+					Position:   0,
+					Type:       domain.SectionTypeVideo,
+				}},
+				{Quiz: &handlers.AddQuizSectionParams{
+					Position: 1,
+					Type:     domain.SectionTypeQuiz,
+					Questions: []handlers.AddQuizQuestionParams{
+						{
+							Question:      "Which answers are correct?",
+							Position:      0,
+							IsMultiAnswer: true,
+							Answers: []handlers.AddQuizAnswerParams{
+								{Answer: "Correct A", IsCorrectAnswer: true, Position: 0},
+								{Answer: "Correct B", IsCorrectAnswer: true, Position: 1},
+								{Answer: "Wrong", IsCorrectAnswer: false, Position: 2},
+							},
+						},
+					},
+				}},
+			},
+		})
+
+		duplicate := duplicateCourse(t, testResources.AppURL, source.ID)
+
+		if duplicate.ID == source.ID {
+			t.Fatalf("expected duplicate to have its own ID, got the source ID %s", source.ID)
+		}
+		if expected := "Copy of " + courseTitle; duplicate.Title != expected {
+			t.Errorf("expected title %q, got %q", expected, duplicate.Title)
+		}
+
+		ignoreIDs := []cmp.Option{
+			cmpopts.IgnoreFields(domain.Course{}, "ID", "Title"),
+			cmpopts.IgnoreFields(domain.CourseMaterial{}, "ID"),
+			cmpopts.IgnoreFields(domain.VideoSection{}, "ID"),
+			cmpopts.IgnoreFields(domain.QuizSection{}, "ID"),
+			cmpopts.IgnoreFields(domain.QuizQuestion{}, "ID"),
+			cmpopts.IgnoreFields(domain.QuizAnswer{}, "ID"),
+		}
+		if diff := cmp.Diff(source, duplicate, ignoreIDs...); diff != "" {
+			t.Errorf("duplicate content mismatch (-source +duplicate):\n%s", diff)
+		}
+
+		if diff := cmp.Diff(duplicate, getCourse(t, testResources.AppURL, duplicate.ID)); diff != "" {
+			t.Errorf("stored duplicate mismatch (-want +got):\n%s", diff)
+		}
+		if diff := cmp.Diff(source, getCourse(t, testResources.AppURL, source.ID)); diff != "" {
+			t.Errorf("source course changed (-want +got):\n%s", diff)
+		}
+
+		expectedCopies := map[string]string{
+			fmt.Sprintf("%s/videos/%s", source.ID, videoStorageKey):           fmt.Sprintf("%s/videos/%s", duplicate.ID, videoStorageKey),
+			fmt.Sprintf("%s/materials/%s.pdf", source.ID, materialStorageKey): fmt.Sprintf("%s/materials/%s.pdf", duplicate.ID, materialStorageKey),
+		}
+		actualCopies := map[string]string{}
+		for _, call := range testResources.ObjectStorage.CopyCalls() {
+			if _, ok := expectedCopies[call.SourceKey]; ok {
+				actualCopies[call.SourceKey] = call.DestinationKey
+			}
+		}
+		if diff := cmp.Diff(expectedCopies, actualCopies); diff != "" {
+			t.Errorf("copied files mismatch (-want +got):\n%s", diff)
+		}
+
+		deleteCourse(t, testResources.AppURL, duplicate.ID)
+		deleteCourse(t, testResources.AppURL, source.ID)
+	})
+
+	t.Run("course not found", func(t *testing.T) {
+		resp := makePOSTRequest(t, testResources.AppURL, "duplicate-course", &handlers.DuplicateCourseParams{
+			CourseID: uuid.New().String(),
 		})
 		defer resp.Body.Close() //nolint:errcheck
 

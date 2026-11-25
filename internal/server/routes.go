@@ -20,6 +20,7 @@ func RegisterCourseRoutes(private *echo.Group, h *handlers.Handlers) {
 	private.POST("/courses", h.GetCourses)
 	private.POST("/add-course", h.AddCourse)
 	private.POST("/edit-course", h.EditCourse)
+	private.POST("/duplicate-course", h.DuplicateCourse)
 	private.POST("/delete-course", h.DeleteCourse)
 }
 

@@ -106,8 +106,8 @@ GROUP BY qs.id, qs.position, qs.course_id
 ORDER BY qs.position;
 
 -- name: AddCourse :one
-INSERT INTO courses (title, description, completion_title, completion_message)
-VALUES ($1, $2, $3, $4) RETURNING id;
+INSERT INTO courses (id, title, description, completion_title, completion_message)
+VALUES ($1, $2, $3, $4, $5) RETURNING id;
 
 -- name: InsertCourseMaterial :exec
 INSERT INTO course_materials (id, name, storage_key, position, course_id)
